@@ -26,14 +26,41 @@ Start by cloning the FALL3D repository from GitLab. Ensure you checkout the appr
 
 ```shell
 git clone --branch 9.0.1 https://gitlab.com/fall3d-suite/fall3d.git
-cd fall3d
 ```
 
 ### CPU
 
 <details><summary>Click to expand</summary>
 
+**Load Modules**
+
+```shell
+ml purge 
+. /global/scratch/groups/gh/bootstrap-gh-env.sh
 ml load gcc/12.3.0-gcc-11.4.1-f7guf3f
+ml load netcdf-fortran/4.6.1-gcc-12.3.0-op3ppzc
+ml load cmake/3.29.2-gcc-12.3.0-iitrhra
+```
+
+**Configure and build**
+
+_serial CPU configuration_
+
+```shell
+cmake \
+    -B ./build-cpu-release \
+    -DDETAIL_BIN=YES \
+    -DWITH-MPI=NO \
+    -DWITH-ACC=NO \
+    -DWITH-R4=NO \
+    -DCMAKE_INSTALL_PREFIX=./install-cpu-release \
+    -DCMAKE_BUILD_TYPE=Release \
+    -S ./fall3d
+```
+
+```shell
+cmake --build ./build-cpu-release 
+```
 
 </details>
 
@@ -59,12 +86,12 @@ _single GPU configuration_
 
 ```shell
 cmake \
-    -B ./fall3d-build-release \
+    -B ./build-openacc-release \
     -DDETAIL_BIN=YES \
     -DWITH-MPI=NO \
     -DWITH-ACC=YES \
     -DWITH-R4=NO \
-    -DCMAKE_INSTALL_PREFIX=./fall3d-install-release \
+    -DCMAKE_INSTALL_PREFIX=./install-openacc-release \
     -DCMAKE_BUILD_TYPE=Release \
     -S ./fall3d
 ```
@@ -72,7 +99,7 @@ cmake \
 ---DCUSTOM_COMPILER_FLAGS="-fast -g -Minfo=accel" \ # ?
 
 ```shell
-cmake --build ./fall3d-build-release/cmake 
+cmake --build ./build-openacc-release 
 ```
 
 </details>
@@ -100,12 +127,12 @@ _multi GPU configuration_
 
 ```shell
 cmake \
-    -B ./fall3d-mpi-build-release \
+    -B ./build-mpi-openacc-release \
     -DDETAIL_BIN=YES \
     -DWITH-MPI=YES \
     -DWITH-ACC=YES \
     -DWITH-R4=NO \
-    -DCMAKE_INSTALL_PREFIX=./fall3d-mpi-install-release \
+    -DCMAKE_INSTALL_PREFIX=./install-mpi-openacc-release \
     -DCMAKE_BUILD_TYPE=Release \
     -S ./fall3d
 ```
@@ -113,7 +140,7 @@ cmake \
 ---DCUSTOM_COMPILER_FLAGS="-fast -g -Minfo=accel" \ # ?
 
 ```shell
-cmake --build ./fall3d-mpi-build-release/
+cmake --build ./build-mpi-openacc-release
 ```
 
 </details>
