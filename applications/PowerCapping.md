@@ -1,0 +1,34 @@
+# Planned Activity Summary
+
+This planned activity is organized into two main milestones:
+
+1. **Milestone 1**: Compilation, testing, and identification of suitable test cases for each CHEESE app.
+2. **Milestone 2**: Running a power capping study on the selected applications.
+
+The completion of Milestone 1 is necessary before proceeding to Milestone 2. Below is the current status and requirements for three codes involved in Milestone 1.
+
+## Milestone 1 Details
+
+- **Tasks**:
+  - Compile each code on the "Thea" system.
+  - Run the available tests.
+  - Identify and document appropriate test cases to be used in the next phase.
+
+## Current Progress Table for Milestone 1
+
+| Code                                                       | Domain                         | Description                                                                                                                                                                                                                                                                            | Version   | Dependencies                            | Compilation Status                                                                      | Testing Status                 | Test Case Identified |
+|------------------------------------------------------------|--------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------|-------------------------------------------|-----------------------------------------------------------------------------------------|-------------------------------|----------------------|
+| [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)| Computational Seismology        | SPECFEM3D_Cartesian simulates acoustic (fluid), elastic (solid), coupled acoustic/elastic, poroelastic or seismic wave propagation in any type of conforming mesh of hexahedra.                                                  | v4.1.1    | Fortran2003, CUDA, (MPI), CUBIT, SCOTCH   | Compiles successfully, but test compilation fails                                        | Not started                    | Not started          |
+| [FALL3D](fall3d/README.md)                                 | Physical Volcanology            | FALL3D simulates the transport and deposition of volcanic ash/tephra produced by explosive eruptions.                                                                                                                                                                                   | 9.0.1         | Fortran, (MPI), OpenACC (NVfortran), netCDF-Fortran with netCDF-4 support, (PnetCDF)                                         | Not started                                                                              | Not started                    | Not started          |
+| [XSHELLS](xshells/README.md)                               | Magneto-Hydrodynamics (Earth’s Interior) | XSHELLS simulates geophysical and astrophysical flows in rotating spherical shells, including magnetic field generation and evolution in magneto-hydrodynamic contexts.                                                                          | -         | NVHPC, Vulkan FFT, MPI                    | Need to coordinate with developer to resolve compilation issues (x86 pre-processor macros) | Not started                    | Not started          |
+| [SPECFEM2D](https://github.com/SPECFEM/specfem2d)          | Computational Seismology        | SPECFEM2D simulates forward and adjoint seismic wave propagation in two-dimensional acoustic, (an)elastic, poroelastic or coupled acoustic-(an)elastic-poroelastic media, with Convolution PML absorbing conditions.                                                                      | -         | Fortran, MPI                              | Not started                                                                              | Not started                    | Not started          |
+| [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe) | Computational Seismology     | SPECFEM3D_GLOBE simulates global and regional (continental-scale) seismic wave propagation.                                                                                                                                                                                              | -         | Fortran, MPI                              | Not started                                                                              | Not started                    | Not started          |
+
+
+
+
+- For fall3d can checkout this paper https://gmd.copernicus.org/articles/13/1431/2020/gmd-13-1431-2020.pdf for references to one illustrative example of FALL3D-8.0 model results for ash dispersal from the
+2011 Cordón Caulle eruption. Also, in FALL3D v9.x the CPU and GPU versions have been unified into a single source code.
+- Fall3d test cases: https://fall3d-suite.gitlab.io/fall3d/chapters/example.html
+
+_Note: The table will be updated as we make progress. Once the applications are successfully compiled and tested, suitable test cases will be chosen and documented + need to coordinate with A. Masini re FALL3D._

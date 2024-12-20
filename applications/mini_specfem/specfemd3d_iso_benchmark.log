@@ -1,0 +1,20 @@
+asctime,job_completion_time,reframe version,info,modules,result,executable,executable_opts,system,environ,partition,environ,descr,num_nodes,num_tasks_per_node,num_cpus_per_task,num_gpus_per_node,num_tasks,exclusive_access,end_time_iteration_loop_value,end_time_iteration_loop_unit,time_step_count_value,time_step_count_unit
+2024-11-06T07:05:03,2024-11-06T07:05:00,reframe 4.6.3,specfemd3d_iso_benchmark %specfemd3d_miniapps_binaries.num_gpus=1 /e8607e01 @THEA:gh+nvhpc-24.9,,pass,/global/home/users/mredenti/stage/THEA/gh/nvhpc-24.9/fetch_specfemd3d_miniapps_170595b4/specfem_mini_app/elastic_iso_cuda_mpi/xspecfem_mini_app,,THEA,nvhpc-24.9,gh,nvhpc-24.9,Elastic Iso [MPI + CUDA],null,null,null,1,1,true,3.95580482,s,1300,count
+
+asctime,result,system,partition,environ,descr,num_tasks,num_tasks_per_node,end_time_iteration_loop_value,end_time_iteration_loop_unit,time_step_count_value,time_step_count_unit
+2024-09-12T11:50:21,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,4,1.681594,s,1300,count
+2024-09-12T11:50:27,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,4,2.480809,s,1300,count
+2024-09-12T11:50:42,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,2,4.977958,s,1300,count
+2024-09-12T11:51:20,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,1,8.556699,s,1300,count
+2024-09-12T12:08:51,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,4,1.700348,s,1300,count
+2024-09-12T12:08:54,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,4,2.481044,s,1300,count
+2024-09-12T12:09:17,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,2,4.979791,s,1300,count
+2024-09-12T12:09:47,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,1,8.554001,s,1300,count
+2024-09-12T12:10:28,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,4,1.682156,s,1300,count
+2024-09-12T12:10:48,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,4,2.481189,s,1300,count
+2024-09-12T12:11:03,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,2,4.980853,s,1300,count
+2024-09-12T12:11:33,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,1,8.555195,s,1300,count
+2024-09-12T12:12:20,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,4,1.694537,s,1300,count
+2024-09-12T12:12:23,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,4,2.480134,s,1300,count
+2024-09-12T12:12:38,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,2,4.985925,s,1300,count
+2024-09-12T12:13:16,pass,leonardo,booster,nvhpc,Elastic Iso [MPI + CUDA],null,1,8.554989,s,1300,count
