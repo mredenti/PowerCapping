@@ -147,5 +147,7 @@ cmake --build ./build-mpi-openacc-release
 
 ## Validation
 
-- How to verify the installation was successful... [To Do]
+The FALL3D distribution includes multiple test cases (benchmark suite) that can be downloaded from [here](https://gitlab.geo3bcn.csic.es/fall3d/test-suite). These cases are used to check the model configuration and installation rather than to perform accurate and realistic simulations for event reconstruction.
+
+- One example seems interesting though
 
