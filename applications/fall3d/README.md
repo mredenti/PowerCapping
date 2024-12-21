@@ -1,6 +1,7 @@
 # FALL3D
 
-Version 0.9.0: Used for the SC5.2 Capacity Run on MN5: Volcanic dispersal at local scale: a reanalysis of the 2021 La Palma case
+Version 0.9.0: Used for the SC5.2 Capacity Run on MN5: Volcanic dispersal at local scale: a reanalysis of the 2021 La Palma case. Ensemble runs https://fall3d-suite.gitlab.io/fall3d/tasks/setens.html are 
+particularly important for this context as they would represent your typical early warning system simulation.
 
 All the following has been based on the [FALL3D USER MANUAL](https://fall3d-suite.gitlab.io/fall3d/chapters/overview.html)
 
