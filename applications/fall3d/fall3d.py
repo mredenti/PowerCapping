@@ -1,12 +1,14 @@
+# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
+# ReFrame Project Developers. See the top-level LICENSE file for details.
+#
+# SPDX-License-Identifier: BSD-3-Clause
+
 import os
-
 import reframe as rfm
-import reframe.utility.sanity as sn
 import reframe.utility.typecheck as typ
-import reframe.utility.udeps as udeps
+import reframe.utility.sanity as sn
 
 
-@rfm.simple_test
 class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
     descr = 'Fetch OSU benchmarks'
     version = variable(str, value='7.3')
@@ -15,33 +17,24 @@ class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
         f'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-{version}.tar.gz'  # noqa: E501
     ]
     local = True
-    valid_systems = ['pseudo-cluster:login']
-    valid_prog_environs = ['gnu']
 
     @sanity_function
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
 
 
-@rfm.simple_test
 class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
     descr = 'Build OSU benchmarks'
     build_system = 'Autotools'
     build_prefix = variable(str)
-    valid_systems = ['pseudo-cluster:compute']
-    valid_prog_environs = ['gnu-mpi']
+    osu_benchmarks = fixture(fetch_osu_benchmarks, scope='session')
 
-    @run_after('init')
-    def add_dependencies(self):
-        self.depends_on('fetch_osu_benchmarks', udeps.fully)
-
-    @require_deps
-    def prepare_build(self, fetch_osu_benchmarks):
-        target = fetch_osu_benchmarks(part='login', environ='gnu')
-        tarball = f'osu-micro-benchmarks-{target.version}.tar.gz'
+    @run_before('compile')
+    def prepare_build(self):
+        tarball = f'osu-micro-benchmarks-{self.osu_benchmarks.version}.tar.gz'
         self.build_prefix = tarball[:-7]  # remove .tar.gz extension
 
-        fullpath = os.path.join(target.stagedir, tarball)
+        fullpath = os.path.join(self.osu_benchmarks.stagedir, tarball)
         self.prebuild_cmds = [
             f'cp {fullpath} {self.stagedir}',
             f'tar xzf {tarball}',
@@ -53,23 +46,20 @@ class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
 class osu_base_test(rfm.RunOnlyRegressionTest):
     '''Base class of OSU benchmarks runtime tests'''
 
-    valid_systems = ['pseudo-cluster:compute']
-    valid_prog_environs = ['gnu-mpi']
+    valid_systems = ['*']
+    valid_prog_environs = ['+mpi']
     num_tasks = 2
     num_tasks_per_node = 1
+    osu_binaries = fixture(build_osu_benchmarks, scope='environment')
     kind = variable(str)
     benchmark = variable(str)
     metric = variable(typ.Str[r'latency|bandwidth'])
 
-    @run_after('init')
-    def add_dependencies(self):
-        self.depends_on('build_osu_benchmarks', udeps.by_env)
-
-    @require_deps
-    def prepare_run(self, build_osu_benchmarks):
-        osu_binaries = build_osu_benchmarks()
+    @run_before('run')
+    def prepare_run(self):
         self.executable = os.path.join(
-            osu_binaries.stagedir, osu_binaries.build_prefix,
+            self.osu_binaries.stagedir,
+            self.osu_binaries.build_prefix,
             'c', 'mpi', self.kind, self.benchmark
         )
         self.executable_opts = ['-x', '100', '-i', '1000']
