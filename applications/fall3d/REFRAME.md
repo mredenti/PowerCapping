@@ -10,11 +10,29 @@ pip install requirements.txt
 
 ```mermaid
 flowchart TB
-    A((fetch_fall3d)) --> B{execution_mode}
-    B -- "container" --> C[Set <br> executable = 'hpccm' <br> + HPC Container Maker steps]
-    B -- "baremetal" --> D[Set <br> executable = 'wget' <br> + download tarball]
-    C --> E((Sanity check<br>job.exitcode == 0))
-    D --> E((Sanity check<br>job.exitcode == 0))
+    %% Legend
+    subgraph Legend
+    L1[Square: ReFrame Test or Step]:::test
+    L2{Rhombus: Conditional Choice}:::conditional
+    L3([Circle: Flow Connector]):::flow
+    end
+
+    classDef test fill:#f8f8ff,stroke:#000,stroke-width:1px
+    classDef conditional fill:#faf7f0,stroke:#000,stroke-width:1px,stroke-dasharray: 5 5
+    classDef flow fill:#ffffff,stroke:#000,stroke-width:2px
+
+    %% Diagram
+    subgraph "ReFrame Workflow"
+    A((Test Definition)):::flow --> B["fetch_fall3d\n(Class Declaration)"]:::test
+    B --> C{@run_before('run')\n(pick_mode hook)}:::conditional
+    C -- "execution_mode = container" --> D["Set executable='hpccm'\n+ HPC Container Maker steps"]:::test
+    C -- "execution_mode = baremetal" --> E["Set executable='wget'\n+ Wget tarball download steps"]:::test
+    D --> F((Run the job)):::flow
+    E --> F((Run the job)):::flow
+    F --> G(["@sanity_function\nvalidate_download"]):::test
+    G --> H((job.exitcode == 0?)):::conditional
+    H -- "Yes" --> I((Test Pass))
+    H -- "No" --> J((Test Fail))
 ```
 
 
