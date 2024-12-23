@@ -5,6 +5,10 @@ venv
 pip install requirements.txt
 ```
 
+```mermaid
+graph LR
+    fa:fa-check-->fa:fa-coffee
+```
 
 
 ```shell 
@@ -23,6 +27,6 @@ reframe \
     --prefix $PWD/REFRAME-TEST \
     --system=leonardo:login \
     -S execution_mode=baremetal \
-    -S valid_prog_environs=gnu \
+    -S valid_prog_environs=default \
     -lC
 ```
