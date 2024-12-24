@@ -5,7 +5,6 @@ Contents:
   Ubuntu 16.04
   NVHPC (version 24.11)
   NETCDF (upstream)
-  PNETCDF (upstream)
   OpenMPI version 3.1.4
 """
 
@@ -13,63 +12,115 @@ from packaging.version import Version
 import re
 
 ###############################################################################
+# Define Cluster Configurations
+###############################################################################
+
+cluster_configs = {
+    'thea': {
+        'gpu_arch': 'sm_90',
+        'arch': 'aarch64',
+        'base_os': 'rockylinux9',
+        'ompi_version': '4.1.6',
+        'nvhpc_version': '24.3',
+        'cuda_version': '12.6',
+    },
+    'leonardo': {
+        'gpu_arch': 'sm_80',
+        'arch': 'x86_64',
+        'base_os': 'ubuntu22.04',
+        'ompi_version': '4.1.6',
+        'nvhpc_version': '24.3',
+        'cuda_version': '12.3',
+    }
+}
+
+###############################################################################
 # Get User Arguments
 ###############################################################################
 
-# Required arguments 
-gpu_arch = USERARG.get('gpu_arch', 'sm_90') # ! do not put a default - it must be specified ???
-arch = USERARG.get('arch', 'aarch64')
-base_os = USERARG.get('base_os', 'rockylinux9')
-
+# Required arguments
+cluster_name = USERARG.get('cluster', None)
 # Optional arguments
-fall3d_version = USERARG.get('fall3d', '9.0.1')
+fall3d_version = USERARG.get('fall3d_version', '9.0.1')
 fall3d_single_precision = USERARG.get('fall3d_single_precision', 'NO')
-#ompi_version = USERARG.get('ompi', '3.1.2')
-nvhpc_version = USERARG.get('nvhpc_version', '24.11')
-cuda_version = USERARG.get('cuda_version', '12.6')
 
 # verify constraints on user arguments
-if Version(fall3d_version) < Version('9.0'):
-  raise RuntimeError(
-    f"\nIn FALL3D v9.x, the CPU and GPU versions have been unified into a "
-        f"single source code. The build system now relies on Meson or CMake, "
-        f"as autotools is deprecated.\n"
-        f"You have requested version {fall3d_version}, which is lower than 9.0, "
-        f"and thus not supported by this test."
-  )
+if cluster_name is None:
+    raise RuntimeError("You must specify the 'cluster' argument (e.g., 'thea' or 'leonardo').")
 
-#if not Version(ompi_version):
-#  raise RuntimeError('invalid OpenMPI version: {}'.format(ompi_version))
+# Validate cluster name
+if cluster_name not in cluster_configs:
+    raise RuntimeError(
+        f"Invalid cluster name: '{cluster_name}'. "
+        f"Valid options are: {', '.join(cluster_configs.keys())}."
+    )
+
+# Retrieve cluster-specific settings
+settings = cluster_configs[cluster_name]
+gpu_arch = settings['gpu_arch']
+arch = settings['arch']
+base_os = settings['base_os']
+ompi_version = settings['ompi_version']
+nvhpc_version = settings['nvhpc_version']
+cuda_version = settings['cuda_version']
 
 ###############################################################################
 # Devel stage
 ###############################################################################
 
-# Dependencies
+##################
+# Base image: nvhpc
+##################
 
-Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc:24.11-devel-cuda{cuda_version}-{base_os}',
+Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-devel-cuda_multi-{base_os}',
                     _distro=f'{base_os}',
                     _arch=f'{arch}',
                 _as='devel') # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
 
-# netcdf
-# Is this needed?
+##################
+# Openmpi
+##################
 
-# PnetCDF (Parallel netCDF) 
+# HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#openmpi
+Stage0 += openmpi(cuda=True, 
+                  infiniband=True, 
+                  ucx=True,
+                  configure_opts=['--disable-getpwuid', '--with-slurm'],
+                  prefix='/opt/openmpi',
+                  version=f'{ompi_version}')
+
+##################
+# netCDF - NetCDF does not provide a parallel API prior to 4.0 (NetCDF4 uses HDF5 parallel capabilities)
+##################
+
+## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#netcdf
+# Fall3d requires the NetCDF C and Fortran libraries (https://gitlab.com/fall3d-suite/fall3d/-/blob/9.0.1/CMakeLists.txt?ref_type=tags#L30)
+# Probably with openmpi support (use nvhpc toolchain to compile mpi)
+
+##################
+# PnetCDF (Parallel netCDF) ≠ NetCDF4  [I don't think FALL3D actually supports this in practice at the moment, although the documentation says they do]
+# I think they just use parallel I/O in NetCDF4
+##################
+
 ## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#pnetcdf
 ## Installation Instructions https://github.com/Parallel-NetCDF/PnetCDF/blob/master/INSTALL
-parallel_netcdf = pnetcdf( # It will use the nvhpc communication libraries (is this what we want?)
-  prefix='/opt/pnetcdf/', 
-  version='1.13.0', # PnetCDF 1.6.0 or later is required for FALL3D
-  disable_cxx=True, # Turn off support for the C++ interface
-  enable_fortran=True, 
-  )
+#parallel_netcdf = pnetcdf( # It will use the nvhpc communication libraries (is this what we want?)
+#  prefix='/opt/pnetcdf/', 
+#  version='1.13.0', # PnetCDF 1.6.0 or later is required for FALL3D
+#  disable_cxx=True, # Turn off support for the C++ interface
+#  enable_fortran=True, # Fall3d requires the NetCDF C and Fortran libraries
+#  )
+#Stage0 += parallel_netcdf
 
-Stage0 += parallel_netcdf
 
+##################
 # CMake 
+##################
+
 ## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#cmake
 #Stage0 += cmake(prefix='/opt/cmake', eula=True, version='3.29.9')
+
+# Install CMake with pip (should be a lot faster)
 Stage0 += pip(packages=['cmake==3.29.9'], pip='pip3')
 # FALL3D
 ## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#generic_cmake
