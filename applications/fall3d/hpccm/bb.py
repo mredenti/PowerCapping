@@ -68,61 +68,108 @@ cuda_version = settings['cuda_version']
 # Devel stage
 ###############################################################################
 
-##################
+#############################
 # Base image: nvhpc
-##################
+#############################
 
 Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-devel-cuda_multi-{base_os}',
                     _distro=f'{base_os}',
                     _arch=f'{arch}',
                 _as='devel') # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
 
-##################
+Stage0 += environment(variables={'CUDA_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/{nvhpc_version}/cuda'}, _export=True)
+
+#############################
+# CMake 
+#############################
+
+## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#cmake
+#Stage0 += cmake(prefix='/opt/cmake', eula=True, version='3.29.9')
+
+# Install CMake with pip (should be a lot faster)
+Stage0 += pip(packages=['cmake==3.30.0'], pip='pip3')
+
+#############################
 # Openmpi
-##################
+#############################
 
 # HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#openmpi
-Stage0 += openmpi(cuda=True, 
+# It should be using the nvhpc compiler toolchain
+mpi = openmpi(cuda=True, 
                   infiniband=True, 
                   ucx=True,
                   configure_opts=['--disable-getpwuid', '--with-slurm'],
                   prefix='/opt/openmpi',
                   version=f'{ompi_version}')
 
-##################
-# netCDF - NetCDF does not provide a parallel API prior to 4.0 (NetCDF4 uses HDF5 parallel capabilities)
-##################
+Stage0 += mpi
 
-## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#netcdf
-# Fall3d requires the NetCDF C and Fortran libraries (https://gitlab.com/fall3d-suite/fall3d/-/blob/9.0.1/CMakeLists.txt?ref_type=tags#L30)
-# Probably with openmpi support (use nvhpc toolchain to compile mpi)
+#############################
+# HDF5
+#############################
 
-##################
+hdf5 = hdf5(
+    version='1.14.3',
+    prefix='/opt/hdf5',
+    cxx=False,                       # Disable C++ library
+    fortran=True,
+    toolchain=mpi.toolchain,  # Use OpenMPI's toolchain
+    configure_opts=['--enable-fortran',
+                    '--enable-production',
+                    '--enable-parallel'
+                    ]
+)
+
+Stage0 += hdf5
+
+
+#############################
 # PnetCDF (Parallel netCDF) ≠ NetCDF4  [I don't think FALL3D actually supports this in practice at the moment, although the documentation says they do]
 # I think they just use parallel I/O in NetCDF4
-##################
+#############################
 
 ## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#pnetcdf
 ## Installation Instructions https://github.com/Parallel-NetCDF/PnetCDF/blob/master/INSTALL
-#parallel_netcdf = pnetcdf( # It will use the nvhpc communication libraries (is this what we want?)
-#  prefix='/opt/pnetcdf/', 
-#  version='1.13.0', # PnetCDF 1.6.0 or later is required for FALL3D
-#  disable_cxx=True, # Turn off support for the C++ interface
-#  enable_fortran=True, # Fall3d requires the NetCDF C and Fortran libraries
-#  )
-#Stage0 += parallel_netcdf
+parallel_netcdf = pnetcdf( # It will use the nvhpc communication libraries (is this what we want?)
+  prefix='/opt/pnetcdf/', 
+  version='1.12.3', # PnetCDF 1.6.0 or later is required for FALL3D
+  disable_cxx=True, # Turn off support for the C++ interface
+  enable_fortran=True, # Fall3d requires the NetCDF C and Fortran libraries
+  toolchain=mpi.toolchain, 
+  )
+
+Stage0 += parallel_netcdf
 
 
-##################
-# CMake 
-##################
+#############################
+# netCDF - NetCDF does not provide a parallel API prior to 4.0 (NetCDF4 uses HDF5 parallel capabilities)
+#############################
 
-## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#cmake
-#Stage0 += cmake(prefix='/opt/cmake', eula=True, version='3.29.9')
+## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#netcdf
+# Fall3d requires the NetCDF C and Fortran libraries (https://gitlab.com/fall3d-suite/fall3d/-/blob/9.0.1/CMakeLists.txt?ref_type=tags#L30)
 
-# Install CMake with pip (should be a lot faster)
-Stage0 += pip(packages=['cmake==3.29.9'], pip='pip3')
+netcdf = netcdf(
+    version='4.7.4',
+    version_fortran='4.5.3',
+    prefix='/opt/netcdf',
+    cxx=False,                       # Disable C++ library
+    fortran=True,
+    enable_mpi=True,                # +mpi
+    toolchain=mpi.toolchain,  # Use OpenMPI's toolchain
+    with_pnetcdf='/opt/pnetcdf',    # --with-pnetcdf=/opt/pnetcdf
+    enable_shared=True,             # --enable-shared
+    disable_doxygen=True,           # --disable-doxygen
+    disable_parallel_tests=True,    # --disable-parallel-tests
+    disable_tests=True,             # --disable-tests
+)
+
+Stage0 += netcdf
+
+
+#############################
 # FALL3D
+#############################
+
 ## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#generic_cmake
 Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     '-D DETAIL_BIN=NO', # name of the binary will be Fall3d.x
