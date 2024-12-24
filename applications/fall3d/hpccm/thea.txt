@@ -1,1 +1,5 @@
-openmpi@4.1.6%nvhpc@24.3~atomics+cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~internal-libevent~internal-pmix~java+legacylaunchers~lustre~memchecker~openshmem~orterunprefix~pmi~romio+rsh+singularity~static+vt+wrapper-rpath build_system=autotools cuda_arch=90 fabrics=ucx schedulers=slurm arch=linux-rocky9-neoverse_v2
+spack install openmpi@4.1.6%nvhpc@24.3~atomics+cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~internal-libevent~internal-pmix~java+legacylaunchers~lustre~memchecker~openshmem~orterunprefix~pmi~romio+rsh+singularity~static+vt+wrapper-rpath build_system=autotools cuda_arch=90 fabrics=ucx schedulers=slurm arch=linux-rocky9-neoverse_v2
+spack install hdf5@1.14.3%nvhpc@24.3~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make arch=linux-rocky9-neoverse_v2
+spack install netcdf-c@4.9.2%nvhpc@24.3+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8 arch=linux-rocky9-neoverse_v2
+spack install netcdf-fortran@4.6.1%nvhpc@24.3~doc+pic+shared build_system=autotools arch=linux-rocky9-neoverse_v2
+spack install parallel-netcdf@1.12.3%nvhpc@24.3~burstbuffer+cxx+fortran+pic+shared build_system=autotools arch=linux-rocky9-neoverse_v2
