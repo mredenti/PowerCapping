@@ -143,7 +143,8 @@ Stage0 += shell(commands=formatted_install_commands + ['spack clean --all'])
 # Initialize Stage1 for runtime
 Stage1 += baseimage(image=f'nvcr.io/nvidia/cuda:12.3.0-runtime-{base_os}',
                     _distro=f'{base_os}',
-                    _arch=f'{arch}',)
+                    _arch=f'{arch}',
+                    _as='runtime')
 
 Stage1 += Stage0.runtime(_from='devel') 
 
