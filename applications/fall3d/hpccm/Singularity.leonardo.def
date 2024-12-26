@@ -10,8 +10,8 @@
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: docker
-From: nvcr.io/nvidia/nvhpc:24.3-devel-cuda_multi-ubuntu22.04
+BootStrap: localimage
+From: nvhpc-24.3-devel.sif
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -24,32 +24,21 @@ Stage: devel
     export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/12.3/hpcx/latest
 
 %post
-    cd /
-    source $HPCX_HOME/hpcx-init.sh
-    hpcx_load
-
-%post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         autoconf \
-        build-essential \
-        bzip2 \
         ca-certificates \
-        coreutils \
         curl \
         environment-modules \
-        git \
-        gzip \
-        libssl-dev \
-        make \
-        openssh-client \
-        patch \
         pkg-config \
-        tar \
-        tcl \
-        unzip \
-        zlib1g
+        python3
     rm -rf /var/lib/apt/lists/*
+
+%post
+    cd /
+    . /usr/share/modules/init/sh
+    module use $HPCX_HOME/modulefiles
+    module load hpcx
 
 %post
     cd /
@@ -59,20 +48,16 @@ Stage: devel
 %environment
     export FORCE_UNSAFE_CONFIGURE=1
     export LD_LIBRARY_PATH=/opt/spack/lib:$LD_LIBRARY_PATH
-    export PATH=/opt/spack/bin:$PATH
-    export SPACK_ROOT=/opt/spack
 %post
     export FORCE_UNSAFE_CONFIGURE=1
     export LD_LIBRARY_PATH=/opt/spack/lib:$LD_LIBRARY_PATH
-    export PATH=/opt/spack/bin:$PATH
-    export SPACK_ROOT=/opt/spack
 
 %post
     cd /
     mkdir -p /opt/spack-environment
     cat <<EOF > /opt/spack-environment/spack.yaml
 spack:
-  specs:
+  specs: []
   concretizer:
     unify: true
   config:
@@ -82,7 +67,7 @@ EOF
     spack env activate /opt/spack-environment
     spack compiler find --scope env:/opt/spack-environment
     spack external find --not-buildable openmpi --scope env:/opt/spack-environment
-    spack external find --all --exclude cmake --scope env:/opt/spack-environment
+    spack external find --all --scope env:/opt/spack-environment
     spack add hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make
     spack add netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8
     spack add netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools
@@ -90,7 +75,6 @@ EOF
     spack add zlib-ng%gcc
     spack concretize -f
     spack install --fail-fast
-    spack gc -y
     spack clean --all
     find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s
 
@@ -99,16 +83,16 @@ EOF
     cd /
     mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
     mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
-    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D WITH-R4=NO -D CMAKE_RUNTIME_OUTPUT_DIRECTORY=/opt/fall3d/bin /var/tmp/fall3d-9.0.1
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D WITH-R4=NO /var/tmp/fall3d-9.0.1
     cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
-    cmake --build /var/tmp/fall3d-9.0.1/build --target install -- -j$(nproc)
     cd /opt/fall3d
-    mkdir /opt/fall3d/bin
-    cp /var/tmp/fall3d-9.0.1/build/Fall3d.x /opt/fall3d/bin/
+    mkdir -p /opt/fall3d/bin
+    cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
     rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
 
 %post
     cd /
+    spack gc -y
     spack env deactivate
     spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
 
@@ -135,4 +119,4 @@ Stage: runtime
     /opt/view /opt/view
 
 %runscript
-    exec /bin/bash --rcfile /etc/profile -l "$@"
+    exec /bin/sh --rcfile /etc/profile -l "$@"

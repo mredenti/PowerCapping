@@ -95,37 +95,47 @@ Stage0 += environment(variables={
     'HPCX_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/24.3/comm_libs/12.3/hpcx/latest',
     }, _export=True)
 
-Stage0 += shell(commands=[
-                          'source $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
-                          'hpcx_load'
-                          ])
-
 ###############################################################################
 # Install Base Dependencies
 ###############################################################################
+os_common_packages = ['autoconf',
+                    'ca-certificates',
+                    'curl',
+                    'pkg-config',
+                    'python3',
+                    'environment-modules']
+
+Stage0 += packages(apt=os_common_packages,
+                   epel=True,
+                   yum=os_common_packages)
+
+Stage0 += shell(commands=['. /usr/share/modules/init/sh',
+                          'module use $HPCX_HOME/modulefiles',
+                          'module load hpcx'])
+
+"""
+Stage0 += shell(commands=[
+                          '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
+                          'hpcx_load'
+                          ])
 
 ospackages = ['autoconf', 
               'build-essential', 
               'bzip2', 
-              'ca-certificates',
+              'ca-certificates', 
               'coreutils', 
               'curl', 
               'environment-modules', 
-              'git', # might not be needed (check)
               'gzip',
               'libssl-dev', 
-              'make', 
               'openssh-client', 
               'patch', 
-              'pkg-config',
+              'pkg-config', 
               'tcl', 
               'tar', 
               'unzip', 
               'zlib1g']
 
-Stage0 += apt_get(ospackages=ospackages)
-
-"""
 Stage0 += shell(commands=['yum update -y rocky-release',
                           'rm -rf /var/cache/yum/*'])
 
@@ -142,29 +152,12 @@ Stage0 += shell(commands=[
     ])
 
 # Configure Environment Variables
-Stage0 += environment(variables={'PATH': '/opt/spack/bin:$PATH',
-                                 'SPACK_ROOT': '/opt/spack',
-                                 'LD_LIBRARY_PATH': '/opt/spack/lib:$LD_LIBRARY_PATH',
-                                 'FORCE_UNSAFE_CONFIGURE': '1'}) # maybe _export false
+Stage0 += environment(variables={'LD_LIBRARY_PATH': '/opt/spack/lib:$LD_LIBRARY_PATH',
+                                 'FORCE_UNSAFE_CONFIGURE': '1'}) 
 
 ###############################################################################
 # Create Spack environment
 ###############################################################################
-"""
-Stage0 += shell(commands=[
-    'mkdir /opt/spack-environment \
-    &&  (echo "spack:" \
-    &&   echo "  specs:" \
-    &&   echo "  concretizer:" \
-    &&   echo "    unify: true" \
-    &&   echo "  config:" \
-    &&   echo "    install_tree: /opt/software" \
-    &&   echo "  view: /opt/view") > /opt/spack-environment/spack.yaml'
-    './configure', 
-    'make install'
-    ])
-"""
-
 Stage0 += shell(commands=[
     # Create the Spack environment directory
     'mkdir -p /opt/spack-environment',
@@ -172,7 +165,7 @@ Stage0 += shell(commands=[
     # Create the spack.yaml configuration file using a Here Document
     '''cat <<EOF > /opt/spack-environment/spack.yaml
 spack:
-  specs:
+  specs: []
   concretizer:
     unify: true
   config:
@@ -189,8 +182,8 @@ EOF''',
     # Find OpenMPI as part of NVIDIA HPCX package 
     'spack external find --not-buildable openmpi --scope env:/opt/spack-environment',
     
-    # Find all other external packages - exclude cmake since version is too old
-    'spack external find --all --exclude cmake --scope env:/opt/spack-environment'
+    # Find all other external packages
+    'spack external find --all --scope env:/opt/spack-environment'
     ] + [  
         # Add user specified specs
         f'spack add {spec}' for spec in spack_specs
@@ -198,7 +191,6 @@ EOF''',
         # Spack install
         'spack concretize -f', 
         'spack install --fail-fast',
-        'spack gc -y',
         'spack clean --all',
         
         # Strip all the binaries in /opt/view to reduce container size
@@ -220,16 +212,17 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     '-D DETAIL_BIN=NO', # name of the binary will be Fall3d.x
                                     '-D WITH-MPI=YES',
                                     '-D WITH-ACC=YES',
+                                    '-D CMAKE_Fortran_COMPILER=nvfortran',
                                     f'-D WITH-R4={fall3d_single_precision}',
-                                    '-D CMAKE_RUNTIME_OUTPUT_DIRECTORY=/opt/fall3d/bin'
                                     ],
                         prefix='/opt/fall3d', 
+                        install=False,
                         postinstall=[
                                     # e.g., If 'Fall3d.x' ended up somewhere else, copy it manually
                                     ## Unfortunately the upstream CMakeLists.txt has no install(TARGETS) logic
                                     ## and can’t rely on -D CMAKE_RUNTIME_OUTPUT_DIRECTORY=... because the upstream CMakeLists.txt unconditionally overrides it
-                                    'mkdir /opt/fall3d/bin',
-                                    'cp /var/tmp/fall3d-9.0.1/build/Fall3d.x /opt/fall3d/bin/'
+                                    'mkdir -p /opt/fall3d/bin',
+                                    'cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/'
                                   ],
                         # Dictionary of environment variables and values, e.g., LD_LIBRARY_PATH and PATH, to set in the runtime stage. 
                         runtime_environment = {
@@ -238,6 +231,8 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                         url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
 Stage0 += shell(commands=[
+        # remove specs which are no longer needed - perhpas do it at the end
+        'spack gc -y',
         # Deactivate 
         'spack env deactivate',
         # Generate modifications to the environment that are necessary to run
