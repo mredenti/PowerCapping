@@ -38,6 +38,10 @@ cluster_configs = {
 # Get User Arguments
 ###############################################################################
 
+# Fall3d Optional arguments
+fall3d_version = USERARG.get('fall3d_version', '9.0.1')
+fall3d_single_precision = USERARG.get('fall3d_single_precision', 'NO')
+
 # Required arguments
 cluster_name = USERARG.get('cluster', None)
 if cluster_name is None:
@@ -185,46 +189,58 @@ EOF''',
     # Find OpenMPI as part of NVIDIA HPCX package 
     'spack external find --not-buildable openmpi --scope env:/opt/spack-environment',
     
-    # Find all other external packages
-    'spack external find --all --scope env:/opt/spack-environment',
-    
-    # Add user specified recipes
-    
-    
-])
+    # Find all other external packages - exclude cmake since version is too old
+    'spack external find --all --exclude cmake --scope env:/opt/spack-environment'
+    ] + [  
+        # Add user specified specs
+        f'spack add {spec}' for spec in spack_specs
+    ] + [
+        # Spack install
+        'spack concretize -f', 
+        'spack install --fail-fast',
+        'spack gc -y',
+        'spack clean --all',
+        
+        # Strip all the binaries in /opt/view to reduce container size
+    '''find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
+xargs file -i | \
+grep 'charset=binary' | \
+grep 'x-executable\|x-archive\|x-sharedlib' | \
+awk -F: '{print $1}' | xargs strip -s''',
 
-"""
-common_spack_install_commands = [ 
-    'spack compiler find',
-    'spack external find --not-buildable openmpi --scope env:/opt/spack-environment'
-    'spack external find --all --scope env:/opt/spack-environment' # find external packages
-    'spack install --fail-fast',
-    'spack gc -y',
-    'spack clean --all'
-]
+        # Deactivate 
+        'spack env deactivate',
+        # Generate modifications to the environment that are necessary to run
+        'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh'
+    ])
 
-# Install the software, remove unnecessary deps
-RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast && spack gc -y && spack clean --all
+# ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l"] at runtime
 
-# Strip all the binaries
-RUN find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
-    xargs file -i | \
-    grep 'charset=binary' | \
-    grep 'x-executable\|x-archive\|x-sharedlib' | \
-    awk -F: '{print $1}' | xargs strip -s
+#############################
+# FALL3D
+#############################
 
-# Modifications to the environment that are necessary to run
-RUN cd /opt/spack-environment && \
-    spack env activate --sh -d . >> /etc/profile.d/z10_spack_environment.sh
-
-###############################################################################
-# Install Spack Packages
-###############################################################################
-
-# Format the install commands with the appropriate architecture
-formatted_install_commands = [cmd for cmd in common_spack_install_commands]
-
-Stage0 += shell(commands=formatted_install_commands + ['spack clean --all'])
+## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#generic_cmake
+Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
+                                    '-D DETAIL_BIN=NO', # name of the binary will be Fall3d.x
+                                    '-D WITH-MPI=YES',
+                                    '-D WITH-ACC=YES',
+                                    f'-D WITH-R4={fall3d_single_precision}',
+                                    '-D CMAKE_RUNTIME_OUTPUT_DIRECTORY=/opt/fall3d/bin'
+                                    ],
+                        prefix='/opt/fall3d', 
+                        postinstall=[
+                                    # e.g., If 'Fall3d.x' ended up somewhere else, copy it manually
+                                    ## Unfortunately the upstream CMakeLists.txt has no install(TARGETS) logic
+                                    ## and can’t rely on -D CMAKE_RUNTIME_OUTPUT_DIRECTORY=... because the upstream CMakeLists.txt unconditionally overrides it
+                                    'mkdir /opt/fall3d/bin',
+                                    'cp /var/tmp/fall3d-9.0.1/build/Fall3d.x /opt/fall3d/bin/'
+                                  ],
+                        # Dictionary of environment variables and values, e.g., LD_LIBRARY_PATH and PATH, to set in the runtime stage. 
+                        runtime_environment = {
+                                    "PATH" : "/opt/fall3d/bin"
+                        },
+                        url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
 ###############################################################################
 # Finalize Container with Runtime Environment
@@ -237,7 +253,17 @@ Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:24.3-runtime-cuda12.3-{base_os}
 
 Stage1 += Stage0.runtime(_from='devel') 
 
-# Configure environment variables for runtime
+# Configure environment variables for runtime 
+# %files from devel
+    # /opt/fall3d /opt/fall3d
+    # /opt/software /opt/software
+    # /opt/view /opt/view
+    # /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
+    # /opt/spack-environment /opt/spack-environment
+    
+# ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l"] at runtime
+
+"""
 Stage1 += environment(
     variables={
         'PATH': '/opt/spack/bin:$PATH',
@@ -245,22 +271,6 @@ Stage1 += environment(
         'SPACK_ROOT': '/opt/spack' # will not need it at runtime
     }
 )
-
-runscript(self, **kwargs)
-The runscript primitive specifies the commands to be invoked when the container starts.
-
-Parameters
-
-_args: Boolean flag to specify whether "$@" should be appended to the command. If more than one command is specified, nothing is appended regardless of the value of this flag. The default is True (Singularity specific).
-
-_app: String containing the SCI-F identifier. This also causes the Singularity block to named %apprun rather than %runscript (Singularity specific).
-
-commands: A list of commands to execute. The default is an empty list.
-
-_exec: Boolean flag to specify whether exec should be inserted to preface the final command. The default is True (Singularity specific).
-
-Examples
-
-runscript(commands=['cd /workdir', 'source env.sh'])
-runscript(commands=['/usr/local/bin/entrypoint.sh'])
 """
+
+# https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript

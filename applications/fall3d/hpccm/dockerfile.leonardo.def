@@ -1,0 +1,91 @@
+# Spack container (https://github.com/spack/spack)
+#    Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
+#    Optionally, set the user argument 'package' to install additional Spack packages.
+#    Otherwise, it will install the predefined packages based on the cluster.
+# 
+#    Sample workflow:
+# $ hpccm --recipe spack.py --userarg cluster="leonardo" > Dockerfile.leonardo.spack
+# $ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
+# 
+
+FROM nvcr.io/nvidia/nvhpc:24.3-devel-cuda_multi-ubuntu22.04 AS devel
+
+ENV CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/cuda \
+    HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/12.3/hpcx/latest
+
+RUN source $HPCX_HOME/hpcx-init.sh && \
+    hpcx_load
+
+RUN apt-get update -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        autoconf \
+        build-essential \
+        bzip2 \
+        ca-certificates \
+        coreutils \
+        curl \
+        environment-modules \
+        git \
+        gzip \
+        libssl-dev \
+        make \
+        openssh-client \
+        patch \
+        pkg-config \
+        tar \
+        tcl \
+        unzip \
+        zlib1g && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN git clone --branch v0.21.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack && \
+    . /opt/spack/share/spack/setup-env.sh
+
+ENV FORCE_UNSAFE_CONFIGURE=1 \
+    LD_LIBRARY_PATH=/opt/spack/lib:$LD_LIBRARY_PATH \
+    PATH=/opt/spack/bin:$PATH \
+    SPACK_ROOT=/opt/spack
+
+RUN mkdir -p /opt/spack-environment && \
+    cat <<EOF > /opt/spack-environment/spack.yaml
+spack:
+  specs:
+  concretizer:
+    unify: true
+  config:
+    install_tree: /opt/software
+  view: /opt/view
+EOF && \
+    spack env activate /opt/spack-environment && \
+    spack compiler find --scope env:/opt/spack-environment && \
+    spack external find --not-buildable openmpi --scope env:/opt/spack-environment && \
+    spack external find --all --exclude cmake --scope env:/opt/spack-environment && \
+    spack add hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make && \
+    spack add netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8 && \
+    spack add netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools && \
+    spack add parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools && \
+    spack add zlib-ng%gcc && \
+    spack concretize -f && \
+    spack install --fail-fast && \
+    spack gc -y && \
+    spack clean --all && \
+    find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s && \
+    spack env deactivate && \
+    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
+
+# https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
+RUN mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz && \
+    mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z && \
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D WITH-R4=NO -D CMAKE_RUNTIME_OUTPUT_DIRECTORY=/opt/fall3d/bin /var/tmp/fall3d-9.0.1 && \
+    cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc) && \
+    cmake --build /var/tmp/fall3d-9.0.1/build --target install -- -j$(nproc) && \
+    cd /opt/fall3d && \
+    mkdir /opt/fall3d/bin && \
+    cp /var/tmp/fall3d-9.0.1/build/Fall3d.x /opt/fall3d/bin/ && \
+    rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
+
+FROM nvcr.io/nvidia/nvhpc:24.3-runtime-cuda12.3-ubuntu22.04 AS runtime
+
+# https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
+COPY --from=devel /opt/fall3d /opt/fall3d
+ENV PATH=/opt/fall3d/bin
