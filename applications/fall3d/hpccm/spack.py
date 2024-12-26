@@ -29,7 +29,7 @@ cluster_configs = {
         'spack_arch': 'linux-rocky9-neoverse_v2',
         'spack_branch_or_tag': 'v0.23.0',  # Tag for Spack version 0.23.0
         'cuda_arch': '90',  # CUDA architecture for 'thea'
-        'base_os': 'ubuntu22.04', # rockylinux9
+        'base_os': 'rockylinux9', # 
         'arch': 'aarch64',
     }
 }
@@ -72,6 +72,12 @@ spack_specs = [
 ]
 
 ###############################################################################
+# Add descriptive comments
+###############################################################################
+
+Stage0 += comment(__doc__, reformat=False)
+
+###############################################################################
 # Base Image:
 ###############################################################################
 
@@ -89,12 +95,6 @@ Stage0 += shell(commands=[
                           'source $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
                           'hpcx_load'
                           ])
-
-###############################################################################
-# Add descriptive comments
-###############################################################################
-
-Stage0 += comment(__doc__, reformat=False)
 
 ###############################################################################
 # Install Base Dependencies
@@ -121,6 +121,12 @@ ospackages = ['autoconf',
 
 Stage0 += apt_get(ospackages=ospackages)
 
+"""
+Stage0 += shell(commands=['yum update -y rocky-release',
+                          'rm -rf /var/cache/yum/*'])
+
+"""
+
 ###############################################################################
 # Setup and install Spack
 ###############################################################################
@@ -135,25 +141,59 @@ Stage0 += shell(commands=[
 Stage0 += environment(variables={'PATH': '/opt/spack/bin:$PATH',
                                  'SPACK_ROOT': '/opt/spack',
                                  'LD_LIBRARY_PATH': '/opt/spack/lib:$LD_LIBRARY_PATH',
-                                 'FORCE_UNSAFE_CONFIGURE': '1'})
+                                 'FORCE_UNSAFE_CONFIGURE': '1'}) # maybe _export false
 
 ###############################################################################
 # Create Spack environment
 ###############################################################################
+"""
+Stage0 += shell(commands=[
+    'mkdir /opt/spack-environment \
+    &&  (echo "spack:" \
+    &&   echo "  specs:" \
+    &&   echo "  concretizer:" \
+    &&   echo "    unify: true" \
+    &&   echo "  config:" \
+    &&   echo "    install_tree: /opt/software" \
+    &&   echo "  view: /opt/view") > /opt/spack-environment/spack.yaml'
+    './configure', 
+    'make install'
+    ])
+"""
 
-# What we want to install and how we want to install it
-# is specified in a manifest file (spack.yaml)
-RUN mkdir /opt/spack-environment \
-&&  (echo "spack:" \
-&&   echo "  specs:" \
-&&   echo "  - gromacs+mpi" \
-&&   echo "  - mpich" \
-&&   echo "  concretizer:" \
-&&   echo "    unify: true" \
-&&   echo "  config:" \
-&&   echo "    install_tree: /opt/software" \
-&&   echo "  view: /opt/view") > /opt/spack-environment/spack.yaml
+Stage0 += shell(commands=[
+    # Create the Spack environment directory
+    'mkdir -p /opt/spack-environment',
 
+    # Create the spack.yaml configuration file using a Here Document
+    '''cat <<EOF > /opt/spack-environment/spack.yaml
+spack:
+  specs:
+  concretizer:
+    unify: true
+  config:
+    install_tree: /opt/software
+  view: /opt/view
+EOF''',
+
+    # Activate spack environment
+    'spack env activate /opt/spack-environment',
+
+    # Find nvhpc, gcc compilers
+    'spack compiler find --scope env:/opt/spack-environment',
+    
+    # Find OpenMPI as part of NVIDIA HPCX package 
+    'spack external find --not-buildable openmpi --scope env:/opt/spack-environment',
+    
+    # Find all other external packages
+    'spack external find --all --scope env:/opt/spack-environment',
+    
+    # Add user specified recipes
+    
+    
+])
+
+"""
 common_spack_install_commands = [ 
     'spack compiler find',
     'spack external find --not-buildable openmpi --scope env:/opt/spack-environment'
@@ -205,3 +245,22 @@ Stage1 += environment(
         'SPACK_ROOT': '/opt/spack' # will not need it at runtime
     }
 )
+
+runscript(self, **kwargs)
+The runscript primitive specifies the commands to be invoked when the container starts.
+
+Parameters
+
+_args: Boolean flag to specify whether "$@" should be appended to the command. If more than one command is specified, nothing is appended regardless of the value of this flag. The default is True (Singularity specific).
+
+_app: String containing the SCI-F identifier. This also causes the Singularity block to named %apprun rather than %runscript (Singularity specific).
+
+commands: A list of commands to execute. The default is an empty list.
+
+_exec: Boolean flag to specify whether exec should be inserted to preface the final command. The default is True (Singularity specific).
+
+Examples
+
+runscript(commands=['cd /workdir', 'source env.sh'])
+runscript(commands=['/usr/local/bin/entrypoint.sh'])
+"""
