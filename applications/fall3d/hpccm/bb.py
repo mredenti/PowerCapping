@@ -93,16 +93,18 @@ Stage0 += pip(packages=['cmake==3.30.0'], pip='pip3')
 # Openmpi
 #############################
 
+# just replace the following with the instructions to setup the environment
+
 # HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#openmpi
 # It should be using the nvhpc compiler toolchain
-mpi = openmpi(cuda=True, 
-                  infiniband=True, 
-                  ucx=True,
-                  configure_opts=['--disable-getpwuid', '--with-slurm'],
-                  prefix='/opt/openmpi',
-                  version=f'{ompi_version}')
+#mpi = openmpi(cuda=True, 
+#                  infiniband=True, ## NOT NEEDED - USE HPCX, LOAD ENVIRONMENT
+#                  ucx=True,
+#                  configure_opts=['--disable-getpwuid', '--with-slurm', f'--with-cuda={CUDA_HOME}'],
+#                  prefix='/opt/openmpi',
+#                  version=f'{ompi_version}')
 
-Stage0 += mpi
+#Stage0 += mpi
 
 #############################
 # HDF5
@@ -113,9 +115,8 @@ hdf5 = hdf5(
     prefix='/opt/hdf5',
     cxx=False,                       # Disable C++ library
     fortran=True,
-    toolchain=mpi.toolchain,  # Use OpenMPI's toolchain
     configure_opts=['--enable-fortran',
-                    '--enable-production',
+                    '--enable-build-mode=production',
                     '--enable-parallel'
                     ]
 )
@@ -135,7 +136,6 @@ parallel_netcdf = pnetcdf( # It will use the nvhpc communication libraries (is t
   version='1.12.3', # PnetCDF 1.6.0 or later is required for FALL3D
   disable_cxx=True, # Turn off support for the C++ interface
   enable_fortran=True, # Fall3d requires the NetCDF C and Fortran libraries
-  toolchain=mpi.toolchain, 
   )
 
 Stage0 += parallel_netcdf
@@ -155,7 +155,6 @@ netcdf = netcdf(
     cxx=False,                       # Disable C++ library
     fortran=True,
     enable_mpi=True,                # +mpi
-    toolchain=mpi.toolchain,  # Use OpenMPI's toolchain
     with_pnetcdf='/opt/pnetcdf',    # --with-pnetcdf=/opt/pnetcdf
     enable_shared=True,             # --enable-shared
     disable_doxygen=True,           # --disable-doxygen

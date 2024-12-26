@@ -60,15 +60,15 @@ cuda_arch = settings['cuda_arch']
 base_os = settings['base_os']
 
 
-###############################################################################
-# Spack specs to be installed in environment
-###############################################################################
-spack_specs = [
-    'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
-    'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
-    'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
-    'parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
-    'zlib-ng%gcc',
+# Common Spack install commands with a placeholder for 'arch'
+common_spack_install_commands = [
+    'spack external find nvhpc',
+    f'spack install cmake@3.27.7%gcc@8.5.0~doc+ncurses+ownlibs build_system=generic build_type=Release arch={spack_arch}',
+    f'spack install openmpi@4.1.6%nvhpc@24.3~atomics+cuda~cxx~cxx_exceptions~gpfs~internal-hwloc~internal-libevent~internal-pmix~java+legacylaunchers~lustre~memchecker~openshmem~orterunprefix~pmi~romio+rsh+singularity~static+vt+wrapper-rpath build_system=autotools cuda_arch={cuda_arch} fabrics=ucx schedulers=slurm arch={spack_arch}',
+    f'spack install hdf5@1.14.3%nvhpc@24.3~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make arch={spack_arch}',
+    f'spack install netcdf-c@4.9.2%nvhpc@24.3+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8 arch={spack_arch}',
+    f'spack install netcdf-fortran@4.6.1%nvhpc@24.3~doc+pic+shared build_system=autotools arch={spack_arch}',
+    f'spack install parallel-netcdf@1.12.3%nvhpc@24.3~burstbuffer+cxx+fortran+pic+shared build_system=autotools arch={spack_arch}'
 ]
 
 ###############################################################################
@@ -80,16 +80,6 @@ Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc:24.3-devel-cuda_multi-{base_os}
                 _arch=f'{arch}',
                 _as='devel') # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
 
-Stage0 += environment(variables={
-    'CUDA_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/24.3/cuda',
-    'HPCX_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/24.3/comm_libs/12.3/hpcx/latest',
-    }, _export=True)
-
-Stage0 += shell(commands=[
-                          'source $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
-                          'hpcx_load'
-                          ])
-
 ###############################################################################
 # Add descriptive comments
 ###############################################################################
@@ -100,24 +90,10 @@ Stage0 += comment(__doc__, reformat=False)
 # Install Base Dependencies
 ###############################################################################
 
-ospackages = ['autoconf', 
-              'build-essential', 
-              'bzip2', 
-              'ca-certificates',
-              'coreutils', 
-              'curl', 
-              'environment-modules', 
-              'git', # might not be needed (check)
-              'gzip',
-              'libssl-dev', 
-              'make', 
-              'openssh-client', 
-              'patch', 
-              'pkg-config',
-              'tcl', 
-              'tar', 
-              'unzip', 
-              'zlib1g']
+ospackages = ['autoconf', 'build-essential', 'bzip2', 'ca-certificates',
+              'coreutils', 'curl', 'environment-modules', 'git', 'gzip',
+              'libssl-dev', 'make', 'openssh-client', 'patch', 'pkg-config',
+              'tcl', 'tar', 'unzip', 'zlib1g']
 
 Stage0 += apt_get(ospackages=ospackages)
 
@@ -127,55 +103,29 @@ Stage0 += apt_get(ospackages=ospackages)
 
 # Setup and install Spack
 Stage0 += shell(commands=[
-    f'git clone --branch {spack_branch_or_tag} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
-    '. /opt/spack/share/spack/setup-env.sh' 
-    ])
+    git().clone_step(repository='https://github.com/spack/spack',
+                     branch=spack_branch_or_tag, path='/opt'),
+    'ln -s /opt/spack/share/spack/setup-env.sh /etc/profile.d/spack.sh',
+    'ln -s /opt/spack/share/spack/spack-completion.bash /etc/profile.d'])
 
+# git clone --branch v0.21.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
+###############################################################################
 # Configure Environment Variables
+###############################################################################
+
 Stage0 += environment(variables={'PATH': '/opt/spack/bin:$PATH',
-                                 'SPACK_ROOT': '/opt/spack',
-                                 'LD_LIBRARY_PATH': '/opt/spack/lib:$LD_LIBRARY_PATH',
                                  'FORCE_UNSAFE_CONFIGURE': '1'})
 
 ###############################################################################
-# Create Spack environment
+# Apply Patches if Necessary
 ###############################################################################
 
-# What we want to install and how we want to install it
-# is specified in a manifest file (spack.yaml)
-RUN mkdir /opt/spack-environment \
-&&  (echo "spack:" \
-&&   echo "  specs:" \
-&&   echo "  - gromacs+mpi" \
-&&   echo "  - mpich" \
-&&   echo "  concretizer:" \
-&&   echo "    unify: true" \
-&&   echo "  config:" \
-&&   echo "    install_tree: /opt/software" \
-&&   echo "  view: /opt/view") > /opt/spack-environment/spack.yaml
-
-common_spack_install_commands = [ 
-    'spack compiler find',
-    'spack external find --not-buildable openmpi --scope env:/opt/spack-environment'
-    'spack external find --all --scope env:/opt/spack-environment' # find external packages
-    'spack install --fail-fast',
-    'spack gc -y',
-    'spack clean --all'
-]
-
-# Install the software, remove unnecessary deps
-RUN cd /opt/spack-environment && spack env activate . && spack install --fail-fast && spack gc -y && spack clean --all
-
-# Strip all the binaries
-RUN find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
-    xargs file -i | \
-    grep 'charset=binary' | \
-    grep 'x-executable\|x-archive\|x-sharedlib' | \
-    awk -F: '{print $1}' | xargs strip -s
-
-# Modifications to the environment that are necessary to run
-RUN cd /opt/spack-environment && \
-    spack env activate --sh -d . >> /etc/profile.d/z10_spack_environment.sh
+# Assuming patches are located in the 'patches' directory relative to the recipe
+#Stage0 += copy(
+#    src='patches/0161eb8.patch',
+#    dest='/opt/spack/var/spack/repos/builtin/packages/netcdf-c/',
+#    _as='copy_patches'
+#)
 
 ###############################################################################
 # Install Spack Packages
@@ -189,8 +139,9 @@ Stage0 += shell(commands=formatted_install_commands + ['spack clean --all'])
 ###############################################################################
 # Finalize Container with Runtime Environment
 ###############################################################################
-# Initialize Stage1 for runtime 
-Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:24.3-runtime-cuda12.3-{base_os}',
+
+# Initialize Stage1 for runtime
+Stage1 += baseimage(image=f'nvcr.io/nvidia/cuda:12.3.0-runtime-{base_os}',
                     _distro=f'{base_os}',
                     _arch=f'{arch}',
                     _as='runtime')
@@ -202,6 +153,6 @@ Stage1 += environment(
     variables={
         'PATH': '/opt/spack/bin:$PATH',
         'LD_LIBRARY_PATH': '/opt/spack/lib:$LD_LIBRARY_PATH',
-        'SPACK_ROOT': '/opt/spack' # will not need it at runtime
+        'SPACK_ROOT': '/opt/spack'
     }
 )

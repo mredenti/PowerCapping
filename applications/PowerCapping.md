@@ -41,7 +41,7 @@ _Note: The table will be updated as we make progress. Once the applications are 
 
 
 - [HPC CONTAINER MAKER DOCS](https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html)
-- [NVIDIA HPC SDK CATALOG](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags)
+- [NVIDIA HPC SDK CATALOG - NVIDIA GPU Cloud](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags)
 
 
 ### Apptainer (Thea) and Singularity (Leonardo)
@@ -102,6 +102,23 @@ marginally._
 ```shell
 git clone --branch v24.10.0 https://github.com/NVIDIA/hpc-container-maker.git
 ```
+
+ THEA
+$ ofed_info
+MLNX_OFED_LINUX-24.04-0.7.0.0 (OFED-24.04-0.7.0):
+
+lsmod | grep mlx
+
+mlx5_ib               655360  0
+ib_uverbs             327680  2 rdma_ucm,mlx5_ib
+ib_core               786432  10 rdma_cm,ib_ipoib,ko2iblnd,nvidia_peermem,iw_cm,ib_umad,rdma_ucm,ib_uverbs,mlx5_ib,ib_cm
+mlx5_core            2621440  1 mlx5_ib
+mlxfw                 262144  1 mlx5_core
+psample               262144  1 mlx5_core
+pci_hyperv_intf       196608  1 mlx5_core
+tls                   327680  1 mlx5_core
+mlxdevm               393216  1 mlx5_core
+mlx_compat            196608  12 rdma_cm,ib_ipoib,mlxdevm,ko2iblnd,iw_cm,ib_umad,ib_core,rdma_ucm,ib_uverbs,mlx5_ib,ib_cm,mlx5_core
 
 ## Important considerations 
 
