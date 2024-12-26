@@ -207,11 +207,6 @@ xargs file -i | \
 grep 'charset=binary' | \
 grep 'x-executable\|x-archive\|x-sharedlib' | \
 awk -F: '{print $1}' | xargs strip -s''',
-
-        # Deactivate 
-        'spack env deactivate',
-        # Generate modifications to the environment that are necessary to run
-        'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh'
     ])
 
 # ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l"] at runtime
@@ -242,10 +237,17 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                         },
                         url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
+Stage0 += shell(commands=[
+        # Deactivate 
+        'spack env deactivate',
+        # Generate modifications to the environment that are necessary to run
+        'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh'
+])
+
 ###############################################################################
 # Finalize Container with Runtime Environment
 ###############################################################################
-# Initialize Stage1 for runtime 
+ 
 Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:24.3-runtime-cuda12.3-{base_os}',
                     _distro=f'{base_os}',
                     _arch=f'{arch}',
@@ -253,24 +255,16 @@ Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:24.3-runtime-cuda12.3-{base_os}
 
 Stage1 += Stage0.runtime(_from='devel') 
 
-# Configure environment variables for runtime 
-# %files from devel
-    # /opt/fall3d /opt/fall3d
-    # /opt/software /opt/software
-    # /opt/view /opt/view
-    # /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
-    # /opt/spack-environment /opt/spack-environment
+# https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#copy
+
+Stage1 += copy(
+    files = {
+        '/opt/software'         : '/opt/software',
+        '/opt/view'             : '/opt/view',
+        '/opt/spack-environment': '/opt/spack-environment',
+        '/etc/profile.d/z10_spack_environment.sh' : '/etc/profile.d/z10_spack_environment.sh'
+        }, _from='devel')
     
 # ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l"] at runtime
-
-"""
-Stage1 += environment(
-    variables={
-        'PATH': '/opt/spack/bin:$PATH',
-        'LD_LIBRARY_PATH': '/opt/spack/lib:$LD_LIBRARY_PATH',
-        'SPACK_ROOT': '/opt/spack' # will not need it at runtime
-    }
-)
-"""
-
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript
+Stage1+= runscript(commands = ['/bin/bash --rcfile /etc/profile -l'], _args=True, _exec=True)

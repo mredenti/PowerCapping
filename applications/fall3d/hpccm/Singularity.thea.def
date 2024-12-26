@@ -1,0 +1,87 @@
+# Spack container (https://github.com/spack/spack)
+#    Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
+#    Optionally, set the user argument 'package' to install additional Spack packages.
+#    Otherwise, it will install the predefined packages based on the cluster.
+# 
+#    Sample workflow:
+# $ hpccm --recipe spack.py --userarg cluster="leonardo" > Dockerfile.leonardo.spack
+# $ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
+# 
+
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc:24.3-devel-cuda_multi-rockylinux9
+Stage: devel
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+%environment
+    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_aarch64/24.3/cuda
+    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_aarch64/24.3/comm_libs/12.3/hpcx/latest
+%post
+    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_aarch64/24.3/cuda
+    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_aarch64/24.3/comm_libs/12.3/hpcx/latest
+
+%post
+    cd /
+    source $HPCX_HOME/hpcx-init.sh
+    hpcx_load
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        autoconf \
+        build-essential \
+        bzip2 \
+        ca-certificates \
+        coreutils \
+        curl \
+        environment-modules \
+        git \
+        gzip \
+        libssl-dev \
+        make \
+        openssh-client \
+        patch \
+        pkg-config \
+        tar \
+        tcl \
+        unzip \
+        zlib1g
+    rm -rf /var/lib/apt/lists/*
+
+%post
+    cd /
+    git clone --branch v0.23.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
+    . /opt/spack/share/spack/setup-env.sh
+
+%environment
+    export FORCE_UNSAFE_CONFIGURE=1
+    export LD_LIBRARY_PATH=/opt/spack/lib:$LD_LIBRARY_PATH
+    export PATH=/opt/spack/bin:$PATH
+    export SPACK_ROOT=/opt/spack
+%post
+    export FORCE_UNSAFE_CONFIGURE=1
+    export LD_LIBRARY_PATH=/opt/spack/lib:$LD_LIBRARY_PATH
+    export PATH=/opt/spack/bin:$PATH
+    export SPACK_ROOT=/opt/spack
+
+%post
+    cd /
+    mkdir -p /opt/spack-environment
+    cat <<EOF > /opt/spack-environment/spack.yaml
+spack:
+  specs:
+  concretizer:
+    unify: true
+  config:
+    install_tree: /opt/software
+  view: /opt/view
+EOF
+    spack env activate /opt/spack-environment
+    spack compiler find --scope env:/opt/spack-environment
+    spack external find --not-buildable openmpi --scope env:/opt/spack-environment
+    spack external find --all --scope env:/opt/spack-environment
+
+

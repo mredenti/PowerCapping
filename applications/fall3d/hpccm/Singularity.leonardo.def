@@ -93,8 +93,6 @@ EOF
     spack gc -y
     spack clean --all
     find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s
-    spack env deactivate
-    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
 %post
@@ -108,6 +106,11 @@ EOF
     mkdir /opt/fall3d/bin
     cp /var/tmp/fall3d-9.0.1/build/Fall3d.x /opt/fall3d/bin/
     rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
+
+%post
+    cd /
+    spack env deactivate
+    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
@@ -124,3 +127,12 @@ Stage: runtime
     export PATH=/opt/fall3d/bin
 %post
     export PATH=/opt/fall3d/bin
+
+%files from devel
+    /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
+    /opt/software /opt/software
+    /opt/spack-environment /opt/spack-environment
+    /opt/view /opt/view
+
+%runscript
+    exec /bin/bash --rcfile /etc/profile -l "$@"
