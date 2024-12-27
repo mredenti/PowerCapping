@@ -2,6 +2,8 @@
 
 ## Requirements & Setup
 
+<details><summary>Click to expand</summary>
+
 Before getting started, ensure that you have the following software installed on your system
 
 - [Reframe v4.7.2](https://reframe-hpc.readthedocs.io/en/v4.7.2/)
@@ -22,6 +24,13 @@ source venv/power-capping
 pip install -r requirements.txt
 ```
 
+</details>
+
+
 ## Reframe Leonardo Settings
 
+<details><summary>Click to expand</summary>
+
 ![Leonardo Configuration](img/leonardo_settings.svg)
+
+</details>
