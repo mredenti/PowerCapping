@@ -101,18 +101,22 @@ Stage0 += environment(variables={
 ###############################################################################
 os_common_packages = ['autoconf',
                     'ca-certificates',
-                    'curl',
                     'pkg-config',
                     'python3',
                     'environment-modules']
 
-Stage0 += packages(apt=os_common_packages,
+Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages)
 
-Stage0 += shell(commands=['. /usr/share/modules/init/sh',
-                          'module use $HPCX_HOME/modulefiles',
-                          'module load hpcx'])
+if base_os == "rockylinux9":
+    Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
+                            'module use $HPCX_HOME/modulefiles',
+                            'module load hpcx'])
+else:
+    Stage0 += shell(commands=['. /usr/share/modules/init/sh',
+                            'module use $HPCX_HOME/modulefiles',
+                            'module load hpcx'])
 
 """
 Stage0 += shell(commands=[

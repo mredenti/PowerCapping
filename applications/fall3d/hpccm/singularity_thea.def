@@ -28,7 +28,6 @@ Stage: devel
     yum install -y \
         autoconf \
         ca-certificates \
-        curl \
         environment-modules \
         pkg-config \
         python3
@@ -36,7 +35,7 @@ Stage: devel
 
 %post
     cd /
-    . /usr/share/modules/init/sh
+    . /usr/share/Modules/init/sh
     module use $HPCX_HOME/modulefiles
     module load hpcx
 
