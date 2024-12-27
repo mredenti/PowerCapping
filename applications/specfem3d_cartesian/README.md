@@ -2,6 +2,8 @@
 
 Relevant Simulation Cases: https://www.nvidia.com/es-la/data-center/gpu-accelerated-applications/specfem3d-cartesian/
 
+Red Hat: https://www.redhat.com/en/blog/a-complete-guide-for-running-specfem-scientific-hpc-workload-on-red-hat-openshift
+
 ## GLOBE? Test case 
 
 ## Both GPU and CPU 
