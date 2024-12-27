@@ -11,28 +11,28 @@
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: nvcr.io/nvidia/nvhpc:24.3-devel-cuda_multi-rockylinux9
+From: nvcr.io/nvidia/nvhpc:24.3-devel-cuda_multi-ubuntu22.04
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
 
 %environment
-    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_aarch64/24.3/cuda
-    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_aarch64/24.3/comm_libs/12.3/hpcx/latest
+    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/cuda
+    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/12.3/hpcx/latest
 %post
-    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_aarch64/24.3/cuda
-    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_aarch64/24.3/comm_libs/12.3/hpcx/latest
+    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/cuda
+    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/12.3/hpcx/latest
 
 %post
-    yum install -y epel-release
-    yum install -y \
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         autoconf \
         ca-certificates \
         curl \
         environment-modules \
         pkg-config \
         python3
-    rm -rf /var/cache/yum/*
+    rm -rf /var/lib/apt/lists/*
 
 %post
     cd /
@@ -42,7 +42,7 @@ Stage: devel
 
 %post
     cd /
-    git clone --branch v0.23.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
+    git clone --branch v0.21.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
     . /opt/spack/share/spack/setup-env.sh
 
 %environment
@@ -83,10 +83,11 @@ EOF
     cd /
     mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
     mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
+    cd /var/tmp/fall3d-9.0.1
+    mkdir -p /opt/fall3d/bin
     mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D WITH-R4=NO /var/tmp/fall3d-9.0.1
     cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
     cd /opt/fall3d
-    mkdir -p /opt/fall3d/bin
     cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
     rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
 
@@ -99,7 +100,7 @@ EOF
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: nvcr.io/nvidia/nvhpc:24.3-runtime-cuda12.3-rockylinux9
+From: nvcr.io/nvidia/nvhpc:24.3-runtime-cuda12.3-ubuntu22.04
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -119,4 +120,4 @@ Stage: runtime
     /opt/view /opt/view
 
 %runscript
-    exec /bin/bash --rcfile /etc/profile -l "$@"
+    exec /bin/sh --rcfile /etc/profile -l "$@"

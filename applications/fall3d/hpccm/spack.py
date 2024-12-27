@@ -217,11 +217,13 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     ],
                         prefix='/opt/fall3d', 
                         install=False,
+                        preconfigure=[
+                            'mkdir -p /opt/fall3d/bin'
+                        ],
                         postinstall=[
                                     # e.g., If 'Fall3d.x' ended up somewhere else, copy it manually
                                     ## Unfortunately the upstream CMakeLists.txt has no install(TARGETS) logic
                                     ## and can’t rely on -D CMAKE_RUNTIME_OUTPUT_DIRECTORY=... because the upstream CMakeLists.txt unconditionally overrides it
-                                    'mkdir -p /opt/fall3d/bin',
                                     'cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/'
                                   ],
                         # Dictionary of environment variables and values, e.g., LD_LIBRARY_PATH and PATH, to set in the runtime stage. 
@@ -262,4 +264,4 @@ Stage1 += copy(
     
 # ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l"] at runtime
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript
-Stage1+= runscript(commands = ['/bin/bash --rcfile /etc/profile -l'], _args=True, _exec=True)
+Stage1+= runscript(commands = ['/bin/sh --rcfile /etc/profile -l'], _args=True, _exec=True)
