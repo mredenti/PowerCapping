@@ -1,5 +1,7 @@
 # SPECFEM3D 
 
+Relevant Simulation Cases: https://www.nvidia.com/es-la/data-center/gpu-accelerated-applications/specfem3d-cartesian/
+
 ## GLOBE? Test case 
 
 ## Both GPU and CPU 
