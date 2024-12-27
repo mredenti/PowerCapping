@@ -16,3 +16,5 @@ hpccm --format singularity --singularity-version=3.2 --recipe power-capping/appl
 
 ### Verification
 - How to verify the container is running correctly
+
+SINGULARITYENV_PREPEND_PATH=/opt/fall3d/bin singularity shell fall3d.sif
