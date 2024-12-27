@@ -9,6 +9,7 @@ $ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
 """
 
 from hpccm.templates.git import git
+from hpccm.common import container_type
 
 ###############################################################################
 # Define Cluster Configurations
@@ -228,7 +229,7 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                   ],
                         # Dictionary of environment variables and values, e.g., LD_LIBRARY_PATH and PATH, to set in the runtime stage. 
                         runtime_environment = {
-                                    "PATH" : "/opt/fall3d/bin"
+                                    "PATH" : "/opt/fall3d/bin:$PATH"
                         },
                         url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
@@ -262,6 +263,16 @@ Stage1 += copy(
         '/etc/profile.d/z10_spack_environment.sh' : '/etc/profile.d/z10_spack_environment.sh'
         }, _from='devel')
     
-# ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l"] at runtime
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript
-Stage1+= runscript(commands = ['/bin/sh --rcfile /etc/profile -l'], _args=True, _exec=True)
+
+if hpccm.config.g_ctype == container_type.DOCKER:
+  # Docker automatically passes through command line arguments
+  Stage1+= runscript(commands = ['/bin/sh', '--rcfile', '/etc/profile', '-l'], _args=True, _exec=True)
+  
+elif hpccm.config.g_ctype == container_type.SINGULARITY:
+  # Singularity does not automatically pass through command line arguments
+  #Stage1 += runscript(commands=['hpccm $@'])
+  
+  # Modify the environment without relying on sourcing shell specific files at startup
+  Stage1 += shell(commands = ['cat /etc/profile.d/z10_spack_environment.sh >> $SINGULARITY_ENVIRONMENT'])
+

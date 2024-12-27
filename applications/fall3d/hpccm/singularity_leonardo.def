@@ -109,9 +109,9 @@ Stage: runtime
 %files from devel
     /opt/fall3d /opt/fall3d
 %environment
-    export PATH=/opt/fall3d/bin
+    export PATH=/opt/fall3d/bin:$PATH
 %post
-    export PATH=/opt/fall3d/bin
+    export PATH=/opt/fall3d/bin:$PATH
 
 %files from devel
     /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
@@ -119,5 +119,6 @@ Stage: runtime
     /opt/spack-environment /opt/spack-environment
     /opt/view /opt/view
 
-%runscript
-    exec /bin/sh --rcfile /etc/profile -l "$@"
+%post
+    cd /
+    cat /etc/profile.d/z10_spack_environment.sh >> $SINGULARITY_ENVIRONMENT
