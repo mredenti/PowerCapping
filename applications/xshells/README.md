@@ -16,3 +16,16 @@ test cases, the main code is also used as mini-app.
 | **Dependencies**     | MPI, FFTW, Python (to run test script) |
 | **Notes**            | It is suggested to run the geodynamo benchmark for testing. |
 
+
+## Thea 
+
+```shell
+ml load openmpi/4.1.6-gcc-12.3.0-wftkmyd
+ml load gcc/12.3.0-gcc-11.4.1-f7guf3f
+ml load cuda/12.3.0-gcc-12.3.0-b2avf4v
+ml load fftw/3.3.10-gcc-12.3.0-6gumeie # only needed to pass configuration setup
+```
+
+```shell
+export CUDA_PATH=$CUDA_HOME
+```
