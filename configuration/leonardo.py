@@ -31,8 +31,12 @@ site_configuration = {
                     "name": "booster",
                     "descr": "LEONARDO Booster partition",
                     "scheduler": "slurm",
+                    "sched_options": {
+                        'use_nodes_option': True
+                    },
                     "launcher": "srun",
                     "modules": [],
+                    "prepare_cmds": ['ml purge'],
                     "container_platforms": [
                         {
                             'type': 'Singularity',
@@ -60,11 +64,11 @@ site_configuration = {
                         "num_cpus_per_socket": 32,
                         "num_sockets": 1,
                     },
-                    'devices': [
+                    "devices": [
                         {
                             'type': 'gpu',
                             'arch': 'sm_80',
-                            'num_devices': 4
+                            'num_devices': 4,
                         }
                     ],
                 },

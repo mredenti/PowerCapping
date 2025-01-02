@@ -58,3 +58,8 @@ reframe \
     -S valid_prog_environs=default \
     -lC
 ```
+
+**Thea** 
+
+- baremetal 
+- container 

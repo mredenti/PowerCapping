@@ -2,7 +2,7 @@ import os
 import reframe as rfm
 import reframe.utility.typecheck as typ
 import reframe.utility.sanity as sn
-
+import math
 
 class fetch_fall3d(rfm.RunOnlyRegressionTest):  
     descr = 'Fetch FALL3D'
@@ -78,9 +78,21 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     #execution_mode = variable(typ.Str[r'baremetal|container'])
     # maybe something about cpu and gpu
     
-    num_tasks = 1
-    num_tasks_per_node = 1
+    num_tasks = None
+    num_tasks_per_node = None
     exclusive_access = True
+    
+    #proc = self.current_partition.processor
+    #self.num_tasks = self.num_nodes * self.num_tasks_per_node
+    #self.num_cpus_per_task = proc.num_cores
+    
+    @run_after('setup')
+    def set_config(self): # find a better name
+        accelerator = self.current_partition.devices
+        self.num_tasks = self.num_gpus
+        self.num_gpus_per_node =  self.num_gpus if self.num_gpus < accelerator[0].num_devices else accelerator[0].num_devices
+        self.num_tasks_per_node = self.num_gpus_per_node
+        # --nodes is set automatically as job.num_tasks // num_tasks_per_node
     
     @run_before('run')
     def set_extra_resources(self):
@@ -136,7 +148,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         '[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
         ]    
     
-    num_gpus_per_node = 1
+    num_gpus = 4
     
     @sanity_function
     def validate_test(self):
