@@ -1,8 +1,3 @@
-# Copyright 2016-2024 Swiss National Supercomputing Centre (CSCS/ETH Zurich)
-# ReFrame Project Developers. See the top-level LICENSE file for details.
-#
-# SPDX-License-Identifier: BSD-3-Clause
-
 import os
 import reframe as rfm
 import reframe.utility.typecheck as typ
@@ -50,8 +45,11 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
         
         configuredir = os.path.join(self.fall3d_source.stagedir, self.fall3d_source.srcdir)
         installdir = os.path.join(self.stagedir, 'install')
+        
         self.build_system.builddir = 'build'
+        # remote reframe default compiler flags
         self.build_system.flags_from_environ = False
+        # CMake configuration flags
         self.build_system.config_opts= [
             '-D CMAKE_Fortran_COMPILER=nvfortran',
             '-D DETAIL_BIN=NO',
@@ -123,20 +121,22 @@ class fall3d_raikoke_test(fall3d_base_test):
         'Raikoke-2019.sat.nc',
         'Raikoke-2019.gfs.nc',
         'GFS.tbl',
-        'Sat.tbl']
-    executable_opts = ['All', 'Raikoke-2019.inp']
-    num_gpus_per_node = 1
-    prerun_cmds = [
-        # There is a typo in the name of the file
-        '[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
-        ]    
-    # maybe we can run a prerun hook which fetches 
+        'Sat.tbl'
+        ]
+     # maybe we can run a prerun hook which fetches the lfs
     keep_files = [
         'Raikoke-2019.SetSrc.log', 
         'Raikoke-2019.SetTgsd.log',
         'Raikoke-2019.SetDbs.log',
         'Raikoke-2019.Fall3d.log'
         ]
+    executable_opts = ['All', 'Raikoke-2019.inp']
+    prerun_cmds = [
+        # There is a typo in the name of the file
+        '[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
+        ]    
+    
+    num_gpus_per_node = 1
     
     @sanity_function
     def validate_test(self):
