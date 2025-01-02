@@ -68,19 +68,22 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
 
 class fall3d_base_test(rfm.RunOnlyRegressionTest):
     '''Base class of Fall3d runtime tests'''
-
-    valid_systems = ['*']
-    valid_prog_environs = ['*'] # ['+mpi']
-    num_tasks = 1
-    num_tasks_per_node = 1
+    
     fall3d_binaries = fixture(build_fall3d, scope='environment')
     kind = variable(str)
     benchmark = variable(str)
     
-    exclusive_access = True
+    valid_systems = ['*']
+    valid_prog_environs = ['*'] # ['+mpi']
+
     #metric = variable(typ.Str[r'latency|bandwidth'])
     #execution_mode = variable(typ.Str[r'baremetal|container'])
     # maybe something about cpu and gpu
+    
+    num_tasks = 1
+    num_tasks_per_node = 1
+    exclusive_access = True
+    
     @run_before('run')
     def set_extra_resources(self):
         self.extra_resources = {
@@ -98,6 +101,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             self.fall3d_binaries.build_system.builddir,
             'bin', 'Fall3d.x'
         )
+        #self.executable_opts += ['NPX']
 
     @sanity_function
     def validate_run(self):
@@ -113,20 +117,26 @@ class fall3d_raikoke_test(fall3d_base_test):
     kind = 'mpi/openacc' # 'openacc', 'mpi'
     benchmark = 'osu_allreduce'
     #metric = 'bandwidth'
-    sourcesdir = 'raikoke-2019'
-    readonly_files = ['Input', 'Output']
+    sourcesdir = 'raikoke-2019/Input'
+    readonly_files = [
+        'Raikoke-2019.inp',
+        'Raikoke-2019.sat.nc',
+        'Raikoke-2019.gfs.nc',
+        'GFS.tbl',
+        'Sat.tbl']
     executable_opts = ['All', 'Raikoke-2019.inp']
     num_gpus_per_node = 1
     prerun_cmds = [
-        'cd Input',
+        # There is a typo in the name of the file
         '[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
         ]    
     # maybe we can run a prerun hook which fetches 
     keep_files = [
-        'Input/Raikoke-2019.SetSrc.log', 
-        'Input/Raikoke-2019.SetTgsd.log',
-        'Input/Raikoke-2019.SetDbs.log',
-        'Input/Raikoke-2019.Fall3d.log']
+        'Raikoke-2019.SetSrc.log', 
+        'Raikoke-2019.SetTgsd.log',
+        'Raikoke-2019.SetDbs.log',
+        'Raikoke-2019.Fall3d.log'
+        ]
     
     @sanity_function
     def validate_test(self):
@@ -134,10 +144,12 @@ class fall3d_raikoke_test(fall3d_base_test):
         If the run was successful, you should obtain a log file Example.Fall3d.log a successful end message
         https://fall3d-suite.gitlab.io/fall3d/chapters/example.html#checking-the-results
         """
+        log_fname = 'Input/Raikoke-2019.Fall3d.log'
+        
         return sn.all([
-            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', 'Input/Raikoke-2019.Fall3d.log'),
-            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', 'Input/Raikoke-2019.Fall3d.log'),
-            sn.assert_found(r'^  Task FALL3D\s*:\s*ends NORMALLY\s*$', 'Input/Raikoke-2019.Fall3d.log')
+            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', log_fname),
+            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', log_fname),
+            sn.assert_found(r'^  Task FALL3D\s*:\s*ends NORMALLY\s*$', log_fname)
         ])
 
     
