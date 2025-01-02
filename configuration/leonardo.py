@@ -19,7 +19,7 @@ site_configuration = {
                     "modules": [],
                     "access": [],
                     "max_jobs": 1,
-                    "environs": ["default", "gnu", "nvhpc", "nvhpc-24.3"],
+                    "environs": ["default", "gnu", "nvhpc"],
                     "processor": {
                         "num_cpus": 32,
                         "num_cpus_per_core": 1,
@@ -33,6 +33,12 @@ site_configuration = {
                     "scheduler": "slurm",
                     "launcher": "srun",
                     "modules": [],
+                    "container_platforms": [
+                        {
+                            'type': 'Singularity',
+                            'modules': []
+                        }
+                    ],
                     "access": ["--partition=boost_usr_prod"],
                     "resources": [
                         {"name": "nodes", "options": ["--nodes={nodes}"]},
@@ -47,7 +53,6 @@ site_configuration = {
                         "gnu",
                         "gnu-mpi",
                         "nvhpc",
-                        "nvhpc-24.3"
                     ],
                     "processor": {
                         "num_cpus": 32,
@@ -55,6 +60,13 @@ site_configuration = {
                         "num_cpus_per_socket": 32,
                         "num_sockets": 1,
                     },
+                    'devices': [
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_80',
+                            'num_devices': 4
+                        }
+                    ],
                 },
                 {
                     "name": "dcgp",
@@ -118,15 +130,6 @@ site_configuration = {
         {
             "name": "nvhpc",
             "modules": ["nvhpc/23.11", "openmpi/4.1.6--nvhpc--23.11"],
-            "cc": "nvcc",
-            "cxx": "nvc++",
-            "ftn": "nvf90",
-            "features": ["openmp", "mpi"],
-            "extras": {"omp_flag": "-fopenmp"},
-        },
-        {
-            "name": "nvhpc-24.3",
-            "modules": ["nvhpc/24.3", "openmpi/4.1.6--nvhpc--24.3"],
             "cc": "nvcc",
             "cxx": "nvc++",
             "ftn": "nvf90",
