@@ -2,6 +2,7 @@ import os
 import reframe as rfm
 import reframe.utility.typecheck as typ
 import reframe.utility.sanity as sn
+from reframe.core.backends import getlauncher
 import math
 
 class fetch_fall3d(rfm.RunOnlyRegressionTest):  
@@ -72,7 +73,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     benchmark = variable(str)
     
     valid_systems = ['*']
-    valid_prog_environs = ['*'] # ['+mpi']
+    valid_prog_environs = ['default'] # ['+mpi']
 
     #metric = variable(typ.Str[r'latency|bandwidth'])
     #execution_mode = variable(typ.Str[r'baremetal|container'])
@@ -104,6 +105,15 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     def load_modules(self):
         self.modules = self.fall3d_binaries.modules
 
+    @run_before("run")
+    def replace_launcher(self):
+        self.job.launcher = getlauncher("mpirun")() # turn this into a custome launcher
+        #self.job.launcher.modifier = "mpirun"
+        #self.job.launcher.modifier_options = [
+        #    "--map-by ppr:1:node:PE=72",
+        #    "--report-bindings",
+        #]
+    
     @run_before('run')
     def prepare_run(self):
         self.executable = os.path.join(
@@ -111,7 +121,30 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             self.fall3d_binaries.build_system.builddir,
             'bin', 'Fall3d.x'
         )
-        #self.executable_opts += ['NPX']
+        #The total number of processors is NPX × NPY × NPY × SIZE and should be equivalent to the argument np
+        npx=npy=npz=1
+        while npx*npy*npz != int(self.num_gpus):
+            # Find which dimension is smallest and increment it
+            if npx <= npy and npx <= npz:
+                npx *= 2
+            elif npy <= npz:
+                npy *= 2
+            else:
+                npz *= 2
+        
+        self.executable_opts += [str(npx), str(npy), str(npz)]
+        
+        """_summary_
+
+        Returns:
+            _type_: _description_
+        @run_before('run')
+        def set_container_variables(self):
+        if self.platform != 'native':
+            self.container_platform = self.platform
+            self.container_platform.command = self.executable
+            self.container_platform.image = 'nvcr.io/nvidia/pytorch:22.08-py3'
+        """
 
     @sanity_function
     def validate_run(self):
@@ -149,6 +182,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         ]    
     
     num_gpus = 4
+    time_limit = '1200'
     
     @sanity_function
     def validate_test(self):
@@ -156,7 +190,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         If the run was successful, you should obtain a log file Example.Fall3d.log a successful end message
         https://fall3d-suite.gitlab.io/fall3d/chapters/example.html#checking-the-results
         """
-        log_fname = 'Input/Raikoke-2019.Fall3d.log'
+        log_fname = 'Raikoke-2019.Fall3d.log'
         
         return sn.all([
             sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', log_fname),
