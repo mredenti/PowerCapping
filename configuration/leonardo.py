@@ -1,7 +1,15 @@
 #
 # ReFrame LEONARDO settings
 #
+from reframe.core.backends import register_launcher
+from reframe.core.launchers import JobLauncher
 
+@register_launcher('mpirun+nsys')
+class MpirunLauncher(JobLauncher):
+    def command(self, job):
+        return ['mpirun', '-np', str(job.num_tasks), 
+                '--report-bindings',
+                'nsys', '-t cuda,nvtx', '--stats=true']
 
 site_configuration = {
     "systems": [
@@ -36,7 +44,6 @@ site_configuration = {
                     },
                     "launcher": "srun",
                     "modules": [],
-                    "prepare_cmds": ['ml purge'],
                     "container_platforms": [
                         {
                             'type': 'Singularity',
