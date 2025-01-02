@@ -9,13 +9,24 @@ import reframe.utility.typecheck as typ
 import reframe.utility.sanity as sn
 
 
-class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
-    descr = 'Fetch OSU benchmarks'
-    version = variable(str, value='7.3')
+class fetch_fall3d(rfm.RunOnlyRegressionTest):  
+    descr = 'Fetch FALL3D'
+    
+    maintainers = ['mredenti']
+    
+    # FALL3D version
+    version = variable(str, value='9.0.1')
+    
     executable = 'wget'
+    tarball = f'fall3d-{version}.tar.gz'
+    srcdir = tarball[:-7]
     executable_opts = [
-        f'http://mvapich.cse.ohio-state.edu/download/mvapich/osu-micro-benchmarks-{version}.tar.gz'  # noqa: E501
-    ]
+                    f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{version}/'
+                    f'{tarball}'
+                ]
+    postrun_cmds= [f'tar xzf {tarball}']
+    
+    # Run fetch step on login node
     local = True
 
     @sanity_function
@@ -23,89 +34,110 @@ class fetch_osu_benchmarks(rfm.RunOnlyRegressionTest):
         return sn.assert_eq(self.job.exitcode, 0)
 
 
-class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
-    descr = 'Build OSU benchmarks'
-    build_system = 'Autotools'
-    build_prefix = variable(str)
-    osu_benchmarks = fixture(fetch_osu_benchmarks, scope='session')
-
+class build_fall3d(rfm.CompileOnlyRegressionTest):
+    descr = 'Build FALL3D'
+    
+    build_system = 'CMake'
+    fall3d_source = fixture(fetch_fall3d, scope='session')
+    
+    #purge_environment=True
+    modules = ['netcdf-fortran']
+    
+    # precision
+    
     @run_before('compile')
     def prepare_build(self):
-        tarball = f'osu-micro-benchmarks-{self.osu_benchmarks.version}.tar.gz'
-        self.build_prefix = tarball[:-7]  # remove .tar.gz extension
-
-        fullpath = os.path.join(self.osu_benchmarks.stagedir, tarball)
-        self.prebuild_cmds = [
-            f'cp {fullpath} {self.stagedir}',
-            f'tar xzf {tarball}',
-            f'cd {self.build_prefix}'
+        
+        configuredir = os.path.join(self.fall3d_source.stagedir, self.fall3d_source.srcdir)
+        installdir = os.path.join(self.stagedir, 'install')
+        self.build_system.builddir = 'build'
+        self.build_system.flags_from_environ = False
+        self.build_system.config_opts= [
+            '-D CMAKE_Fortran_COMPILER=nvfortran',
+            '-D DETAIL_BIN=NO',
+            '-D WITH-MPI=YES',
+            '-D WITH-ACC=YES', 
+            '-D WITH-R4=NO', 
+            f'-D CMAKE_INSTALL_PREFIX={installdir}',
+            f'-S {configuredir}'
         ]
+        # generator
         self.build_system.max_concurrency = 8
+        # keep_files = ["cp2k.out"]
 
 
-class osu_base_test(rfm.RunOnlyRegressionTest):
-    '''Base class of OSU benchmarks runtime tests'''
+class fall3d_base_test(rfm.RunOnlyRegressionTest):
+    '''Base class of Fall3d runtime tests'''
 
     valid_systems = ['*']
-    valid_prog_environs = ['+mpi']
-    num_tasks = 2
+    valid_prog_environs = ['*'] # ['+mpi']
+    num_tasks = 1
     num_tasks_per_node = 1
-    osu_binaries = fixture(build_osu_benchmarks, scope='environment')
+    fall3d_binaries = fixture(build_fall3d, scope='environment')
     kind = variable(str)
     benchmark = variable(str)
-    metric = variable(typ.Str[r'latency|bandwidth'])
+    
+    exclusive_access = True
+    #metric = variable(typ.Str[r'latency|bandwidth'])
+    #execution_mode = variable(typ.Str[r'baremetal|container'])
+    # maybe something about cpu and gpu
+    @run_before('run')
+    def set_extra_resources(self):
+        self.extra_resources = {
+            "gpu": {"num_gpus_per_node": f"{self.num_gpus_per_node}"},
+        }
+    
+    @run_before('run')
+    def load_modules(self):
+        self.modules = self.fall3d_binaries.modules
 
     @run_before('run')
     def prepare_run(self):
         self.executable = os.path.join(
-            self.osu_binaries.stagedir,
-            self.osu_binaries.build_prefix,
-            'c', 'mpi', self.kind, self.benchmark
+            self.fall3d_binaries.stagedir,
+            self.fall3d_binaries.build_system.builddir,
+            'bin', 'Fall3d.x'
         )
-        self.executable_opts = ['-x', '100', '-i', '1000']
 
     @sanity_function
-    def validate_test(self):
-        return sn.assert_found(r'^8', self.stdout)
-
-    def _extract_metric(self, size):
-        return sn.extractsingle(rf'^{size}\s+(\S+)', self.stdout, 1, float)
-
-    @run_before('performance')
-    def set_perf_vars(self):
-        make_perf = sn.make_performance_function
-        if self.metric == 'latency':
-            self.perf_variables = {
-                'latency': make_perf(self._extract_metric(8), 'us')
-            }
-        else:
-            self.perf_variables = {
-                'bandwidth': make_perf(self._extract_metric(1048576), 'MB/s')
-            }
-
+    def validate_run(self):
+        '''Check that a line indicating a successful run is present.'''
+        return sn.assert_found(
+            r'^<LOG>\s+The program has been run successfully\s*$', 
+            self.stdout
+        )
 
 @rfm.simple_test
-class osu_latency_test(osu_base_test):
-    descr = 'OSU latency test'
-    kind = 'pt2pt/standard'
-    benchmark = 'osu_latency'
-    metric = 'latency'
-    executable_opts = ['-x', '3', '-i', '10']
-
-
-@rfm.simple_test
-class osu_bandwidth_test(osu_base_test):
-    descr = 'OSU bandwidth test'
-    kind = 'pt2pt/standard'
-    benchmark = 'osu_bw'
-    metric = 'bandwidth'
-    executable_opts = ['-x', '3', '-i', '10']
-
-
-@rfm.simple_test
-class osu_allreduce_test(osu_base_test):
-    descr = 'OSU Allreduce test'
-    kind = 'collective/blocking'
+class fall3d_raikoke_test(fall3d_base_test):
+    descr = 'Fall3d raikoke test'
+    kind = 'mpi/openacc' # 'openacc', 'mpi'
     benchmark = 'osu_allreduce'
-    metric = 'bandwidth'
-    executable_opts = ['-m', '8', '-x', '3', '-i', '10']
+    #metric = 'bandwidth'
+    sourcesdir = 'raikoke-2019'
+    readonly_files = ['Input', 'Output']
+    executable_opts = ['All', 'Raikoke-2019.inp']
+    num_gpus_per_node = 1
+    prerun_cmds = [
+        'cd Input',
+        '[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
+        ]    
+    # maybe we can run a prerun hook which fetches 
+    keep_files = [
+        'Input/Raikoke-2019.SetSrc.log', 
+        'Input/Raikoke-2019.SetTgsd.log',
+        'Input/Raikoke-2019.SetDbs.log',
+        'Input/Raikoke-2019.Fall3d.log']
+    
+    @sanity_function
+    def validate_test(self):
+        """
+        If the run was successful, you should obtain a log file Example.Fall3d.log a successful end message
+        https://fall3d-suite.gitlab.io/fall3d/chapters/example.html#checking-the-results
+        """
+        return sn.all([
+            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', 'Input/Raikoke-2019.Fall3d.log'),
+            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', 'Input/Raikoke-2019.Fall3d.log'),
+            sn.assert_found(r'^  Task FALL3D\s*:\s*ends NORMALLY\s*$', 'Input/Raikoke-2019.Fall3d.log')
+        ])
+
+    

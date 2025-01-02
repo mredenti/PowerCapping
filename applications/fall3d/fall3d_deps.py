@@ -6,7 +6,9 @@ import reframe.utility.udeps as udeps
 
 
 @rfm.simple_test
-class fetch_fall3d(rfm.RunOnlyRegressionTest):
+class fetch_fall3d(rfm.RunOnlyRegressionTest):    
+    descr = 'Fetch FALL3D'
+    
     maintainers = ['mredenti']
     
     # Reframe variable that can be set to 'baremetal' or 'container'
@@ -15,11 +17,54 @@ class fetch_fall3d(rfm.RunOnlyRegressionTest):
     # FALL3D version
     version = variable(str, value='9.0.1')
     
+    executable = 'wget'
+    executable_opts = [
+                    f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{version}/'
+                    f'fall3d-{version}.tar.gz'
+                ]
+    
     # Run fetch step on login node
     local = True
     valid_systems = ['*']
+    valid_prog_environs = ['default']
+    
+    @sanity_function
+    def validate_download(self):
+        return sn.assert_eq(self.job.exitcode, 0)
+
+
+@rfm.simple_test
+class build_fall3d(rfm.CompileOnlyRegressionTest):
+    descr = 'Build FALL3D'
+    
+    build_system = 'CMake'
+    build_prefix = variable(str)
+    
+    valid_systems = ['*']
     valid_prog_environs = ['*']
     
+    # Reframe variable that can be set to 'baremetal' or 'container'
+    execution_mode = variable(typ.Str[r'baremetal|container']) # TEMPORARY
+    
+    @run_after('init')
+    def add_dependencies(self):
+        self.depends_on('fetch_fall3d', udeps.by_part)
+
+    @require_deps
+    def prepare_build(self, fetch_fall3d):
+        target = fetch_fall3d(part='login', environ='default')
+        tarball = f'fall3d-{target.version}.tar.gz'
+        self.build_prefix = tarball[:-7]  # remove .tar.gz extension
+
+        fullpath = os.path.join(target.stagedir, tarball)
+        self.prebuild_cmds = [
+            f'cp {fullpath} {self.stagedir}',
+            f'tar xzf {tarball}',
+            f'cd {self.build_prefix}'
+        ]
+        self.build_system.max_concurrency = 4
+
+""" 
     @run_before('run')
     def pick_mode(self):
         '''Dynamically switch between baremetal or HPC Container Maker depending
@@ -60,38 +105,6 @@ class fetch_fall3d(rfm.RunOnlyRegressionTest):
         self.descr = config['descr']
         self.executable = config['executable']
         self.executable_opts = config['executable_opts']
-    
-    @sanity_function
-    def validate_download(self):
-        '''Check our command (wget or hpccm) exited with 0.'''
-        return sn.assert_eq(self.job.exitcode, 0)
-
-"""
-@rfm.simple_test
-class build_osu_benchmarks(rfm.CompileOnlyRegressionTest):
-    descr = 'Build OSU benchmarks'
-    build_system = 'Autotools'
-    build_prefix = variable(str)
-    valid_systems = ['pseudo-cluster:compute']
-    valid_prog_environs = ['gnu-mpi']
-
-    @run_after('init')
-    def add_dependencies(self):
-        self.depends_on('fetch_osu_benchmarks', udeps.fully)
-
-    @require_deps
-    def prepare_build(self, fetch_osu_benchmarks):
-        target = fetch_osu_benchmarks(part='login', environ='gnu')
-        tarball = f'osu-micro-benchmarks-{target.version}.tar.gz'
-        self.build_prefix = tarball[:-7]  # remove .tar.gz extension
-
-        fullpath = os.path.join(target.stagedir, tarball)
-        self.prebuild_cmds = [
-            f'cp {fullpath} {self.stagedir}',
-            f'tar xzf {tarball}',
-            f'cd {self.build_prefix}'
-        ]
-        self.build_system.max_concurrency = 8
 
 
 class osu_base_test(rfm.RunOnlyRegressionTest):
