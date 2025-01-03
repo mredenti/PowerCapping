@@ -2,8 +2,8 @@ import os
 import reframe as rfm
 import reframe.utility.typecheck as typ
 import reframe.utility.sanity as sn
+import reframe.core.builtins as bn
 from reframe.core.backends import getlauncher
-import reframe.utility.udeps as udeps
 import math
 
 class fetch_fall3d(rfm.RunOnlyRegressionTest):  
@@ -30,7 +30,7 @@ class fetch_fall3d(rfm.RunOnlyRegressionTest):
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
 
-@rfm.simple_test
+
 class build_fall3d(rfm.CompileOnlyRegressionTest):
     descr = 'Build FALL3D'
     
@@ -38,8 +38,6 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
     fall3d_source = fixture(fetch_fall3d, scope='session')
     
     #purge_environment=True
-    valid_systems = ['*:login']
-    valid_prog_environs = ['*']
     modules = ['netcdf-fortran']
     
     # precision
@@ -67,40 +65,66 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
         self.build_system.max_concurrency = 8
         # keep_files = ["cp2k.out"]
 
-# ========================================================
-# Fall3d Base Test Class with Conditional Dependencies
-# ========================================================
 
 class fall3d_base_test(rfm.RunOnlyRegressionTest):
     '''Base class of Fall3d runtime tests'''
     
-    fall3d_binaries = None # fixture(build_fall3d, scope='environment')
+    fall3d_binaries = None #fixture(build_fall3d, scope='environment')
     kind = variable(str)
     benchmark = variable(str)
     
-    valid_systems = ['leonardo:booster']
-    valid_prog_environs = ['*'] # ['+mpi']
+    valid_systems = ['*']
+    valid_prog_environs = ['default'] # ['+mpi']
 
-    execution_mode = variable(typ.Str[r'baremetal|container']) #platform
-    image = variable(str) 
+    execution_mode = variable(typ.Str[r'baremetal|container'])
+    #platform = variable(typ.Str[r'baremetal|container'])
+    #image = variable(str) # path to image - no default
+    # maybe something about cpu and gpu
     
     num_tasks = None
     num_tasks_per_node = None
     exclusive_access = True
     
-    @run_after('init')
+    @run_after('setup')
     def configure_dependencies(self):
         '''Conditionally add dependencies based on the programming environment.'''
         if self.execution_mode == 'baremetal':
-            self.depends_on('build_fall3d', udeps.by_env)
-            
-    @require_deps
-    def get_dependencies(self, build_fall3d):
-        if self.execution_mode == 'baremetal':
-            self.fall3d_binaries = build_fall3d(part='*', environ='*')
-    
+            self.fall3d_binaries = bn.fixture(build_fall3d, scope='environment')
+             
     @run_after('setup')
+    def set_config(self): # find a better name
+        accelerator = self.current_partition.devices
+        self.num_tasks = self.num_gpus
+        self.num_gpus_per_node =  self.num_gpus if self.num_gpus < accelerator[0].num_devices else accelerator[0].num_devices
+        self.num_tasks_per_node = self.num_gpus_per_node
+        # --nodes is set automatically as job.num_tasks // num_tasks_per_node
+    
+    @run_before('run')
+    def set_extra_resources(self):
+        self.extra_resources = {
+            "gpu": {"num_gpus_per_node": f"{self.num_gpus_per_node}"},
+        }
+    
+    @run_before('run')
+    def load_modules(self):
+        self.modules = self.fall3d_binaries.modules
+
+    @run_before("run")
+    def replace_launcher(self):
+        self.job.launcher = getlauncher("mpirun")() # turn this into a custome launcher
+        #self.job.launcher.modifier = "mpirun"
+        #self.job.launcher.modifier_options = [
+        #    "--map-by ppr:1:node:PE=72",
+        #    "--report-bindings",
+        #]
+    
+    @run_before('run')
     def prepare_run(self):
+        self.executable = os.path.join(
+            self.fall3d_binaries.stagedir,
+            self.fall3d_binaries.build_system.builddir,
+            'bin', 'Fall3d.x'
+        )
         #The total number of processors is NPX × NPY × NPY × SIZE and should be equivalent to the argument np
         npx=npy=npz=1
         while npx*npy*npz != int(self.num_gpus):
@@ -112,25 +136,8 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             else:
                 npz *= 2
         
-        if self.execution_mode == 'baremetal':
-            
-            self.executable = os.path.join(
-                self.fall3d_binaries.stagedir,
-                self.fall3d_binaries.build_system.builddir,
-                'bin', 'Fall3d.x'
-            )
+        self.executable_opts += [str(npx), str(npy), str(npz)]
         
-            self.executable_opts += [str(npx), str(npy), str(npz)]
-        
-        elif self.execution_mode == 'container':
-            self.container_platform.image = self.image
-            self.container_platform.pull_image = False
-            # adds --nv flag to singularity exec
-            self.container_platform.with_cuda= True # if self.container_platform=='Singularity'
-            # command issued by singularity exec
-            self.container_platform.command = 'Fall3d.x'
-            
-            
         """_summary_
 
         Returns:
@@ -151,33 +158,9 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             The working directory of ReFrame inside the container.
             self.container_platform.with_mpi = True for Sarus but not singularity?
             with_cuda¶ Enable CUDA support when launching the container. I guess this will add the --nv flag
+            self.container_platform.command = self.executable
+            self.container_platform.image = 'nvcr.io/nvidia/pytorch:22.08-py3'
         """
-            
-        
-    @run_after('setup')
-    def set_resources(self): # find a better name
-        accelerator = self.current_partition.devices
-        self.num_tasks = self.num_gpus
-        self.num_gpus_per_node =  self.num_gpus if self.num_gpus < accelerator[0].num_devices else accelerator[0].num_devices
-        self.num_tasks_per_node = self.num_gpus_per_node
-        # --nodes is set automatically as job.num_tasks // num_tasks_per_node
-        self.extra_resources = {
-            "gpu": {"num_gpus_per_node": f"{self.num_gpus_per_node}"},
-        }
-    
-    @run_before('run')
-    def load_modules(self):
-        if self.execution_mode == 'baremetal':
-            self.modules = self.fall3d_binaries.modules
-
-    @run_before("run")
-    def replace_launcher(self):
-        self.job.launcher = getlauncher("mpirun")() # turn this into a custome launcher
-        #self.job.launcher.modifier = "mpirun"
-        #self.job.launcher.modifier_options = [
-        #    "--map-by ppr:1:node:PE=72",
-        #    "--report-bindings",
-        #]
 
     @sanity_function
     def validate_run(self):

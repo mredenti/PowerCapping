@@ -33,6 +33,33 @@ reframe \
 ```
 
 ```shell
+reframe     -C power-capping/configuration/leonardo.py     -c power-capping/applications/fall3d/fall3d_test.py     --prefix $SCRATCH/REFRAME-TEST     --keep-stage-files     --dont-restage  --system=leonardo:booster   --performance-report -M netcdf-fortran:netcdf-fortran/4.6.1--openmpi--4.1.6--nvhpc--23.11 -p default -J qos=normal -J account=cin_staff -S fall3d_raikoke_test.execution_mode=baremetal -lC
+
+ reframe     -C power-capping/configuration/leonardo.py     -c power-capping/applications/fall3d/fall3d_test.py     --prefix $SCRATCH/REFRAME-TEST     --keep-stage-files     --dont-restage  --system=leonardo:booster   --performance-report -M netcdf-fortran:netcdf-fortran/4.6.1--openmpi--4.1.6--nvhpc--23.11 -p default -J qos=normal -J account=cin_staff -S fall3d_raikoke_test.execution_mode=baremetal -lC
+
+ reframe     -C power-capping/configuration/leonardo.py     -c power-capping/applications/fall3d/fall3d_test.py     --prefix $SCRATCH/REFRAME-TEST     --keep-stage-files     --dont-restage   --performance-report -M netcdf-fortran:netcdf-fortran/4.6.1--openmpi--4.1.6--nvhpc--23.11 -p default -J qos=normal -J account=cin_staff -S fall3d_raikoke_test.execution_mode=baremetal -lC
+```
+
+
+# Final
+
+## Leonardo 
+
+**Baremetal**
+
+```shell
+reframe     -C power-capping/configuration/leonardo.py     -c power-capping/applications/fall3d/fall3d_test.py     --prefix $SCRATCH/REFRAME-TEST     --keep-stage-files     --dont-restage   --performance-report -M netcdf-fortran:netcdf-fortran/4.6.1--openmpi--4.1.6--nvhpc--23.11 -p default -J qos=normal -J account=cin_staff -S fall3d_raikoke_test.execution_mode=baremetal -n fall3d_raikoke_test --dry-run
+```
+
+**Container**
+
+```shell
+reframe     -C power-capping/configuration/leonardo.py     -c power-capping/applications/fall3d/fall3d_test.py     --prefix $SCRATCH/REFRAME-TEST     --keep-stage-files     --dont-restage   --performance-report -M netcdf-fortran:netcdf-fortran/4.6.1--openmpi--4.1.6--nvhpc--23.11 -p default -J qos=normal -J account=cin_staff -S fall3d_raikoke_test.execution_mode=container -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES -n fall3d_raikoke_test --dry-run
+```
+
+# extra
+
+```shell
 reframe \
     -C power-capping/configuration/leonardo.py \
     -c power-capping/applications/fall3d/fall3d.py \
