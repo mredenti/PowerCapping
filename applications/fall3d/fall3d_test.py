@@ -4,7 +4,6 @@ import reframe.utility.typecheck as typ
 import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
 import reframe.utility.udeps as udeps
-import math
 
 class fetch_fall3d(rfm.RunOnlyRegressionTest):  
     descr = 'Fetch FALL3D'
@@ -63,9 +62,7 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
             f'-D CMAKE_INSTALL_PREFIX={installdir}',
             f'-S {configuredir}'
         ]
-        # generator
         self.build_system.max_concurrency = 8
-        # keep_files = ["cp2k.out"]
 
 # ========================================================
 # Fall3d Base Test Class with Conditional Dependencies
@@ -75,8 +72,6 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     '''Base class of Fall3d runtime tests'''
     
     fall3d_binaries = None # fixture(build_fall3d, scope='environment')
-    kind = variable(str)
-    benchmark = variable(str)
     
     valid_systems = ['leonardo:booster']
     valid_prog_environs = ['*'] # ['+mpi']
@@ -125,22 +120,20 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         elif self.execution_mode == 'container':
             self.modules = ['openmpi']
             self.container_platform.image = self.image
-            self.container_platform.pull_image = False
+            #This does not have any effect for the Singularity container platform.
+            #self.container_platform.pull_image = False
             # adds --nv flag to singularity exec
             self.container_platform.with_cuda= True # if self.container_platform=='Singularity'
+            # https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html#reframe.core.containers.ContainerPlatform.mount_points
+            input_dir = os.path.join(os.path.dirname(__file__), self.sourcesdir) # handle symlinks of read only input files
+            self.container_platform.mount_points = [
+                (input_dir, input_dir) 
+            ]
             # Additional options to be passed to the container runtime when executed
             self.container_platform.options = ['--no-home']
             # command issued by singularity exec
             self.container_platform.command = f"/opt/fall3d/bin/Fall3d.x {' '.join(map(str, self.executable_opts))}"
-            
-            
-            """
-                _type_: _description_
-                mount points https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html#reframe.core.containers.ContainerPlatform.mount_points
-                workdir The working directory of ReFrame inside the container.
-                self.container_platform.with_mpi = True for Sarus but not singularity?
-            """
-            
+            # workdir: The working directory of ReFrame inside the container. Default is rfm_workdir
         
     @run_after('setup')
     def set_resources(self): # find a better name
@@ -178,8 +171,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
     descr = 'Fall3d raikoke test'
-    kind = 'mpi/openacc' # 'openacc', 'mpi'
-    benchmark = 'osu_allreduce'
+    #kind = 'mpi/openacc' # 'openacc', 'mpi'
     #metric = 'bandwidth'
     sourcesdir = 'raikoke-2019/Input'
     readonly_files = [
@@ -194,7 +186,8 @@ class fall3d_raikoke_test(fall3d_base_test):
         # There is a typo in the name of the file
         '[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
         ]    
-     # maybe we can run a prerun hook which fetches the lfs
+    # maybe we can run a prerun hook which fetches the lfs
+    # show define an test case name variable and make keep files the default in the base
     keep_files = [
         'Raikoke-2019.SetSrc.log', 
         'Raikoke-2019.SetTgsd.log',
