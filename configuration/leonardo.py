@@ -47,7 +47,9 @@ site_configuration = {
                     "container_platforms": [
                         {
                             'type': 'Singularity',
-                            'modules': []
+                            'default': True,
+                            'modules': [],
+                            'env_vars': [['ENV_VAR', 'VALUE']]
                         }
                     ],
                     "access": ["--partition=boost_usr_prod"],
