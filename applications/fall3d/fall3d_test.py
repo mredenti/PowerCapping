@@ -103,7 +103,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     def prepare_run(self):
         #The total number of processors is NPX × NPY × NPY × SIZE and should be equivalent to the argument np
         npx=npy=npz=1
-        while npx*npy*npz != int(self.num_gpus):
+        while npx*npy*npz != self.num_gpus:
             # Find which dimension is smallest and increment it
             if npx <= npy and npx <= npz:
                 npx *= 2
@@ -111,6 +111,8 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
                 npy *= 2
             else:
                 npz *= 2
+        
+        self.executable_opts += [str(npx), str(npy), str(npz)]
         
         if self.execution_mode == 'baremetal':
             
@@ -120,38 +122,24 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
                 'bin', 'Fall3d.x'
             )
         
-            self.executable_opts += [str(npx), str(npy), str(npz)]
-        
         elif self.execution_mode == 'container':
+            self.modules = ['openmpi']
             self.container_platform.image = self.image
             self.container_platform.pull_image = False
             # adds --nv flag to singularity exec
             self.container_platform.with_cuda= True # if self.container_platform=='Singularity'
+            # Additional options to be passed to the container runtime when executed
+            self.container_platform.options = ['--no-home']
             # command issued by singularity exec
-            self.container_platform.command = 'Fall3d.x'
+            self.container_platform.command = f"/opt/fall3d/bin/Fall3d.x {' '.join(map(str, self.executable_opts))}"
             
             
-        """_summary_
-
-        Returns:
-            _type_: _description_
-        @run_before('run')
-        def set_container_variables(self):
-        if self.platform != 'native':
-            self.container_platform = self.platform
-            self.container_platform.command = (
-            f'{nbody_exec} -benchmark -fp64 '
-            f'-numbodies={self.num_bodies_per_gpu * self.gpu_count} ' 
-            f'-numdevices={self.gpu_count}'
-            )
-            mount points https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html#reframe.core.containers.ContainerPlatform.mount_points
-            options = Additional options to be passed to the container runtime when executed.
-            pull_image = False ? this should pull the image locally
-            workdir¶
-            The working directory of ReFrame inside the container.
-            self.container_platform.with_mpi = True for Sarus but not singularity?
-            with_cuda¶ Enable CUDA support when launching the container. I guess this will add the --nv flag
-        """
+            """
+                _type_: _description_
+                mount points https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html#reframe.core.containers.ContainerPlatform.mount_points
+                workdir The working directory of ReFrame inside the container.
+                self.container_platform.with_mpi = True for Sarus but not singularity?
+            """
             
         
     @run_after('setup')
