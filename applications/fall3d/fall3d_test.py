@@ -3,6 +3,7 @@ import reframe as rfm
 import reframe.utility.typecheck as typ
 import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
+import reframe.utility.udeps as udeps
 import math
 
 class fetch_fall3d(rfm.RunOnlyRegressionTest):  
@@ -29,7 +30,7 @@ class fetch_fall3d(rfm.RunOnlyRegressionTest):
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
 
-
+@rfm.simple_test
 class build_fall3d(rfm.CompileOnlyRegressionTest):
     descr = 'Build FALL3D'
     
@@ -37,6 +38,8 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
     fall3d_source = fixture(fetch_fall3d, scope='session')
     
     #purge_environment=True
+    valid_systems = ['*:login']
+    valid_prog_environs = ['*']
     modules = ['netcdf-fortran']
     
     # precision
@@ -64,36 +67,66 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
         self.build_system.max_concurrency = 8
         # keep_files = ["cp2k.out"]
 
+# ========================================================
+# Fall3d Base Test Class with Conditional Dependencies
+# ========================================================
 
 class fall3d_base_test(rfm.RunOnlyRegressionTest):
     '''Base class of Fall3d runtime tests'''
     
-    fall3d_binaries = fixture(build_fall3d, scope='environment')
+    fall3d_binaries = None # fixture(build_fall3d, scope='environment')
     kind = variable(str)
     benchmark = variable(str)
     
-    valid_systems = ['*']
-    valid_prog_environs = ['default'] # ['+mpi']
+    valid_systems = ['leonardo:booster']
+    valid_prog_environs = ['*'] # ['+mpi']
 
     execution_mode = variable(typ.Str[r'baremetal|container'])
+    image = variable(str) 
     #platform = variable(typ.Str[r'baremetal|container'])
-    #image = variable(str) # path to image - no default
-    # maybe something about cpu and gpu
     
     num_tasks = None
     num_tasks_per_node = None
     exclusive_access = True
     
+    @run_after('init')
+    def configure_dependencies(self):
+        '''Conditionally add dependencies based on the programming environment.'''
+        if self.execution_mode == 'baremetal':
+            self.depends_on('build_fall3d', udeps.by_env)
+            
+    @require_deps
+    def prepare_run(self, build_fall3d):
+        
+        #The total number of processors is NPX × NPY × NPY × SIZE and should be equivalent to the argument np
+        npx=npy=npz=1
+        while npx*npy*npz != int(self.num_gpus):
+            # Find which dimension is smallest and increment it
+            if npx <= npy and npx <= npz:
+                npx *= 2
+            elif npy <= npz:
+                npy *= 2
+            else:
+                npz *= 2
+        
+        if self.execution_mode == 'baremetal':
+            fall3d_binaries = build_fall3d(part='login', environ='default')
+            
+            self.executable = os.path.join(
+                self.fall3d_binaries.stagedir,
+                self.fall3d_binaries.build_system.builddir,
+                'bin', 'Fall3d.x'
+            )
+        
+        self.executable_opts += [str(npx), str(npy), str(npz)]
+    
     @run_after('setup')
-    def set_config(self): # find a better name
+    def set_resources(self): # find a better name
         accelerator = self.current_partition.devices
         self.num_tasks = self.num_gpus
         self.num_gpus_per_node =  self.num_gpus if self.num_gpus < accelerator[0].num_devices else accelerator[0].num_devices
         self.num_tasks_per_node = self.num_gpus_per_node
         # --nodes is set automatically as job.num_tasks // num_tasks_per_node
-    
-    @run_before('run')
-    def set_extra_resources(self):
         self.extra_resources = {
             "gpu": {"num_gpus_per_node": f"{self.num_gpus_per_node}"},
         }
@@ -111,26 +144,6 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         #    "--report-bindings",
         #]
     
-    @run_before('run')
-    def prepare_run(self):
-        self.executable = os.path.join(
-            self.fall3d_binaries.stagedir,
-            self.fall3d_binaries.build_system.builddir,
-            'bin', 'Fall3d.x'
-        )
-        #The total number of processors is NPX × NPY × NPY × SIZE and should be equivalent to the argument np
-        npx=npy=npz=1
-        while npx*npy*npz != int(self.num_gpus):
-            # Find which dimension is smallest and increment it
-            if npx <= npy and npx <= npz:
-                npx *= 2
-            elif npy <= npz:
-                npy *= 2
-            else:
-                npz *= 2
-        
-        self.executable_opts += [str(npx), str(npy), str(npz)]
-        
         """_summary_
 
         Returns:
