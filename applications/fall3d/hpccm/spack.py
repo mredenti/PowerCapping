@@ -105,7 +105,7 @@ os_common_packages = ['autoconf',
                     'python3',
                     'environment-modules']
 
-Stage0 += packages(apt=os_common_packages + ['curl'],
+Stage0 += packages(apt=os_common_packages + ['curl-devel', '--allowerasing'],
                    epel=True,
                    yum=os_common_packages)
 
