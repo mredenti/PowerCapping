@@ -105,9 +105,9 @@ os_common_packages = ['autoconf',
                     'python3',
                     'environment-modules']
 
-Stage0 += packages(apt=os_common_packages + ['curl-devel', '--allowerasing'],
+Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
-                   yum=os_common_packages)
+                   yum=os_common_packages + ['curl-devel', '--allowerasing'])
 
 if base_os == "rockylinux9":
     Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
