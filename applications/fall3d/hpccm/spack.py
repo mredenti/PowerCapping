@@ -238,6 +238,7 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                         url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
 Stage0 += shell(commands=[
+        'export PATH=/opt/fall3d/bin:$PATH',
         # remove specs which are no longer needed - perhpas do it at the end
         'spack gc -y',
         # Deactivate 
