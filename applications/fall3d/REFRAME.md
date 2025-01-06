@@ -54,7 +54,7 @@ reframe     -C power-capping/configuration/leonardo.py     -c power-capping/appl
 **Container**
 
 ```shell
-reframe     -C power-capping/configuration/leonardo.py     -c power-capping/applications/fall3d/fall3d_test.py     --prefix $SCRATCH/REFRAME-TEST     --keep-stage-files       --performance-report -M openmpi:openmpi/4.1.6--nvhpc--23.11 -p default -J qos=normal -J account=cin_staff -S fall3d_raikoke_test.execution_mode=container -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/fall3d_openacc.sif -n fall3d_raikoke_test --dry-run
+reframe     -C power-capping/configuration/leonardo.py     -c power-capping/applications/fall3d/fall3d_test.py     --prefix $SCRATCH/REFRAME-TEST     --keep-stage-files       --performance-report -M openmpi:openmpi/4.1.6--nvhpc--24.3 -p default -J qos=normal -J account=cin_staff -S fall3d_raikoke_test.execution_mode=container -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/fall3d_openacc.sif -n fall3d_raikoke_test --dry-run
 ```
 
 /leonardo_scratch/large/userinternal/mredenti/POWER_CAPPING

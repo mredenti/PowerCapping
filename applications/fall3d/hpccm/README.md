@@ -3,3 +3,6 @@ hpccm --format singularity --singularity-version=3.2 --recipe ./applications/fal
 **Thea**
 
 hpccm --format singularity --singularity-version=3.2 --recipe ./applications/fall3d/hpccm/spack.py --userarg cluster=thea > applications/fall3d/hpccm/singularity_thea.def
+
+
+/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/comm_libs/11.8/hpcx/latests

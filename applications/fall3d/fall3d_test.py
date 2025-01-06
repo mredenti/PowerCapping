@@ -132,7 +132,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             # Additional options to be passed to the container runtime when executed
             self.container_platform.options = ['--no-home']
             # command issued by singularity exec
-            self.container_platform.command = f"/opt/fall3d/bin/Fall3d.x {' '.join(map(str, self.executable_opts))}"
+            self.container_platform.command = f"Fall3d.x {' '.join(map(str, self.executable_opts))}"
             # workdir: The working directory of ReFrame inside the container. Default is rfm_workdir
         
     @run_after('setup')
@@ -195,7 +195,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         'Raikoke-2019.Fall3d.log'
         ]
     
-    num_gpus = 4
+    num_gpus = 8
     time_limit = '1200'
     
     @sanity_function
