@@ -22,6 +22,8 @@ cluster_configs = {
         'spack_arch': 'linux-rhel8-icelake',
         'spack_branch_or_tag': 'v0.21.0',  # Tag for Spack version 0.21.0
         'cuda_arch': '80',  # CUDA architecture for 'leonardo'
+        'nvhpc_version': '24.11',
+        'cuda_version': '11.8',
         'base_os': 'ubuntu22.04',
         'arch': 'x86_64',
     },
@@ -30,6 +32,8 @@ cluster_configs = {
         'spack_arch': 'linux-rocky9-neoverse_v2',
         'spack_branch_or_tag': 'v0.23.0',  # Tag for Spack version 0.23.0
         'cuda_arch': '90',  # CUDA architecture for 'thea'
+        'nvhpc_version': '24.11',
+        'cuda_version': '12.6',
         'base_os': 'rockylinux9', # 
         'arch': 'aarch64',
     }
@@ -62,6 +66,8 @@ spack_arch = settings['spack_arch']
 arch = settings['arch']
 spack_branch_or_tag = settings['spack_branch_or_tag']
 cuda_arch = settings['cuda_arch']
+nvhpc_version = settings['nvhpc_version']
+cuda_version = settings['cuda_version']
 base_os = settings['base_os']
 
 
@@ -86,14 +92,14 @@ Stage0 += comment(__doc__, reformat=False)
 # Base Image:
 ###############################################################################
 
-Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc:24.3-devel-cuda_multi-{base_os}',
+Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-devel-cuda_multi-{base_os}',
                 _distro=f'{base_os}',
                 _arch=f'{arch}',
                 _as='devel') # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
 
 Stage0 += environment(variables={
-    'CUDA_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/24.3/cuda',
-    'HPCX_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/24.3/comm_libs/12.3/hpcx/latest',
+    'CUDA_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/{nvhpc_version}/cuda',
+    'HPCX_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/{nvhpc_version}/comm_libs/{cuda_version}/hpcx/latest',
     }, _export=True)
 
 ###############################################################################
@@ -251,7 +257,7 @@ Stage0 += shell(commands=[
 # Finalize Container with Runtime Environment
 ###############################################################################
  
-Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:24.3-runtime-cuda12.3-{base_os}',
+Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-runtime-cuda{cuda_version}-{base_os}',
                     _distro=f'{base_os}',
                     _arch=f'{arch}',
                     _as='runtime')

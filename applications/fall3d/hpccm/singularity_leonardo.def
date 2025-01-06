@@ -11,17 +11,17 @@
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: nvcr.io/nvidia/nvhpc:24.3-devel-cuda_multi-ubuntu22.04
+From: nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
 
 %environment
-    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/cuda
-    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/12.3/hpcx/latest
+    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/cuda
+    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/comm_libs/11.8/hpcx/latest
 %post
-    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/cuda
-    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.3/comm_libs/12.3/hpcx/latest
+    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/cuda
+    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/comm_libs/11.8/hpcx/latest
 
 %post
     apt-get update -y
@@ -93,6 +93,7 @@ EOF
 
 %post
     cd /
+    export PATH=/opt/fall3d/bin:$PATH
     spack gc -y
     spack env deactivate
     spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
@@ -100,7 +101,7 @@ EOF
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: nvcr.io/nvidia/nvhpc:24.3-runtime-cuda12.3-ubuntu22.04
+From: nvcr.io/nvidia/nvhpc:24.11-runtime-cuda11.8-ubuntu22.04
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
