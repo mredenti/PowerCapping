@@ -1,0 +1,118 @@
+# Spack container (https://github.com/spack/spack)
+#    Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
+#    Optionally, set the user argument 'package' to install additional Spack packages.
+#    Otherwise, it will install the predefined packages based on the cluster.
+# 
+#    Sample workflow:
+# $ hpccm --recipe spack.py --userarg cluster="leonardo" > Dockerfile.leonardo.spack
+# $ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
+# 
+
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: localimage
+From: nvhpc-24.11-devel.sif
+Stage: devel
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        autoconf \
+        ca-certificates \
+        curl \
+        environment-modules \
+        pkg-config \
+        python3
+    rm -rf /var/lib/apt/lists/*
+
+%post
+    cd /
+    . /usr/share/modules/init/sh
+    module use /opt/nvidia/hpc_sdk/modulefiles
+    module load nvhpc-hpcx-cuda12
+
+%post
+    cd /
+    git clone --branch v0.21.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
+    . /opt/spack/share/spack/setup-env.sh
+
+%environment
+    export FORCE_UNSAFE_CONFIGURE=1
+    export LD_LIBRARY_PATH=/opt/spack/lib:$LD_LIBRARY_PATH
+%post
+    export FORCE_UNSAFE_CONFIGURE=1
+    export LD_LIBRARY_PATH=/opt/spack/lib:$LD_LIBRARY_PATH
+
+%post
+    cd /
+    mkdir -p /opt/spack-environment
+    cat <<EOF > /opt/spack-environment/spack.yaml
+spack:
+  specs: []
+  concretizer:
+    unify: true
+  config:
+    install_tree: /opt/software
+  view: /opt/view
+EOF
+    spack env activate /opt/spack-environment
+    spack compiler find --scope env:/opt/spack-environment
+    spack external find --not-buildable openmpi --scope env:/opt/spack-environment
+    spack external find --all --scope env:/opt/spack-environment
+    spack add hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make
+    spack add netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8
+    spack add netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools
+    spack add parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools
+    spack add zlib-ng%gcc
+    spack concretize -f
+    spack install --fail-fast
+    spack clean --all
+    find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s
+
+# https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
+    cd /var/tmp/fall3d-9.0.1
+    mkdir -p /opt/fall3d/bin
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D WITH-R4=NO /var/tmp/fall3d-9.0.1
+    cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
+    cd /opt/fall3d
+    cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
+    rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
+
+%post
+    cd /
+    export PATH=/opt/fall3d/bin:$PATH
+    spack gc -y
+    spack env deactivate
+    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
+
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: localimage
+From: nvhpc-24.11-runtime-cuda12.6.sif
+Stage: runtime
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+# https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
+%files from devel
+    /opt/fall3d /opt/fall3d
+%environment
+    export PATH=/opt/fall3d/bin:$PATH
+%post
+    export PATH=/opt/fall3d/bin:$PATH
+
+%files from devel
+    /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
+    /opt/software /opt/software
+    /opt/spack-environment /opt/spack-environment
+    /opt/view /opt/view
+
+%post
+    cd /
+    cat /etc/profile.d/z10_spack_environment.sh >> $SINGULARITY_ENVIRONMENT
