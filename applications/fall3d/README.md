@@ -1,41 +1,62 @@
 # FALL3D
 
-Version 0.9.0: Used for the SC5.2 Capacity Run on MN5: Volcanic dispersal at local scale: a reanalysis of the 2021 La Palma case. Ensemble runs https://fall3d-suite.gitlab.io/fall3d/tasks/setens.html are 
-particularly important for this context as they would represent your typical early warning system simulation.
+[FALL3D USER MANUAL](https://fall3d-suite.gitlab.io/fall3d/chapters/overview.html)
 
-All the following has been based on the [FALL3D USER MANUAL](https://fall3d-suite.gitlab.io/fall3d/chapters/overview.html)
+## Validation + Simulation Cases 
 
-## Code Description
-
-- [Missing Link]()
-- [Container Registry](https://gitlab.com/fall3d-suite/fall3d/container_registry)
-
-## Installation
-
-Choose your preferred installation method:
-
-- [Baremetal Installation](INSTALL_BAREMETAL.md)
-- [Containerised Installation](INSTALL_CONTAINERISED.md)
-
-## Validation 
-
-- Test Suite Case
-- Raikoka 
-
-To fetch the LFS objects for the Raikoka test case, run this command:
-
-```shell
-git submodule update --init
-git lfs fetch origin main # I do not know if I actually need this
-```
-
-## Simulation Cases 
+### Raikoke 
 
 - The Raikoke-2019 run case considers a deterministic (single scenario) SO2 dispersal simulation from the June 2019 Raikoke eruption. The simulation is driven by GFS model wind fields. 
 
-- **Highly Relevant** [Eruption plumes extended more than 30 km in altitude in both phases of the Millennium eruption of Paektu (Changbaishan) volcano](https://doi.org/10.1038/s43247-023-01162-0) (Version 8.2.0 of FALL3D - no GPU acc) 
-    - The simulation should be "reproducible" (TBD) as they provide Datasets, configuration input files and scripts used for the simulations described in the paper - see https://zenodo.org/records/10159966
+- To fetch the LFS objects for the Raikoke-2019 test case, run this command:
 
-## Suitability as Workflow 
+```shell
+git submodule update --init
+git lfs fetch
+```
 
-- See [FALL3D workflow](https://fall3d-suite.gitlab.io/fall3d/chapters/tasks.html)
+#### Leonardo 
+
+**Baremetal**
+
+```shell
+reframe \
+    -C power-capping/configuration/leonardo.py \
+    -c power-capping/applications/fall3d/fall3d.py \
+    --prefix $SCRATCH/REFRAME-TEST \
+    --keep-stage-files \
+    --dont-restage \
+    --performance-report \
+    -M netcdf-fortran:netcdf-fortran/4.6.1--openmpi--4.1.6--nvhpc--23.11 \
+    -p default \
+    -J qos=normal \
+    -J account=cin_staff \
+    -n fall3d_raikoke_test \
+    -S fall3d_raikoke_test.execution_mode=baremetal \
+    --dry-run
+```
+
+**Container**
+
+```shell
+reframe \
+    -C power-capping/configuration/leonardo.py \
+    -c power-capping/applications/fall3d/fall3d.py \
+    --prefix $SCRATCH/REFRAME-TEST \
+    --keep-stage-files \
+    --performance-report \
+    -M openmpi:openmpi/4.1.6--nvhpc--24.3 \ # or load cuda and openmpi
+    -p default \
+    -J qos=normal \
+    -J account=cin_staff \
+    -n fall3d_raikoke_test \
+    -S fall3d_raikoke_test.execution_mode=container \
+    -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/fall3d_openacc.sif \
+    --dry-run
+```
+
+#### Thea
+
+**Baremetal**
+
+**Container**
