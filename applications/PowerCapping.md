@@ -28,7 +28,7 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 
 | Code                                                                    | leonardo-baremetal                                                         | leonardo-container | thea-baremetal | thea-container | Test Case Identified |
 |-------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------|----------------|----------------|----------------------|
-| [FALL3D](fall3d/README.md)                                             | Ok                                                                          | Ok       | Ok   | X    | No       |
+| [FALL3D](fall3d/README.md)                                             | Ok                                                                          | Ok       | Ok   | Ready to test build    | No       |
 | [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)            | OK                          | Not started        | Not started    | Not started    | No         |
 | [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)          | OK                                                                 | Not started        | Not started    | Not started    | No         |
 | [XSHELLS](xshells/README.md)                                           | OK | Not started        | Waiting to test fix to compilation issues (x86 pre-processor macros)    | Not started    | No         |

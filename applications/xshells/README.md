@@ -24,6 +24,12 @@ wget https://gricad-gitlab.univ-grenoble-alpes.fr/schaeffn/xshells/-/archive/che
 tar xzf xshells-cheese-miniapp-fp32.tar.gz
 ```
 
+or
+
+```shell
+git clone -b cheese-miniapp-fp32 --recurse-submodules https://gricad-gitlab.univ-grenoble-alpes.fr/schaeffn/xshells.git
+```
+
 ```shell
 ml load openmpi/4.1.6-gcc-12.3.0-wftkmyd
 ml load gcc/12.3.0-gcc-11.4.1-f7guf3f
