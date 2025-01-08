@@ -20,6 +20,11 @@ test cases, the main code is also used as mini-app.
 ## Thea 
 
 ```shell
+wget https://gricad-gitlab.univ-grenoble-alpes.fr/schaeffn/xshells/-/archive/cheese-miniapp-fp32/xshells-cheese-miniapp-fp32.tar.gz
+tar xzf xshells-cheese-miniapp-fp32.tar.gz
+```
+
+```shell
 ml load openmpi/4.1.6-gcc-12.3.0-wftkmyd
 ml load gcc/12.3.0-gcc-11.4.1-f7guf3f
 ml load cuda/12.3.0-gcc-12.3.0-b2avf4v
