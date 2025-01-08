@@ -41,6 +41,8 @@ reframe \
 
 **Container**
 
+At the moment we assume that the SIF image has already been pulled/build to the local file system. Thus, please see [link to hpcc-readme0]() for more information on the build process. Eventually we might consider opening the remote registry to the public and have Singularity automatically pull the image at runtime.  
+
 ```shell
 reframe \
     -C power-capping/configuration/leonardo.py \
