@@ -1,0 +1,3 @@
+[submodule "applications/fall3d/raikoke-2019"]
+	path = applications/fall3d/raikoke-2019
+	url = https://gitlab.geo3bcn.csic.es/fall3d/test-suite/raikoke-2019.git

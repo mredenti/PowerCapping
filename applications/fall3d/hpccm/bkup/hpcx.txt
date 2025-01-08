@@ -1,0 +1,221 @@
+HPCX v2.17.1 README
+
+NVIDIA HPCX package contains the following pre-compiled HPC packages:
+* Open MPI and OpenSHMEM v4.x from https://github.com/open-mpi/ompi/
+* UCX
+* HCOLL
+* MPI tests (OSU, IMB, random ring, basic examples, ...)
+* Cluster Kit
+* nccl-rdma-sharp plugin
+* UCC
+* SHARP
+
+1. Install HPCX
+
+   a) Extract tarball and set environment variable to HPCX location
+
+    $ tar -xvf hpcx.tbz
+    $ cd hpcx
+    $ export HPCX_HOME=$PWD
+
+2. HPCX environments
+
+HPCX comes with 4 environments. Please use the one that best suits your needs.
+Please note that only one of the three available environments can be loaded in order
+to run.
+All envs support CUDA v11 out of the box.
+
+2.1. Vanilla HPCX
+
+This is the default option which is optimized for best performance for the
+Single-Thread mode.
+
+2.2. HPCX with Multi-Threading support
+
+This option enables Multi-Threading support in all the HPCX components.
+
+2.3. HPCX for profiling
+
+This option enables UCX compiled with profiling information.
+
+2.4. HPCX for debug
+
+This option enables UCX/HCOLL/SHARP compiled in debug mode.
+
+2.5. HPCX stack
+
+This environment contains all the libraries that 'Vanilla HPCX' has, except for OMPI.
+
+3. Load HPCX environment
+
+Note: HPCX environment scripts require bash to operate.
+
+3.1. Load Vanilla HPCX environment using bash init scripts
+    $ bash
+    $ source $HPCX_HOME/hpcx-init.sh
+    $ hpcx_load
+    $ env | grep HPCX
+    $ mpicc $HPCX_MPI_TESTS_DIR/examples/hello_c.c -o $HPCX_MPI_TESTS_DIR/examples/hello_c
+    $ mpirun -np 2 $HPCX_MPI_TESTS_DIR/examples/hello_c
+    $ oshcc $HPCX_MPI_TESTS_DIR/examples/hello_oshmem_c.c -o $HPCX_MPI_TESTS_DIR/examples/hello_oshmem_c
+    $ oshrun -np 2 $HPCX_MPI_TESTS_DIR/examples/hello_oshmem_c
+    $ hpcx_unload
+
+For using the HPCX Multi-Threaded environment please follow the steps from section 3.1 except the first command:
+    $ bash
+    $ source $HPCX_HOME/hpcx-mt-init.sh
+
+For using HPCX environment with profiling please follow the steps from section 3.1 except the second command:
+    $ bash
+    $ source $HPCX_HOME/hpcx-prof-init.sh
+
+
+3.2. Load HPCX environment from modules
+
+    $ module use $HPCX_HOME/modulefiles
+    $ module load hpcx
+    $ mpicc $HPCX_MPI_TESTS_DIR/examples/hello_c.c -o $HPCX_MPI_TESTS_DIR/examples/hello_c
+    $ mpirun -np 2 $HPCX_MPI_TESTS_DIR/examples/hello_c
+    $ oshcc $HPCX_MPI_TESTS_DIR/examples/hello_oshmem_c.c -o $HPCX_MPI_TESTS_DIR/examples/hello_oshmem_c
+    $ oshrun -np 2 $HPCX_MPI_TESTS_DIR/examples/hello_oshmem_c
+    $ module unload hpcx
+
+For using the HPCX Multi-Threaded environment please follow the steps from section 3.2 except the second command:
+    $ module load hpcx-mt
+
+For using HPCX environment with profiling please follow the steps from section 3.2 except the second command:
+    $ module load hpcx-prof
+
+* IMPORTANT NOTE:
+
+    When HPCX is launched in an environment where there is no resource manager
+    (slurm, pbs, ...) installed or if you are launching from a compute node,
+    please follow these steps:
+
+    In this case the OMPI default rsh/ssh based launcher will be used, which
+    does not propagate the library path to the compute nodes.
+
+    Please pass LD_LIBRARY_PATH variable as follows:
+
+    $ mpirun -x LD_LIBRARY_PATH -np 2 -H host1,host2 $HPCX_MPI_TESTS_DIR/examples/hello_c
+
+4. Rebuild HPCX packages from sources
+
+a. Using the helper script
+The /utils/hpcx_rebuild.sh script can rebuild OMPI and UCX from HPCX
+using the same sources and configuration. It also takes into account HPCX's
+environments: vanilla, MT and CUDA.
+For more details, please run:
+/utils/hpcx_rebuild.sh --help
+
+b. Manually
+The sources for SHMEM, OMPI and UCX can be found at $HPCX_HOME/sources/
+Check $HPCX_HOME/sources/config.log for build details.
+
+* The HPCX package contains OpenMPI sources which can be found at the $HPCX_HOME/sources/ folder.
+
+* The HPCX package should be loaded to the user environment prior to recompiling HPCX from
+  sources, see section #3 above.
+
+    $ bash
+    $ HPCX_HOME=/path/to/extracted/hpcx
+    $ source $HPCX_HOME/hpcx-init.sh
+    $ hpcx_load
+    $ cd $HPCX_HOME/sources/
+    $ tar -zxf openmpi-gitclone.tar.gz
+    $ cd openmpi-gitclone
+    $ ./configure --prefix=${HPCX_HOME}/hpcx-ompi \
+                --with-hcoll=${HPCX_HOME}/hcoll \
+                --with-ucx=${HPCX_HOME}/ucx \
+                --with-platform=contrib/platform/mellanox/optimized \
+                --with-slurm --with-pmi
+    $ make -j9 all && make -j9 install
+
+  After compiling OMPI, HPCX needs to be reloaded in order to work with the newly compiled OMPI.
+  First unload the previous HPCX.
+
+  If previously loaded HPCX from bash:
+
+    hpcx_unload
+
+    In the $HPCX_HOME/hpcx-init.sh file, change:
+    export HPCX_MPI_DIR=$HPCX_HOME/ompi
+    to
+    export HPCX_MPI_DIR=$HPCX_HOME/hpcx-ompi
+
+    Then repeat #3.
+
+  If previously loaded HPCX from modules:
+
+    module unload hpcx
+
+    In the $HPCX_HOME/modulefiles/hpcx file, change:
+    set hpcx_mpi_dir    $hpcx_dir/ompi
+    to
+    set hpcx_mpi_dir    $hpcx_dir/hpcx-ompi
+
+    Then repeat #3.
+
+  Please note that the tests that are part of the HPCX toolkit will remain in the directory of
+  the previous Open MPI.
+
+* IMPORTANT NOTE FOR STATIC COMPILATION:
+
+Static compilation with the hcoll/ucx products can be achieved with the following
+procedure:
+
+a. Load HPCX from package supplied module file or from shell source script
+b. Run the following script to fix libtool .la file with current HPCX location
+
+    $ $HPCX_HOME/utils/hpcx_fix_ladir.sh
+
+5. Run MPI with debug version of UCX
+
+    $ LD_PRELOAD=$HPCX_HOME/ucx/debug/lib/libucp.so mpirun -x LD_PRELOAD 
+
+6. Run OpenSHMEM job with debug version of UCX
+
+    $ LD_PRELOAD=$HPCX_HOME/ucx/debug/lib/libucp.so oshrun -x LD_PRELOAD 
+
+7. Run MPI job with HCOLL v4.x
+
+*** Run with defaults
+
+$  mpirun -mca coll_hcoll_enable 1 -x HCOLL_MAIN_IB=mlx5_0:1 
+
+8. HPCX tuning examples
+
+# Run MPI job, map ranks to cores starting from ones which are closer to HCA,
+# then use byslot policy
+
+$ mpirun --map-by dist -mca rmaps_dist_device mlx5_0:1 
+
+# Run MPI job, map ranks to cores starting from ones which are closer to HCA,
+# then use bynode policy
+
+$ mpirun --map-by dist:span -mca rmaps_dist_device mlx5_0:1 
+
+9. Performance tuning notes
+
+** Distribute IB IRQs across all available cores (by default it is handled by
+core0). It is needed for Mellanox OFED 2.4 or earlier.
+
+# cp $HPCX_HOME/utils/mlnx_set_irq_affinity.pl /etc/infiniband/post-start-hook.pl
+# /etc/infiniband/post-start-hook.pl
+
+10. HPCX supports SHARP Accelerated Collectives. These collectives are enabled by
+default in HCOLL 3.5 and above.
+
+# To enable SHARP acceleration:
+
+$ mpirun -x HCOLL_ENABLE_SHARP=1 
+
+# To disable SHARP acceleration:
+
+$ mpirun -x HCOLL_ENABLE_SHARP=0 
+
+For instructions on how to deploy SHARP in Infiniband fabric, please see the
+SHARP Deployment Guide.
+
+For more information about this HPCX toolkit, please refer to the HPCX User Manual
+which is available on the NVIDIA website.
