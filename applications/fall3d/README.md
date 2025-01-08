@@ -11,8 +11,8 @@
 - To fetch the LFS objects for the Raikoke-2019 test case, run this command:
 
 ```shell
+module load git-lfs # needed only on Leonardols
 git submodule update --init
-git lfs fetch
 ```
 
 #### Leonardo 
@@ -50,7 +50,7 @@ reframe \
     --prefix $SCRATCH/REFRAME-TEST \
     --keep-stage-files \
     --performance-report \
-    -M openmpi:openmpi/4.1.6--nvhpc--24.3 \ # or load cuda and openmpi
+    -M openmpi:openmpi/4.1.6--nvhpc--24.3 \
     -p default \
     -J qos=normal \
     -J account=cin_staff \
