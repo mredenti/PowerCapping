@@ -100,21 +100,16 @@ singularity pull nvhpc-24.11-devel.sif docker://nvcr.io/nvidia/nvhpc:24.11-devel
 singularity pull nvhpc-24.11-runtime.sif docker://nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
 ```
 
+```shell
 export CONT_DIR=$SCRATCH
 export CONT_NAME="<container_name>"
 mkdir /local/$SLURM_JOBID
 cp ${CONT_DIR}/${CONT_NAME} /local/$SLURM_JOBID/
+```
 
 _Accessing a SIF container is usually fast enough also when the file is locate on the  $SCRATCH 
 filesystem. Copying it on  /local  (preferred) of  $SCRATCH_FAST  will improve the bootstrap time
 marginally._
-
-
-### HPC Container Maker 
-
-```shell
-git clone --branch v24.10.0 https://github.com/NVIDIA/hpc-container-maker.git
-```
 
 ## Important considerations 
 
