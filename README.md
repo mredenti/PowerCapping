@@ -1,5 +1,9 @@
 # Power Capping
 
+```shell
+git clone --recurse-submodules -b thea/fall3d/specfem https://gitlab.hpc.cineca.it/cheese2p-hls/power-capping.git
+```
+
 ## Requirements & Setup
 
 <details><summary>Click to expand</summary>
