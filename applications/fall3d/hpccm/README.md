@@ -13,3 +13,9 @@ hpccm --format singularity --singularity-version=3.2 --recipe ./applications/fal
 you can run CUDA 12.6 in a container with your existing 530.30.02 driver. It meets the minimum required driver version (≥525.60.13 for CUDA 12.x) per NVIDIA’s “minor version compatibility” rules.
 
 https://docs.nvidia.com/cuda/cuda-toolkit-release-notes/index.html#id4
+
+
+
+maybe
+
+singularity pull nvhpc-24.9-runtime.sif docker://nvcr.io/nvidia/nvhpc:24.9-runtime-cuda11.8-ubuntu22.04
