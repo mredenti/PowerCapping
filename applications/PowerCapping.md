@@ -22,13 +22,13 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 
 ### Table 2: Compilation Status, Testing Status, and Test Case Identified
 
-| Code                                                       | Compilation Status                                                                      | Testing Status | Test Case Identified |
-|------------------------------------------------------------|-----------------------------------------------------------------------------------------|---------------|----------------------|
-| [FALL3D](fall3d/README.md)                                 | Not started                                                                             | Not started   | Not started          |
-| [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)| Compiles successfully, but test compilation fails                                       | Not started   | Not started          |
-| [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe) | Not started                                                                             | Not started   | Not started          |
-| [XSHELLS](xshells/README.md)                               | Need to coordinate with developer to resolve compilation issues (x86 pre-processor macros) | Not started   | Not started          |
-| [TANDEM](https://tandem.readthedocs.io/en/latest/)          | Not started                                                                             | Not started   | Not started          |
+| Code                                                                    | leonardo-baremetal                                                         | leonardo-container | thea-baremetal | thea-container | Test Case Identified |
+|-------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------|----------------|----------------|----------------------|
+| [FALL3D](fall3d/README.md)                                             | Ok                                                                          | Ok       | Ok   | X    | No       |
+| [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)            | OK                          | Not started        | Not started    | Not started    | No         |
+| [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)          | OK                                                                 | Not started        | Not started    | Not started    | No         |
+| [XSHELLS](xshells/README.md)                                           | OK | Not started        | Waiting to test fix to compilation issues (x86 pre-processor macros)    | Not started    | No         |
+| [TANDEM](https://tandem.readthedocs.io/en/latest/)                     | Ok   | Not started        | Ok    | Not started    | No          |
 
 
 _Note: The table will be updated as we make progress. Once the applications are successfully compiled and tested, suitable test cases will be chosen and documented._
