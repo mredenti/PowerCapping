@@ -1,5 +1,7 @@
 # Power Capping
 
+See [Power Capping Status](./applications/PowerCapping.md)
+
 ## Requirements & Setup
 
 <details><summary>Click to expand</summary>
