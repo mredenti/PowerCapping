@@ -17,6 +17,9 @@ git lfs fetch
 
 #### Leonardo 
 
+<details>
+  <summary>Click me</summary>
+
 **Baremetal**
 
 ```shell
@@ -55,8 +58,15 @@ reframe \
     --dry-run
 ```
 
+</details>
+
 #### Thea
+
+<details>
+  <summary>Click me</summary>
 
 **Baremetal**
 
 **Container**
+
+</details>
