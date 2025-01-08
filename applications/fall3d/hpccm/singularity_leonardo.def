@@ -16,13 +16,6 @@ Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
 
-%environment
-    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/cuda
-    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/comm_libs/11.8/hpcx/latest
-%post
-    export CUDA_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/cuda
-    export HPCX_HOME=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/comm_libs/11.8/hpcx/latest
-
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -37,8 +30,8 @@ Stage: devel
 %post
     cd /
     . /usr/share/modules/init/sh
-    module use $HPCX_HOME/modulefiles
-    module load hpcx
+    module use /opt/nvidia/hpc_sdk/modulefiles
+    module load hpcx-cuda11
 
 %post
     cd /

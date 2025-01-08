@@ -97,11 +97,6 @@ Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-devel-cuda_mult
                 _arch=f'{arch}',
                 _as='devel') # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
 
-Stage0 += environment(variables={
-    'CUDA_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/{nvhpc_version}/cuda',
-    'HPCX_HOME' : f'/opt/nvidia/hpc_sdk/Linux_{arch}/{nvhpc_version}/comm_libs/{cuda_version}/hpcx/latest',
-    }, _export=True)
-
 ###############################################################################
 # Install Base Dependencies
 ###############################################################################
@@ -115,14 +110,16 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages + ['curl-devel', '--allowerasing'])
 
+cuda_major = cuda_version.split('.')[0]  # e.g. '11.8' -> '11'
+
 if base_os == "rockylinux9":
     Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
-                            'module use $HPCX_HOME/modulefiles',
-                            'module load hpcx'])
+                            'module use /opt/nvidia/hpc_sdk/modulefiles',
+                            f'module load hpcx-cuda{cuda_major}'])
 else:
     Stage0 += shell(commands=['. /usr/share/modules/init/sh',
-                            'module use $HPCX_HOME/modulefiles',
-                            'module load hpcx'])
+                            'module use /opt/nvidia/hpc_sdk/modulefiles',
+                            f'module load hpcx-cuda{cuda_major}'])
 
 """
 Stage0 += shell(commands=[
