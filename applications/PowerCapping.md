@@ -123,4 +123,5 @@ https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html#multi-architecture
 **Resources**
 
   - Could fine some papers on reproducibility with Containers
+  - [Understanding Data Movement in Tightly Coupled Heterogeneous Systems: A Case Study with the Grace Hopper Superchip](https://arxiv.org/pdf/2408.11556v2)
   - Papers on power capping 
