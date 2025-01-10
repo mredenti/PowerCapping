@@ -7,7 +7,7 @@ This planned activity is organized into two main milestones:
 
 Below you can find more information about the CHEESE-2P flagship codes being considered and the current status for Milestone 1.
 
-### Flagship codes
+### CODE IDs
 
 <details>
   <summary>Click me</summary>
@@ -24,7 +24,7 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 
 ---
 
-## Backup Flaghsip Codes
+## Backup Codes
 
 The following codes are to be considered if any of the main targeted codes does not come through
 
