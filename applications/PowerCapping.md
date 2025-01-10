@@ -11,6 +11,9 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 
 ### Flagship codes
 
+<details>
+  <summary>Click me</summary>
+
 | Code                                                       | Domain                                  | Description                                                                                                                                                                                                                                                                                | Version | Dependencies                                                                                   |
 |------------------------------------------------------------|-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|------------------------------------------------------------------------------------------------|
 | [FALL3D](fall3d/README.md)                                 | Physical Volcanology                    | FALL3D simulates the transport and deposition of volcanic ash/tephra produced by explosive eruptions.                                                                                                                                                                                      | 9.0.1   | Fortran, (MPI), OpenACC (NVFortran), netCDF-Fortran with netCDF-4 support, (PnetCDF)                                                |
@@ -23,8 +26,9 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 | exa-hype                                                   | -                                       | -                                                                                                                                                                                                                                                                                          | -       | -                                                                                              |
 
 
+</details>
 
-### Table 2: Compilation Status, Testing Status, and Test Case Identified
+### Compilation Status, Testing Status, and Test Case Identified
 
 | Code                                                                    | leonardo-baremetal                                                         | leonardo-container | thea-baremetal | thea-container | Test Case Identified |
 |-------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------|----------------|----------------|----------------------|
@@ -37,21 +41,7 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 
 _Note: The table will be updated as we make progress. Once the applications are successfully compiled and tested, suitable test cases will be chosen and documented._
 
-
-## ChEESE-2P Pilot Demonstrator 
-
-| No | PD Name                                              | Area | Related flagship codes              | Initial TRL | Target TRL | Underpinning concept     | ECC         |
-|----|------------------------------------------------------|------|-------------------------------------|------------|-----------|--------------------------|------------|
-| 1  | Extreme-scale modeling of seismic hazards            | CS   | All CS codes                        | 5          | 7         | multiphysics multiscale | ECC2 ECC3  |
-| 2  | Joint seismic inversion and tomography               | CS   | SPECFEM3D                           | 4          | 6         | multisource             | ECC1       |
-| 3  | Global tsunami hazard and uncertainty quantification | T    | HySEA                               | 6          | 8-9       | multiscale              | ECC6       |
-| 4  | Complex multi-source tsunami modeling                | T    | HySEA, ExaHyPE, SeisSol             | 3          | 5         | multisource multiphysics| ECC4 ECC5  |
-| 5  | Ensemble-based volcanic dispersal at multiple scales | V    | FALL3D                              | 5          | 7-8       | multiscale              | ECC7 ECC9  |
-| 6  | Multiphase 3D volcanic explosion modeling            | V    | OpenPDAC                           | 4          | 7         | multiphysics multiscale | ECC8       |
-| 7  | The Earth’s dynamo model                             | MHD  | xSHELLS                             | 3          | 5         | multiscale              | ECC10      |
-| 8  | Geodynamics to geohazards                            | GD   | LaMEM, pTatin3D                     | 3          | 5         | multiscale              | ECC11 ECC12|
-| 9  | Glacial outburst floods                              | GL   | Elmer/Ice                           | 2          | 4         | multiphysics            | none       |
-
+</details>
 
 
 ## Containerisation 
@@ -120,9 +110,14 @@ marginally._
 **Note** The dataset should be typically mounted from the host into the running container. Including datasets in the container image is bad practice and is not recommended. Datasets can be large and bloat the size of the container image and are often specific to a particular usage.
 https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html#multi-architecture-support
 
-**Resources**
+
+</details>
+
+## Useful References
 
   - Could fine some papers on reproducibility with Containers
   - [Understanding Data Movement in Tightly Coupled Heterogeneous Systems: A Case Study with the Grace Hopper Superchip](https://arxiv.org/pdf/2408.11556v2)
   - [In this video from the PASC18 conference in Basel, Alice-Agnes Gabriel presents: Unravelling Earthquake Dynamics through Extreme-Scale Multiphysics Simulations.](https://www.youtube.com/watch?v=nJlzFwYtau0&t=10s)
   - Papers on power capping 
+  
+</details>
