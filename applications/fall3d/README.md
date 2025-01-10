@@ -2,7 +2,10 @@
 
 [FALL3D USER MANUAL](https://fall3d-suite.gitlab.io/fall3d/chapters/overview.html)
 
-## Validation + Simulation Cases 
+## Validation Case 
+
+<details>
+  <summary>Click me</summary>
 
 ### Raikoke 
 
@@ -11,7 +14,7 @@
 - To fetch the LFS objects for the Raikoke-2019 test case, run this command:
 
 ```shell
-module load git-lfs # needed only on Leonardols
+module load git-lfs # needed only on Leonardo, on Thea the lfs git extension is already loaded
 git submodule update --init
 ```
 
@@ -72,3 +75,16 @@ reframe \
 **Container**
 
 </details>
+
+</details>
+
+
+## Test case
+
+
+<details>
+  <summary>Click me</summary>
+
+soon, waiting data from developers
+
+  </details>
