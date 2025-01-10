@@ -7,8 +7,6 @@ This planned activity is organized into two main milestones:
 
 Below you can find more information about the CHEESE-2P flagship codes being considered and the current status for Milestone 1.
 
-## Milestone 1
-
 ### Flagship codes
 
 <details>
@@ -27,6 +25,8 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 
 
 </details>
+
+## Milestone 1
 
 ### Compilation Status, Testing Status, and Test Case Identified
 
