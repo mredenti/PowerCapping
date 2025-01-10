@@ -7,8 +7,6 @@ This planned activity is organized into two main milestones:
 
 Below you can find more information about the CHEESE-2P flagship codes being considered and the current status for Milestone 1.
 
-## Milestone 1
-
 ### Flagship codes
 
 <details>
@@ -27,6 +25,8 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 
 
 </details>
+
+## Milestone 1
 
 ### Compilation Status, Testing Status, and Test Case Identified
 
@@ -115,9 +115,9 @@ marginally._
 
 ## Important considerations 
 
-**Note** The dataset should be typically mounted from the host into the running container. Including datasets in the container image is bad practice and is not recommended. Datasets can be large and bloat the size of the container image and are often specific to a particular usage.
-https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html#multi-architecture-support
+**Note** The dataset should be typically mounted from the host into the running container. Including datasets in the container image is bad practice and is not recommended. Datasets can be large and bloat the size of the container image and are often specific to a particular usage. https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html#multi-architecture-support
 
+However, this raises an important question about reproducibility aspects. We are not developing a tutorial. In order to have our work fully reproducible we must also make available the data input (input files, mesh files and so on). We will have to consider whether actually embedding this input data in the image or alternatively make it available somewhere. In CINECA we do not have a registry for the images and thush we will probably have to resort to Docker Hub or Singularity Hub. For the data we also need to find a solution. Git lfs pointers to remote repositories like FALL3D does are out of the question as they are not under our direct control and we can not ensure they will still be there in the future
 
 </details>
 
@@ -126,9 +126,11 @@ https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html#multi-architecture
 <details>
   <summary>Click me</summary>
 
-  - Could fine some papers on reproducibility with Containers
-  - [Understanding Data Movement in Tightly Coupled Heterogeneous Systems: A Case Study with the Grace Hopper Superchip](https://arxiv.org/pdf/2408.11556v2)
-  - [In this video from the PASC18 conference in Basel, Alice-Agnes Gabriel presents: Unravelling Earthquake Dynamics through Extreme-Scale Multiphysics Simulations.](https://www.youtube.com/watch?v=nJlzFwYtau0&t=10s)
-  - Papers on power capping 
+  - **Reproducibility with Containers**
+    - [The Scientific Filesystem](https://doi.org/10.1093/gigascience/giy023)
+  - **Power Capping**  
+    - [Understanding Data Movement in Tightly Coupled Heterogeneous Systems: A Case Study with the Grace Hopper Superchip](https://arxiv.org/pdf/2408.11556v2)
+  - **Scientific Impact**
+    - [In this video from the PASC18 conference in Basel, Alice-Agnes Gabriel presents: Unravelling Earthquake Dynamics through Extreme-Scale Multiphysics Simulations.](https://www.youtube.com/watch?v=nJlzFwYtau0&t=10s) 
   
 </details>
