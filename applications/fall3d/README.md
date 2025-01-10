@@ -4,6 +4,9 @@
 
 ## Validation Case 
 
+<details>
+  <summary>Click me</summary>
+
 ### Raikoke 
 
 - The Raikoke-2019 run case considers a deterministic (single scenario) SO2 dispersal simulation from the June 2019 Raikoke eruption. The simulation is driven by GFS model wind fields. 
@@ -70,6 +73,8 @@ reframe \
 **Baremetal**
 
 **Container**
+
+</details>
 
 </details>
 
