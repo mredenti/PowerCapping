@@ -30,6 +30,10 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 
 ### Compilation Status, Testing Status, and Test Case Identified
 
+
+<details>
+  <summary>Click me</summary>
+
 | Code                                                                    | leonardo-baremetal                                                         | leonardo-container | thea-baremetal | thea-container | Test Case Identified |
 |-------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------|----------------|----------------|----------------------|
 | [FALL3D](fall3d/README.md)                                             | Ok                                                                          | Ok       | Ok   | Ready to test build    | No       |
@@ -45,6 +49,10 @@ _Note: The table will be updated as we make progress. Once the applications are 
 
 
 ## Containerisation 
+
+
+<details>
+  <summary>Click me</summary>
 
 - [NVIDIA HPC SDK](https://ngc.nvidia.com/catalog/containers/nvidia:nvhpc) containers are available on NGC. Two types of containers are provided, "devel" containers which contain the entire HPC SDK development environment, and "runtime" container which include only the components necessary to redistribute software built with the HPC SDK. Some care must will have to be taken in ensuring the UCX library has been configured with all communication mechanmism of interest, eg. `cuda_ipc`, `gdrcopy`. Alternatively one can install all the stack using the HPCCM building blocks, see for example [Generic recipe to build a OFED+UCX+MPI+CUDA container environment](https://github.com/NVIDIA/hpc-container-maker/blob/master/recipes/osu_benchmarks/common.py)
 - [HPC CONTAINER MAKER DOCS](https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html)
@@ -114,6 +122,9 @@ https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html#multi-architecture
 </details>
 
 ## Useful References
+
+<details>
+  <summary>Click me</summary>
 
   - Could fine some papers on reproducibility with Containers
   - [Understanding Data Movement in Tightly Coupled Heterogeneous Systems: A Case Study with the Grace Hopper Superchip](https://arxiv.org/pdf/2408.11556v2)
