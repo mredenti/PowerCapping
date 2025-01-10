@@ -12,8 +12,6 @@ Below you can find more information about the CHEESE-2P flagship codes being con
 <details>
   <summary>Click me</summary>
 
-## Main Table (TANDEM removed)
-
 | Code                                                         | Domain                                  | Description                                                                                                                                                                                                                                                                                | Version | Dependencies                                                                                   |
 |--------------------------------------------------------------|-----------------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|------------------------------------------------------------------------------------------------|
 | [FALL3D](applications/fall3d/README.md)                     | Physical Volcanology                    | FALL3D simulates the transport and deposition of volcanic ash/tephra produced by explosive eruptions.                                                                                                                                                                                      | 9.0.1   | Fortran, (MPI), OpenACC (NVFortran), netCDF-Fortran with netCDF-4 support, (PnetCDF)                                                |
