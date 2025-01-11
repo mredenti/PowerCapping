@@ -106,6 +106,9 @@ os_common_packages = ['autoconf',
                     'python3',
                     'environment-modules']
 
+if cluster_name == "thea" and base_os == "ubuntu22.04":
+    os_common_packages += ['libcurl4-openssl-dev']
+
 Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages + ['curl-devel', '--allowerasing'])
