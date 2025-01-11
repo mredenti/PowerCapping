@@ -77,6 +77,14 @@ site_configuration = {
                         ". /global/scratch/groups/gh/bootstrap-gh-env.sh",
                         "module purge"
                     ],
+                    "container_platforms": [
+                        {
+                            'type': 'Singularity',
+                            'default': True,
+                            'modules': [],
+                            'env_vars': [['ENV_VAR', 'VALUE']]
+                        }
+                    ],
                     "environs": [
                         "default", 
                         "gcc-12.3.0", 
