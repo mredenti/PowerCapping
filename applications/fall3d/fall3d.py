@@ -24,7 +24,7 @@ class fetch_fall3d(rfm.RunOnlyRegressionTest):
     
     # Run fetch step on login node
     local = True
-
+    
     @sanity_function
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
@@ -46,8 +46,9 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
         'openmpi'
     ]
     
-    # precision
+    # Set to False if building is not allowed on login node 
     build_locally = False
+    build_time_limit='600'
     
     @run_before('compile')
     def prepare_build(self):
