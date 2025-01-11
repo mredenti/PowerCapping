@@ -68,6 +68,51 @@ _Note: The table will be updated as we make progress. Once the applications are 
 - [HPC CONTAINER MAKER DOCS](https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html)
 - [NVIDIA HPC SDK CATALOG - NVIDIA GPU Cloud](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags)
 
+### UCX Configuration base devel image 
+
+```shell
+$ singularity pull nvhpc-devel-24.11.sif  docker://nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
+$ singularity shell --nv --no-home -B"/leonardo/prod:/leonardo/prod" nvhpc-devel-24.11.sif 
+Singularity> module load nvhpc-hpcx-cuda12
+Singularity> ucx_info -v
+# Library version: 1.17.0
+# Library path: /opt/nvidia/hpc_sdk/Linux_x86_64/24.11/comm_libs/12.6/hpcx/hpcx-2.20/ucx/lib/libucs.so.0
+# API headers version: 1.17.0
+# Git branch '', revision 39c8f9b
+# Configured with: --disable-logging --disable-debug --disable-assertions --disable-params-check --without-knem --with-xpmem=/hpc/local/oss/xpmem/v2.7.1 --without-java --enable-devel-headers --with-fuse3-static --with-cuda=/hpc/local/oss/cuda12.5.1/redhat8 --with-gdrcopy --prefix=/build-result/hpcx-v2.20-gcc-inbox-redhat8-cuda12-x86_64/ucx --with-bfd=/hpc/local/oss/binutils/2.37/redhat8
+Singularity> ucx_info -d | grep Transport
+#      Transport: self
+#      Transport: tcp
+#      Transport: tcp
+#      Transport: tcp
+#      Transport: sysv
+#      Transport: posix
+#      Transport: cuda_copy
+#      Transport: cuda_ipc
+#      Transport: gdr_copy
+#      Transport: dc_mlx5
+#      Transport: rc_verbs
+#      Transport: rc_mlx5
+#      Transport: ud_verbs
+#      Transport: ud_mlx5
+#      Transport: dc_mlx5
+#      Transport: rc_verbs
+#      Transport: rc_mlx5
+#      Transport: ud_verbs
+#      Transport: ud_mlx5
+#      Transport: dc_mlx5
+#      Transport: rc_verbs
+#      Transport: rc_mlx5
+#      Transport: ud_verbs
+#      Transport: ud_mlx5
+#      Transport: dc_mlx5
+#      Transport: rc_verbs
+#      Transport: rc_mlx5
+#      Transport: ud_verbs
+#      Transport: ud_mlx5
+#      Transport: cma
+```
+
 
 ### Apptainer (Thea) and Singularity (Leonardo)
 
