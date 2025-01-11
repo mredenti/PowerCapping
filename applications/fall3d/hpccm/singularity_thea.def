@@ -31,7 +31,7 @@ Stage: devel
     cd /
     . /usr/share/modules/init/sh
     module use /opt/nvidia/hpc_sdk/modulefiles
-    module load hpcx-cuda12
+    module load nvhpc-hpcx-cuda12
 
 %post
     cd /
