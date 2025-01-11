@@ -14,6 +14,8 @@ https://repository.prace-ri.eu/git/UEABS/ueabs/-/tree/specfem-compile-validation
 
 [SPECFEM3D_GLOBE USER MANUAL](https://specfem3d-globe.readthedocs.io/en/latest/)
 
+- [Estimating memory requirements](https://specfem3d-globe.readthedocs.io/en/latest/03_running_the_mesher/#:~:text=local%20mesh%20files.-,Memory%20requirements,-The%20SPECFEM3D_GLOBE%20memory)
+
 ## Validation Case 
 
 <details>
