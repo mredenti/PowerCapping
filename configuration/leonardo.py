@@ -44,6 +44,9 @@ site_configuration = {
                     },
                     "launcher": "srun",
                     "modules": [],
+                    "prepare_cmds": [
+                        "module purge"
+                    ],
                     "container_platforms": [
                         {
                             'type': 'Singularity',
