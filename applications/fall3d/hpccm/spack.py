@@ -34,7 +34,7 @@ cluster_configs = {
         'cuda_arch': '90',  # CUDA architecture for 'thea'
         'nvhpc_version': '24.11',
         'cuda_version': '12.6',
-        'base_os': 'rockylinux9', # 
+        'base_os': 'ubuntu22.04', # 
         'arch': 'aarch64',
     }
 }
