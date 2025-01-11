@@ -14,7 +14,7 @@
 - To fetch the LFS objects for the Raikoke-2019 test case, run this command:
 
 ```shell
-module load git-lfs # needed only on Leonardo, on Thea the lfs git extension is already loaded
+module load git-lfs # needs to be installed on Thea
 git submodule update --init
 ```
 
