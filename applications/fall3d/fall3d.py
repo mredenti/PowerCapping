@@ -186,7 +186,7 @@ class fall3d_raikoke_test(fall3d_base_test):
     readonly_files = [
         'Raikoke-2019.inp',
         'Raikoke-2019.sat.nc',
-        'raikoke-2019.gfs.nc',
+        'Raikoke-2019.gfs.nc',
         'GFS.tbl',
         'Sat.tbl'
         ]
