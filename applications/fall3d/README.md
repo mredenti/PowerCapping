@@ -90,6 +90,21 @@ reframe \
 
 **Container**
 
+```shell
+reframe \
+    -C power-capping/configuration/thea.py \
+    -c power-capping/applications/fall3d/fall3d.py \
+    --prefix $SCRATCH/REFRAME-FALL3D \
+    --keep-stage-files \
+    --performance-report \
+    -M openmpi:openmpi/4.1.6-nvhpc-24.3-zxjv2cq \
+    -p default \
+    -n fall3d_raikoke_test \
+    -S fall3d_raikoke_test.execution_mode=container \
+    -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/fall3d.sif \
+    --dry-run
+```
+
 </details>
 
 </details>
