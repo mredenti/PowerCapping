@@ -204,7 +204,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         'Raikoke-2019.Fall3d.log'
         ]
     
-    num_gpus = 8
+    num_gpus = 2
     time_limit = '1200'
     
     @sanity_function

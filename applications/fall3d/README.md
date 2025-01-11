@@ -14,7 +14,7 @@
 - To fetch the LFS objects for the Raikoke-2019 test case, run this command:
 
 ```shell
-module load git-lfs # needed only on Leonardo, on Thea the lfs git extension is already loaded
+module load git-lfs # needs to be installed on Thea
 git submodule update --init
 ```
 
@@ -101,7 +101,7 @@ reframe \
     -p default \
     -n fall3d_raikoke_test \
     -S fall3d_raikoke_test.execution_mode=container \
-    -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/fall3d.sif \
+    -S fall3d_raikoke_test.image=$SCRATCH/SIF_IMAGES/fall3d.sif \
     --dry-run
 ```
 
