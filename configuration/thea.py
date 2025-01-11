@@ -73,6 +73,10 @@ site_configuration = {
                         {"name": "account", "options": ["--account={account}"]},
                         {"name": "nodes", "options": ["--nodes={nodes}"]},
                     ],
+                    "prepare_cmds": [
+                        ". /global/scratch/groups/gh/bootstrap-gh-env.sh",
+                        "module purge"
+                    ],
                     "environs": [
                         "default", 
                         "gcc-12.3.0", 
