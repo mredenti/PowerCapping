@@ -150,6 +150,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         self.num_tasks = self.num_gpus
         self.num_gpus_per_node =  self.num_gpus if self.num_gpus < accelerator[0].num_devices else accelerator[0].num_devices
         self.num_tasks_per_node = self.num_gpus_per_node
+        self.num_cpus_per_task = self.current_partition.processor.num_cpus // self.num_tasks_per_node
         # --nodes is set automatically as job.num_tasks // num_tasks_per_node
         self.extra_resources = {
             "gpu": {"num_gpus_per_node": f"{self.num_gpus_per_node}"},
@@ -162,12 +163,11 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
 
     @run_before("run")
     def replace_launcher(self):
-        self.job.launcher = getlauncher("mpirun")() # turn this into a custome launcher
-        #self.job.launcher.modifier = "mpirun"
-        #self.job.launcher.modifier_options = [
-        #    "--map-by ppr:1:node:PE=72",
-        #    "--report-bindings",
-        #]
+        try:
+            launcher_cls = getlauncher("mpirun-mapby")
+        except Exception:
+            launcher_cls = getlauncher("mpirun")
+        self.job.launcher = launcher_cls()
 
     @sanity_function
     def validate_run(self):
