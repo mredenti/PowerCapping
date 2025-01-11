@@ -33,13 +33,18 @@ class fetch_fall3d(rfm.RunOnlyRegressionTest):
 class build_fall3d(rfm.CompileOnlyRegressionTest):
     descr = 'Build FALL3D'
     
-    build_system = 'CMake'
+    build_system = 'CustomBuild' # switch back to 'CMake' when FR https://github.com/reframe-hpc/reframe/issues/3359 integrated
     fall3d_source = fixture(fetch_fall3d, scope='session')
     
     #purge_environment=True
     valid_systems = ['*:login']
     valid_prog_environs = ['*']
-    modules = ['netcdf-fortran']
+    modules = [
+        'nvhpc',
+        'netcdf-fortran',
+        'cmake',
+        'openmpi'
+    ]
     
     # precision
     
@@ -48,19 +53,21 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
         
         configuredir = os.path.join(self.fall3d_source.stagedir, self.fall3d_source.srcdir)
         installdir = os.path.join(self.stagedir, 'install')
-        
         self.build_system.builddir = 'build'
         # remote reframe default compiler flags
         self.build_system.flags_from_environ = False
         # CMake configuration flags
-        self.build_system.config_opts= [
-            '-D CMAKE_Fortran_COMPILER=nvfortran',
-            '-D DETAIL_BIN=NO',
-            '-D WITH-MPI=YES',
-            '-D WITH-ACC=YES', 
-            '-D WITH-R4=NO', 
-            f'-D CMAKE_INSTALL_PREFIX={installdir}',
-            f'-S {configuredir}'
+        self.build_system.commands= [
+            'cmake'
+            ' -B build'
+            ' -D CMAKE_Fortran_COMPILER=nvfortran'
+            ' -D DETAIL_BIN=NO'
+            ' -D WITH-MPI=YES'
+            ' -D WITH-ACC=YES' 
+            ' -D WITH-R4=NO'
+            f' -D CMAKE_INSTALL_PREFIX={installdir}'
+            f' -S {configuredir}',
+            'cmake --build ./build --parallel 8'
         ]
         self.build_system.max_concurrency = 8
 
