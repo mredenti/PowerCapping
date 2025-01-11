@@ -29,11 +29,11 @@ git submodule update --init
 reframe \
     -C power-capping/configuration/leonardo.py \
     -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-TEST \
+    --prefix $SCRATCH/REFRAME-FALL3D \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
-    -M netcdf-fortran:netcdf-fortran/4.6.1--openmpi--4.1.6--nvhpc--23.11 \
+    --module-mappings power-capping/applications/fall3d/leonardo_modmap.txt \
     -p default \
     -J qos=normal \
     -J account=cin_staff \
@@ -50,7 +50,7 @@ At the moment we assume that the SIF image has already been pulled/build to the 
 reframe \
     -C power-capping/configuration/leonardo.py \
     -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-TEST \
+    --prefix $SCRATCH/REFRAME-FALL3D \
     --keep-stage-files \
     --performance-report \
     -M openmpi:openmpi/4.1.6--nvhpc--24.3 \
@@ -71,6 +71,23 @@ reframe \
   <summary>Click me</summary>
 
 **Baremetal**
+
+```shell
+reframe \
+    -C power-capping/configuration/thea.py \
+    -c power-capping/applications/fall3d/fall3d.py \
+    --prefix $SCRATCH/REFRAME-FALL3D \
+    --keep-stage-files \
+    --dont-restage \
+    --performance-report \
+    -M netcdf-fortran:netcdf-fortran/netcdf-fortran/4.6.1-nvhpc-24.3-sgu66sx \
+    -p default \
+    -J qos=normal \
+    -J account=cin_staff \
+    -n fall3d_raikoke_test \
+    -S fall3d_raikoke_test.execution_mode=baremetal \
+    --dry-run
+```
 
 **Container**
 
