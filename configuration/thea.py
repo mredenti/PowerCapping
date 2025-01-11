@@ -222,5 +222,11 @@ site_configuration = {
             ],
         },
     ],
-    "general": [{"check_search_path": ["checks/"], "check_search_recursive": True}],
+    "general": [
+        {
+            "check_search_path": ["checks/"], 
+            "check_search_recursive": True,
+            "use_login_shell": True
+        }
+    ],
 }
