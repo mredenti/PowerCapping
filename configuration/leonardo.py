@@ -65,6 +65,7 @@ site_configuration = {
                         "default",
                         "gnu",
                         "gnu-mpi",
+                        "cuda",
                         "nvhpc",
                     ],
                     "processor": {
@@ -133,7 +134,7 @@ site_configuration = {
         },
         {
             "name": "cuda",
-            "modules": ["cuda/12.1", "gcc/12.2.0"],
+            "modules": ["cuda/12.1"],
             "cc": "gcc",
             "cxx": "g++",
             "ftn": "gfortran",
