@@ -1,0 +1,4 @@
+nvhpc:nvhpc/24.3-gcc-12.3.0-b36fwfy
+netcdf-fortran:netcdf-fortran/4.6.1-nvhpc-24.3-sgu66sx
+cmake:cmake/3.29.2-gcc-12.3.0-iitrhra 
+openmpi:openmpi/4.1.6-nvhpc-24.3-zxjv2cq

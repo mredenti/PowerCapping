@@ -1,0 +1,4 @@
+nvhpc:nvhpc/23.11
+netcdf-fortran:netcdf-fortran/4.6.1--openmpi--4.1.6--nvhpc--23.11
+cmake:cmake/3.27.7  
+openmpi:openmpi/4.1.6--nvhpc--23.11
