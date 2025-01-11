@@ -25,15 +25,14 @@ site_configuration = {
                     "name": "ggcompile",
                     "descr": "THEA GRACE SUPERCHIP CPU+GPU COMPILATION NODE",
                     "scheduler": "slurm",
+                    "sched_options": {
+                        'use_nodes_option': True
+                    },
                     "launcher": "mpirun",
                     "modules": [],
                     "access": [
                         "--partition=ggcompile",
                         "--oversubscribe",
-                        "--nodes=1",
-                        "--ntasks=1",
-                        "--ntasks-per-node=1",
-                        "--cpus-per-task=1"
                     ],
                     "resources": [
                         {
@@ -62,6 +61,9 @@ site_configuration = {
                     "name": "gh",
                     "descr": "THEA GRACE HOPPER",
                     "scheduler": "slurm",
+                    "sched_options": {
+                        'use_nodes_option': True
+                    },
                     "launcher": "srun",
                     "max_jobs": 1,
                     "modules": [],
