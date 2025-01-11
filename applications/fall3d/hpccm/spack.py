@@ -119,7 +119,7 @@ if base_os == "rockylinux9":
 else:
     Stage0 += shell(commands=['. /usr/share/modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
-                            f'module load hpcx-cuda{cuda_major}'])
+                            f'module load nvhpc-hpcx-cuda{cuda_major}'])
 
 """
 Stage0 += shell(commands=[
