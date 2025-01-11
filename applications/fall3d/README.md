@@ -34,6 +34,7 @@ reframe \
     --dont-restage \
     --performance-report \
     --module-mappings power-capping/applications/fall3d/leonardo_modmap.txt \
+    -S build_locally=True \
     -p default \
     -J qos=normal \
     -J account=cin_staff \
