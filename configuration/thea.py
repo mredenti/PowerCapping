@@ -215,6 +215,7 @@ site_configuration = {
             "check_search_path": ["checks/"], 
             "check_search_recursive": True,
             "use_login_shell": True,
+            "module_map_file": ""
         }
     ],
 }
