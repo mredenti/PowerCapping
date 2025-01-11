@@ -210,17 +210,12 @@ site_configuration = {
             ],
         }
     ],
-    "modes": [
+    "general": [
         {
-            "name": "maintenance",
-            "options": [
-                "--exec-policy=async",
-                "--reservation=maintenance",
-                "--save-log-files",
-                "--tag=acceptance",
-                "--timestamp=%F_%H-%M-%S",
-            ],
-        },
+            "check_search_path": ["checks/"], 
+            "check_search_recursive": True,
+            "use_login_shell": True,
+            "module_map_file": ""
+        }
     ],
-    "general": [{"check_search_path": ["checks/"], "check_search_recursive": True}],
 }
