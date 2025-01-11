@@ -184,6 +184,8 @@ However, this raises an important question about reproducibility aspects. We are
   - **Reproducibility with Containers**
     - [The Scientific Filesystem](https://doi.org/10.1093/gigascience/giy023)
   - **Power Capping**  
+    - missing 
+  - **GraceHopper**
     - [Understanding Data Movement in Tightly Coupled Heterogeneous Systems: A Case Study with the Grace Hopper Superchip](https://arxiv.org/pdf/2408.11556v2)
   - **Scientific Impact**
     - [In this video from the PASC18 conference in Basel, Alice-Agnes Gabriel presents: Unravelling Earthquake Dynamics through Extreme-Scale Multiphysics Simulations.](https://www.youtube.com/watch?v=nJlzFwYtau0&t=10s) 
