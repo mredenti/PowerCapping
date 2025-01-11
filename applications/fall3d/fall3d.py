@@ -47,6 +47,7 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
     ]
     
     # precision
+    build_locally = False
     
     @run_before('compile')
     def prepare_build(self):
