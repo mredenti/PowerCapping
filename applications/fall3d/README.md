@@ -80,10 +80,8 @@ reframe \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
-    -M netcdf-fortran:netcdf-fortran/netcdf-fortran/4.6.1-nvhpc-24.3-sgu66sx \
+    --module-mappings power-capping/applications/fall3d/thea_modmap.txt \
     -p default \
-    -J qos=normal \
-    -J account=cin_staff \
     -n fall3d_raikoke_test \
     -S fall3d_raikoke_test.execution_mode=baremetal \
     --dry-run
