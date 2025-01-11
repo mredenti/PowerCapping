@@ -11,26 +11,25 @@
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-rockylinux9
+From: nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
 
 %post
-    yum install -y epel-release
-    yum install -y \
-        --allowerasing \
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         autoconf \
         ca-certificates \
-        curl-devel \
+        curl \
         environment-modules \
         pkg-config \
         python3
-    rm -rf /var/cache/yum/*
+    rm -rf /var/lib/apt/lists/*
 
 %post
     cd /
-    . /usr/share/Modules/init/sh
+    . /usr/share/modules/init/sh
     module use /opt/nvidia/hpc_sdk/modulefiles
     module load hpcx-cuda12
 
@@ -95,7 +94,7 @@ EOF
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-rockylinux9
+From: nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
