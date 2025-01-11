@@ -60,7 +60,7 @@ reframe \
     -J account=cin_staff \
     -n fall3d_raikoke_test \
     -S fall3d_raikoke_test.execution_mode=container \
-    -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/fall3d_openacc.sif \
+    -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/fall3d.sif \
     --dry-run
 ```
 
