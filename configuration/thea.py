@@ -210,23 +210,11 @@ site_configuration = {
             ],
         }
     ],
-    "modes": [
-        {
-            "name": "maintenance",
-            "options": [
-                "--exec-policy=async",
-                "--reservation=maintenance",
-                "--save-log-files",
-                "--tag=acceptance",
-                "--timestamp=%F_%H-%M-%S",
-            ],
-        },
-    ],
     "general": [
         {
             "check_search_path": ["checks/"], 
             "check_search_recursive": True,
-            "use_login_shell": True
+            "use_login_shell": True,
         }
     ],
 }
