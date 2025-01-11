@@ -6,9 +6,9 @@
 site_configuration = {
     "systems": [
         {
-            "name": "THEA",
+            "name": "thea",
             "descr": "NVIDIA MULTI-NODE GRACE-HOPPER EVALUATION SYSTEM",
-            "hostnames": ["login"],
+            "hostnames": [r'login\d+'],
             "modules_system": "tmod4",
             "partitions": [
                 {
@@ -18,22 +18,21 @@ site_configuration = {
                     "launcher": "local",
                     "modules": [],
                     "access": [],
-                    "environs": [],
+                    "environs": ["default"],
                     "max_jobs": 1,
                 },
                 {
                     "name": "ggcompile",
                     "descr": "THEA GRACE SUPERCHIP CPU+GPU COMPILATION NODE",
                     "scheduler": "slurm",
+                    "sched_options": {
+                        'use_nodes_option': True
+                    },
                     "launcher": "mpirun",
                     "modules": [],
                     "access": [
                         "--partition=ggcompile",
                         "--oversubscribe",
-                        "--nodes=1",
-                        "--ntasks=1",
-                        "--ntasks-per-node=1",
-                        "--cpus-per-task=1"
                     ],
                     "resources": [
                         {
@@ -62,6 +61,9 @@ site_configuration = {
                     "name": "gh",
                     "descr": "THEA GRACE HOPPER",
                     "scheduler": "slurm",
+                    "sched_options": {
+                        'use_nodes_option': True
+                    },
                     "launcher": "srun",
                     "max_jobs": 1,
                     "modules": [],
@@ -72,6 +74,18 @@ site_configuration = {
                         {"name": "qos", "options": ["--qos={qos}"]},
                         {"name": "account", "options": ["--account={account}"]},
                         {"name": "nodes", "options": ["--nodes={nodes}"]},
+                    ],
+                    "prepare_cmds": [
+                        ". /global/scratch/groups/gh/bootstrap-gh-env.sh",
+                        "module purge"
+                    ],
+                    "container_platforms": [
+                        {
+                            'type': 'Singularity',
+                            'default': True,
+                            'modules': [],
+                            'env_vars': [['ENV_VAR', 'VALUE']]
+                        }
                     ],
                     "environs": [
                         "default", 
@@ -84,6 +98,13 @@ site_configuration = {
                         "num_cpus_per_socket": 1,
                         "num_sockets": 1,
                     },
+                    "devices": [
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_90',
+                            'num_devices': 1,
+                        }
+                    ],
                 },
             ],
         },

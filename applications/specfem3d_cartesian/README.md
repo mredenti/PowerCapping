@@ -22,3 +22,85 @@ for 3d crust and mantle models, can account for the rotation of the earth, topog
 
 
 
+
+# SPECFEM3D_CARTESIAN 
+
+[SPECFEM3D_CARTESIAN USER MANUAL](https://specfem3d.readthedocs.io/en/latest/)
+
+## Validation Case 
+
+<details>
+  <summary>Click me</summary>
+
+### Some example
+
+- Some description about the example. The example will be used as a validation test of the installation by comparing ...
+
+#### Leonardo 
+
+<details>
+  <summary>Click me</summary>
+
+**Baremetal**
+
+```shell
+reframe \
+    -C power-capping/configuration/leonardo.py \
+    -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
+    --prefix $SCRATCH/REFRAME-TEST \
+    --keep-stage-files \
+    --dont-restage \
+    --performance-report \
+    -J qos=normal \
+    -J account=cin_staff \
+    --system=leonardo:booster \ # comment out potentially
+    -p nvhpc \
+    -lC
+```
+
+**Container**
+
+At the moment we assume that the SIF image has already been pulled/build to the local file system. Thus, please see [HPCCM_SPECFEM3D](./hpccm/README.md) for more information on the build process. Eventually we might consider opening the remote registry to the public and have Singularity automatically pull the image at runtime.  
+
+```shell
+reframe \
+    -C power-capping/configuration/leonardo.py \
+    -c power-capping/applications/fall3d/fall3d.py \
+    --prefix $SCRATCH/REFRAME-TEST \
+    --keep-stage-files \
+    --performance-report \
+    -M openmpi:openmpi/4.1.6--nvhpc--24.3 \
+    -p default \
+    -J qos=normal \
+    -J account=cin_staff \
+    -n fall3d_raikoke_test \
+    -S fall3d_raikoke_test.execution_mode=container \
+    -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/fall3d_openacc.sif \
+    --dry-run
+```
+
+</details>
+
+#### Thea
+
+<details>
+  <summary>Click me</summary>
+
+**Baremetal**
+
+**Container**
+
+</details>
+
+</details>
+
+
+## Test case
+
+
+<details>
+  <summary>Click me</summary>
+
+soon, waiting data from developers
+
+  </details>

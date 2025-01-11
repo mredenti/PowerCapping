@@ -37,7 +37,7 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
     fall3d_source = fixture(fetch_fall3d, scope='session')
     
     #purge_environment=True
-    valid_systems = ['*:login']
+    valid_systems = ['leonardo:login', 'thea:ggcompile']
     valid_prog_environs = ['*']
     modules = [
         'nvhpc',
@@ -47,6 +47,7 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
     ]
     
     # precision
+    build_locally = False
     
     @run_before('compile')
     def prepare_build(self):
@@ -80,7 +81,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     
     fall3d_binaries = None # fixture(build_fall3d, scope='environment')
     
-    valid_systems = ['leonardo:booster']
+    valid_systems = ['leonardo:booster', 'thea:gh']
     valid_prog_environs = ['*'] # ['+mpi']
 
     execution_mode = variable(typ.Str[r'baremetal|container']) #platform
