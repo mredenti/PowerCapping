@@ -6,9 +6,9 @@
 site_configuration = {
     "systems": [
         {
-            "name": "THEA",
+            "name": "thea",
             "descr": "NVIDIA MULTI-NODE GRACE-HOPPER EVALUATION SYSTEM",
-            "hostnames": ["login"],
+            "hostnames": [r'login\d+'],
             "modules_system": "tmod4",
             "partitions": [
                 {
@@ -18,7 +18,7 @@ site_configuration = {
                     "launcher": "local",
                     "modules": [],
                     "access": [],
-                    "environs": [],
+                    "environs": ["default"],
                     "max_jobs": 1,
                 },
                 {
@@ -84,6 +84,13 @@ site_configuration = {
                         "num_cpus_per_socket": 1,
                         "num_sockets": 1,
                     },
+                    "devices": [
+                        {
+                            'type': 'gpu',
+                            'arch': 'sm_90',
+                            'num_devices': 1,
+                        }
+                    ],
                 },
             ],
         },
