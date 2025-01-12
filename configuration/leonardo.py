@@ -67,7 +67,6 @@ site_configuration = {
                     "environs": [
                         "default",
                         "gnu",
-                        "gnu-mpi",
                         "cuda",
                         "nvhpc",
                     ],
@@ -126,7 +125,7 @@ site_configuration = {
             "modules": ["gcc/12.2.0"],
             "cc": "gcc",
             "cxx": "g++",
-            "ftn": "f90",
+            "ftn": "gfortran",
             "features": ["openmp"],
             "extras": {"omp_flag": "-fopenmp"},
         },
