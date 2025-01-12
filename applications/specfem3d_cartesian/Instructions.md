@@ -24,6 +24,8 @@ ml load scotch/7.0.4-gcc-12.3.0-ejxckxy
 
 **Export SCOTCH environment variables**
 
+_Note: On Leonardo I have installed SCOTCH with the following spec: scotch@7.0.4%gcc@12.2.0+compression~esmumps~int64~ipo~metis+mpi~mpi_thread+shared+threads build_system=cmake build_type=Release generator=make scotch/7.0.4--openmpi--4.1.6--gcc--12.2.0_
+
 ```shell 
 export SCOTCH_ROOT=/global/scratch/groups/gh/spack-dev/opt/spack/linux-rocky9-neoverse_v2/gcc-12.3.0/scotch-7.0.4-ejxckxyol5v7rsv2rfc5yujsqctfa6s6
 export SCOTCH_DIR=$SCOTCH_ROOT/
