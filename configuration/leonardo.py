@@ -44,9 +44,6 @@ site_configuration = {
                     },
                     "launcher": "srun",
                     "modules": [],
-                    "prepare_cmds": [
-                        "module purge"
-                    ],
                     "container_platforms": [
                         {
                             'type': 'Singularity',
@@ -97,9 +94,6 @@ site_configuration = {
                         {"name": "account", "options": ["--account={account}"]},
                     ],
                     "environs": ["default", "gnu"],
-                    "prepare_cmds": [
-                        "module purge"
-                    ],
                     "processor": {
                         "num_cpus": 112,
                         "num_cpus_per_core": 1,
