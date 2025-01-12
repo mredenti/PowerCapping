@@ -19,6 +19,8 @@ test cases, the main code is also used as mini-app.
 
 ## Thea 
 
+For some reason it does not seem to like privately hosted repositories
+
 ```shell
 wget https://gricad-gitlab.univ-grenoble-alpes.fr/schaeffn/xshells/-/archive/cheese-miniapp-fp32/xshells-cheese-miniapp-fp32.tar.gz
 tar xzf xshells-cheese-miniapp-fp32.tar.gz
@@ -27,7 +29,11 @@ tar xzf xshells-cheese-miniapp-fp32.tar.gz
 or
 
 ```shell
-git clone -b cheese-miniapp-fp32 --recurse-submodules https://gricad-gitlab.univ-grenoble-alpes.fr/schaeffn/xshells.git
+git clone --branch cheese-miniapp-fp32 git clone https://bitbucket.org/nschaeff/xshells.git 
+cd xshells 
+git clone https://bitbucket.org/nschaeff/shtns.git
+cd shtns 
+git checkout a0144e6b879a481755997caf836e3295d71811f9
 ```
 
 ```shell
