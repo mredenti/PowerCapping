@@ -27,7 +27,7 @@ site_configuration = {
                     "modules": [],
                     "access": [],
                     "max_jobs": 1,
-                    "environs": ["default", "gnu", "nvhpc"],
+                    "environs": ["default", "gcc", "openmpi-gcc", "openmpi-nvhpc"],
                     "processor": {
                         "num_cpus": 32,
                         "num_cpus_per_core": 1,
@@ -63,9 +63,10 @@ site_configuration = {
                     "max_jobs": 10,
                     "environs": [
                         "default",
-                        "gnu",
+                        "gcc",
+                        "openmpi-gcc", 
                         "cuda",
-                        "nvhpc",
+                        "openmpi-nvhpc",
                     ],
                     "processor": {
                         "num_cpus": 32,
@@ -93,7 +94,7 @@ site_configuration = {
                         {"name": "qos", "options": ["--qos={qos}"]},
                         {"name": "account", "options": ["--account={account}"]},
                     ],
-                    "environs": ["default", "gnu"],
+                    "environs": ["default", "gcc"],
                     "processor": {
                         "num_cpus": 112,
                         "num_cpus_per_core": 1,
@@ -115,7 +116,16 @@ site_configuration = {
             "extras": {"omp_flag": "-fopenmp"},
         },
         {
-            "name": "gnu",
+            "name": "gcc",
+            "modules": ["gcc/12.2.0"],
+            "cc": "gcc",
+            "cxx": "g++",
+            "ftn": "gfortran",
+            "features": ["openmp"],
+            "extras": {"omp_flag": "-fopenmp"},
+        },
+        {
+            "name": "openmpi-gcc",
             "modules": ["gcc/12.2.0", "openmpi/4.1.6--gcc--12.2.0"],
             "cc": "gcc",
             "cxx": "g++",
@@ -124,7 +134,7 @@ site_configuration = {
             "extras": {"omp_flag": "-fopenmp"},
         },
         {
-            "name": "nvhpc",
+            "name": "openmpi-nvhpc",
             "modules": ["nvhpc/23.11", "openmpi/4.1.6--nvhpc--23.11"],
             "cc": "nvcc",
             "cxx": "nvc++",

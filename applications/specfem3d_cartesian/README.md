@@ -53,7 +53,7 @@ reframe \
     --performance-report \
     -J qos=normal \
     -J account=cin_staff \
-    -p gnu \
+    -p openmpi-gcc \
     -lC
 ```
 
@@ -96,7 +96,7 @@ reframe \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
-    -p gnu \
+    -p openmpi-gcc \
     -lC
 ```
 
