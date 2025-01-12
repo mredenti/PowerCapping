@@ -7,7 +7,7 @@ import reframe.utility.osext as osext
 from reframe.core.backends import getlauncher
 
 
-class fetch_specfemd3d_miniapps(rfm.RunOnlyRegressionTest):
+class fetch_specfemd3d_cartesian(rfm.RunOnlyRegressionTest):
     descr = "Fetch SPECFEM3D_CARTESIAN repository"
 
     repo_url = "https://github.com/SPECFEM/specfem3d.git"
@@ -26,19 +26,31 @@ class fetch_specfemd3d_miniapps(rfm.RunOnlyRegressionTest):
         return sn.assert_eq(self.job.exitcode, 0)
 
 
-class build_specfem3d_miniapps(rfm.CompileOnlyRegressionTest):
+class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
     descr = "Build Specfem3D"
 
     build_system = "Autotools"
     # build_locally = False # check first whether you can pass it from the command line
     num_gpus = parameter([1])
 
-    specfem3d_miniapps = fixture(fetch_specfemd3d_miniapps, scope="test")
+    specfem3d_cartesian = fixture(fetch_specfemd3d_cartesian, scope="test")
 
     @run_before("compile")
     def prepare_build(self):        
-        self.build_system.configuredir = os.path.join(self.specfem3d_miniapps.stagedir, 'specfem3d')
+        self.build_system.builddir = 'build'
+        self.build_system.configuredir = os.path.join(self.specfem3d_cartesian.stagedir, 'specfem3d')
+        self.build_system.flags_from_environ= False
+        self.build_system.ftn = 'gfortran'
+        self.build_system.cflags = ['-O3']
+        self.build_system.fflags = ['-O3']
         
+        target_gpu_arch = 'hello'
+        self.build_system.config_opts= [
+            'MPIFC=mpif90',
+            'CUDA_LIB=$CUDA_HOME/lib64',
+            f'--with-cuda={target_gpu_arch}',
+            '--enable-cuda-aware-mpi', # perhaps you could verify whether cuda aware mpi is supported first
+        ]
         #self.build_system.srcdir = fullpath
         self.build_system.options = [
             "VERBOSE=1",
@@ -68,8 +80,8 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
     exclusive_access = True
     time_limit = "600"
 
-    specfemd3d_miniapps_binaries = fixture(
-        build_specfem3d_miniapps, scope="environment"
+    specfemd3d_cartesian_binaries = fixture(
+        build_specfem3d_cartesian, scope="environment"
     )
    
     # kind = variable(str)
@@ -79,10 +91,10 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
     def setup_job_opts(self):
         procinfo = self.current_partition.processor
         self.num_cpus_per_task = procinfo.num_cores
-        self.num_nodes = self.specfemd3d_miniapps_binaries.num_gpus 
-        self.num_gpus_per_node = int(self.specfemd3d_miniapps_binaries.num_gpus / self.num_nodes)
+        self.num_nodes = self.specfemd3d_cartesian_binaries.num_gpus 
+        self.num_gpus_per_node = int(self.specfemd3d_cartesian_binaries.num_gpus / self.num_nodes)
         self.num_tasks_per_node = self.num_gpus_per_node
-        self.num_tasks = self.specfemd3d_miniapps_binaries.num_gpus
+        self.num_tasks = self.specfemd3d_cartesian_binaries.num_gpus
         self.extra_resources = {
             "nodes": {"nodes": f"{self.num_nodes}"},
         }
@@ -91,7 +103,7 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
     def set_executable_path(self):
         # Set the executable path using the stagedir and build prefix
         self.executable = os.path.join(
-            self.specfemd3d_miniapps_binaries.specfem3d_miniapps.stagedir,
+            self.specfemd3d_cartesian_binaries.specfem3d_cartesian.stagedir,
             "xspecfem_mini_app",
         )
 
@@ -103,7 +115,7 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
         self.job.launcher = getlauncher("local")()
         self.job.launcher.modifier = "mpirun"
         self.job.launcher.modifier_options = [
-            f"-np {self.specfemd3d_miniapps_binaries.num_gpus}",
+            f"-np {self.specfemd3d_cartesian_binaries.num_gpus}",
             "--map-by ppr:1:node:PE=72",
             "--report-bindings",
         ]
