@@ -180,7 +180,9 @@ However, this raises an important question about reproducibility aspects. We are
 
 <details>
   <summary>Click me</summary>
-
+  
+  -**Specfem3d**
+    - [SPECFEM3D won the Gordon Bell award for best performance at the SuperComputing 2003](https://dl.acm.org/doi/10.1145/1048935.1050155)
   - **Reproducibility with Containers**
     - [The Scientific Filesystem](https://doi.org/10.1093/gigascience/giy023)
   - **Power Capping**  
