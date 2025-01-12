@@ -29,20 +29,24 @@ tar xzf xshells-cheese-miniapp-fp32.tar.gz
 or
 
 ```shell
-git clone --branch cheese-miniapp-fp32 git clone https://bitbucket.org/nschaeff/xshells.git 
+git clone --branch cheese-miniapp-fp32 https://bitbucket.org/nschaeff/xshells.git 
 cd xshells 
 git clone https://bitbucket.org/nschaeff/shtns.git
 cd shtns 
 git checkout a0144e6b879a481755997caf836e3295d71811f9
 ```
 
+autoreconf -i
+
 ```shell
 ml load openmpi/4.1.6-gcc-12.3.0-wftkmyd
 ml load gcc/12.3.0-gcc-11.4.1-f7guf3f
 ml load cuda/12.3.0-gcc-12.3.0-b2avf4v
 ml load fftw/3.3.10-gcc-12.3.0-6gumeie # only needed to pass configuration setup
+ml load hdf5/1.12.3-gcc-12.3.0-vfd3tkl
 ```
 
 ```shell
 export CUDA_PATH=$CUDA_HOME
+./configure --enable-cuda=hopper
 ```
