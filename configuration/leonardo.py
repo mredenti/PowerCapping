@@ -44,9 +44,6 @@ site_configuration = {
                     },
                     "launcher": "srun",
                     "modules": [],
-                    "prepare_cmds": [
-                        "module purge"
-                    ],
                     "container_platforms": [
                         {
                             'type': 'Singularity',
@@ -67,7 +64,6 @@ site_configuration = {
                     "environs": [
                         "default",
                         "gnu",
-                        "gnu-mpi",
                         "cuda",
                         "nvhpc",
                     ],
@@ -98,9 +94,6 @@ site_configuration = {
                         {"name": "account", "options": ["--account={account}"]},
                     ],
                     "environs": ["default", "gnu"],
-                    "prepare_cmds": [
-                        "module purge"
-                    ],
                     "processor": {
                         "num_cpus": 112,
                         "num_cpus_per_core": 1,
@@ -123,18 +116,19 @@ site_configuration = {
         },
         {
             "name": "gnu",
-            "modules": ["gcc/12.2.0"],
+            "modules": ["gcc/12.2.0", "openmpi/4.1.6--gcc--12.2.0"],
             "cc": "gcc",
             "cxx": "g++",
-            "ftn": "f90",
-            "features": ["openmp"],
+            "ftn": "gfortran",
+            "features": ["openmp", "mpi"],
             "extras": {"omp_flag": "-fopenmp"},
         },
         {
-            "name": "gnu-mpi",
-            "modules": ["gcc/12.2.0", "openmpi/4.1.6--gcc--12.2.0"],
-            "cc": "mpicc",
-            "cxx": "mpic++",
+            "name": "nvhpc",
+            "modules": ["nvhpc/23.11", "openmpi/4.1.6--nvhpc--23.11"],
+            "cc": "nvcc",
+            "cxx": "nvc++",
+            "ftn": "nvfortran",
             "features": ["openmp", "mpi"],
             "extras": {"omp_flag": "-fopenmp"},
         },
@@ -145,15 +139,6 @@ site_configuration = {
             "cxx": "g++",
             "ftn": "gfortran",
             "features": ["openmp", "cuda"],
-            "extras": {"omp_flag": "-fopenmp"},
-        },
-        {
-            "name": "nvhpc",
-            "modules": ["nvhpc/23.11", "openmpi/4.1.6--nvhpc--23.11"],
-            "cc": "nvcc",
-            "cxx": "nvc++",
-            "ftn": "nvf90",
-            "features": ["openmp", "mpi"],
             "extras": {"omp_flag": "-fopenmp"},
         },
     ],
@@ -227,5 +212,10 @@ site_configuration = {
             ],
         },
     ],
-    "general": [{"check_search_path": ["checks/"], "check_search_recursive": True}],
+    "general": [
+        {
+            "check_search_path": ["checks/"], 
+            "check_search_recursive": True
+        }
+    ],
 }

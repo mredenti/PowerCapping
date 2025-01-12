@@ -7,7 +7,7 @@ import reframe.utility.osext as osext
 from reframe.core.backends import getlauncher
 
 
-class fetch_specfemd3d_miniapps(rfm.RunOnlyRegressionTest):
+class fetch_specfemd3d_cartesian(rfm.RunOnlyRegressionTest):
     descr = "Fetch SPECFEM3D_CARTESIAN repository"
 
     repo_url = "https://github.com/SPECFEM/specfem3d.git"
@@ -26,19 +26,54 @@ class fetch_specfemd3d_miniapps(rfm.RunOnlyRegressionTest):
         return sn.assert_eq(self.job.exitcode, 0)
 
 
-class build_specfem3d_miniapps(rfm.CompileOnlyRegressionTest):
+class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
     descr = "Build Specfem3D"
 
     build_system = "Autotools"
     # build_locally = False # check first whether you can pass it from the command line
+    modules = ['cuda']
     num_gpus = parameter([1])
 
-    specfem3d_miniapps = fixture(fetch_specfemd3d_miniapps, scope="test")
+    specfem3d_cartesian = fixture(fetch_specfemd3d_cartesian, scope="test")
 
     @run_before("compile")
     def prepare_build(self):        
-        self.build_system.configuredir = os.path.join(self.specfem3d_miniapps.stagedir, 'specfem3d')
+        self.build_system.builddir = 'build'
+        # Before running the configure script, you should probably edit file flags.guess 
+        # to make sure that it contains the best compiler options for your system
+        self.build_system.configuredir = os.path.join(self.specfem3d_cartesian.stagedir, 'specfem3d')
+        self.build_system.srcdir = os.path.join(self.specfem3d_cartesian.stagedir, 'specfem3d')
+        self.build_system.flags_from_environ= True
+        self.build_system.cflags = ['-O3']
+        self.build_system.fflags = ['-O3']
         
+        # Map Nvidia GPU arch to the SPECFEM3D "cudaN" flag
+        arch_map = {
+            'sm_80': 'cuda11',  # Ampere: A100
+            'sm_90': 'cuda12',  # Hopper: H100
+        }
+
+        # Extract the actual GPU arch from the system
+        device_arch = self.current_partition.devices[0].arch
+
+        # Look up the correct "cudaN" option
+        try:
+            target_gpu_arch = arch_map[device_arch]
+        except KeyError:
+            # For unknown arch, either raise or default to something safe
+            raise ValueError(
+                f"Unsupported or unknown GPU architecture '{device_arch}'. "
+                "Please update arch_map accordingly."
+            )
+        
+        # -with-scotch-dir=/opt/scotch
+        # We recommend that you add ulimit -S -s unlimited to your .bash_profile file and/or limit 
+        # stacksize unlimited to your .cshrc file to suppress any potential limit to the size of the Unix stack.
+        self.build_system.config_opts= [
+            'MPIFC=mpif90',
+            '--with-mpi',
+            f'--with-cuda={target_gpu_arch}',
+        ]
         #self.build_system.srcdir = fullpath
         self.build_system.options = [
             "VERBOSE=1",
@@ -63,13 +98,14 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
     """Base class of Specfem3d mini-aps runtime tests"""
 
     valid_systems = ["leonardo:booster"]
-    valid_prog_environs = ["*"]
+    valid_prog_environs = ["+mpi"]
+    modules = ['cuda']
     
     exclusive_access = True
     time_limit = "600"
 
-    specfemd3d_miniapps_binaries = fixture(
-        build_specfem3d_miniapps, scope="environment"
+    specfemd3d_cartesian_binaries = fixture(
+        build_specfem3d_cartesian, scope="environment"
     )
    
     # kind = variable(str)
@@ -79,10 +115,10 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
     def setup_job_opts(self):
         procinfo = self.current_partition.processor
         self.num_cpus_per_task = procinfo.num_cores
-        self.num_nodes = self.specfemd3d_miniapps_binaries.num_gpus 
-        self.num_gpus_per_node = int(self.specfemd3d_miniapps_binaries.num_gpus / self.num_nodes)
+        self.num_nodes = self.specfemd3d_cartesian_binaries.num_gpus 
+        self.num_gpus_per_node = int(self.specfemd3d_cartesian_binaries.num_gpus / self.num_nodes)
         self.num_tasks_per_node = self.num_gpus_per_node
-        self.num_tasks = self.specfemd3d_miniapps_binaries.num_gpus
+        self.num_tasks = self.specfemd3d_cartesian_binaries.num_gpus
         self.extra_resources = {
             "nodes": {"nodes": f"{self.num_nodes}"},
         }
@@ -90,23 +126,15 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
     @run_before("run")
     def set_executable_path(self):
         # Set the executable path using the stagedir and build prefix
-        self.executable = os.path.join(
-            self.specfemd3d_miniapps_binaries.specfem3d_miniapps.stagedir,
-            "xspecfem_mini_app",
-        )
+        self.executable = 'echo hello'
+        #os.path.join(
+        #    self.specfemd3d_cartesian_binaries.specfem3d_cartesian.stagedir,
+        #    "xspecfem_mini_app",
+        #)
 
     @run_before("run")
     def replace_launcher(self):
-        self.job.options = [
-            opt for opt in self.job.options if not opt.startswith("--ntasks")
-        ]
-        self.job.launcher = getlauncher("local")()
-        self.job.launcher.modifier = "mpirun"
-        self.job.launcher.modifier_options = [
-            f"-np {self.specfemd3d_miniapps_binaries.num_gpus}",
-            "--map-by ppr:1:node:PE=72",
-            "--report-bindings",
-        ]
+        self.job.launcher = getlauncher("mpirun")()
 
     @sanity_function
     def validate_test(self):

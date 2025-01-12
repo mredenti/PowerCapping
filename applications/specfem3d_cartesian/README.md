@@ -47,14 +47,13 @@ for 3d crust and mantle models, can account for the rotation of the earth, topog
 reframe \
     -C power-capping/configuration/leonardo.py \
     -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
-    --prefix $SCRATCH/REFRAME-TEST \
+    --prefix $SCRATCH/REFRAME-SPECFEM \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
     -J qos=normal \
     -J account=cin_staff \
-    --system=leonardo:booster \ # comment out potentially
-    -p nvhpc \
+    -p gnu \
     -lC
 ```
 
@@ -65,9 +64,10 @@ At the moment we assume that the SIF image has already been pulled/build to the 
 ```shell
 reframe \
     -C power-capping/configuration/leonardo.py \
-    -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-TEST \
+    -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
+    --prefix $SCRATCH/REFRAME-SPECFEM \
     --keep-stage-files \
+    --dont-restage \
     --performance-report \
     -M openmpi:openmpi/4.1.6--nvhpc--24.3 \
     -p default \
@@ -87,6 +87,18 @@ reframe \
   <summary>Click me</summary>
 
 **Baremetal**
+
+```shell
+reframe \
+    -C power-capping/configuration/thea.py \
+    -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
+    --prefix $SCRATCH/REFRAME-SPECFEM \
+    --keep-stage-files \
+    --dont-restage \
+    --performance-report \
+    -p gnu \
+    -lC
+```
 
 **Container**
 
