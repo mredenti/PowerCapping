@@ -50,7 +50,7 @@ The following codes are to be considered if any of the main targeted codes does 
 | [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)              | OK                                                                          | Not started        | Not started    | Not started    |      Not started            | Waiting Response From Developers                  | 
 | [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)            | OK                                                                          | Not started        | Not started    | Not started    |        Not started          | Waiting Response From Developers                   |
 | [XSHELLS](applications/xshells/README.md)                              | OK                                                                          | Not started        | OK | Not started    |      Not started           | Waiting Response From Developers                  |
-| [TANDEM](https://tandem.readthedocs.io/en/latest/)                      | Ok                                                                          | Not started        | Ok             | Not started    |         Not started        | Waiting Response From Developers                   |
+| [TANDEM](https://tandem.readthedocs.io/en/latest/)                      | Ok                                                                          | Not started        | Ok             | Not started    |         Not started        | Backup                   |
 
 
 
