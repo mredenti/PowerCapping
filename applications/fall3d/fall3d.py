@@ -185,12 +185,12 @@ class fall3d_raikoke_test(fall3d_base_test):
         'raikoke-2019.gfs.nc',
         'GFS.tbl',
         'Sat.tbl'
-        ]
+    ]
     executable_opts = ['All', 'Raikoke-2019.inp']
     prerun_cmds = [
         # There is a typo in the name of the file
         '[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
-        ]    
+    ]    
     # maybe we can run a prerun hook which fetches the lfs
     # show define an test case name variable and make keep files the default in the base
     keep_files = [
@@ -198,7 +198,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         'Raikoke-2019.SetTgsd.log',
         'Raikoke-2019.SetDbs.log',
         'Raikoke-2019.Fall3d.log'
-        ]
+    ]
     
     num_gpus = 2
     time_limit = '1200'
