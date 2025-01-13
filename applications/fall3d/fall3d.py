@@ -73,6 +73,10 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
         ]
         self.build_system.max_concurrency = 8
 
+    @sanity_function
+    def validate_build(self):
+        # Check that the output contains the string 'Built target Fall3d.x'
+        return sn.assert_found(r'Built target Fall3d\.x', self.stdout)
 # ========================================================
 # Fall3d Base Test Class with Conditional Dependencies
 # ========================================================

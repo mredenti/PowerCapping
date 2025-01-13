@@ -46,7 +46,7 @@ The following codes are to be considered if any of the main targeted codes does 
 
 | Code                                                                    | leonardo-baremetal                                                         | leonardo-container | thea-baremetal | thea-container | Test Case Identified |
 |-------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------|----------------|----------------|----------------------|
-| [FALL3D](applications/fall3d/README.md)                                             | Ok                                                                          | Ok       | Ok   | Ready to test build    | No       |
+| [FALL3D](applications/fall3d/README.md)                                             | Ok                                                                          | Ok       | Ok   | Ok   | No       |
 | [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)            | OK                          | Not started        | Not started    | Not started    | No         |
 | [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)          | OK                                                                 | Not started        | Not started    | Not started    | No         |
 | [XSHELLS](applications/xshells/README.md)                                           | OK | Not started        | Waiting to test fix to compilation issues (x86 pre-processor macros)    | Not started    | No         |

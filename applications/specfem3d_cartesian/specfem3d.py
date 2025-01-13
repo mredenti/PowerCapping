@@ -31,19 +31,26 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
 
     build_system = "Autotools"
     # build_locally = False # check first whether you can pass it from the command line
-    modules = ['cuda']
+    modules = [
+        'cuda',
+        'scotch' # this automatically loads ...
+    ]
     num_gpus = parameter([1])
 
     specfem3d_cartesian = fixture(fetch_specfemd3d_cartesian, scope="test")
 
     @run_before("compile")
     def prepare_build(self):        
-        self.build_system.builddir = 'build'
-        # Before running the configure script, you should probably edit file flags.guess 
-        # to make sure that it contains the best compiler options for your system
-        self.build_system.configuredir = os.path.join(self.specfem3d_cartesian.stagedir, 'specfem3d')
-        self.build_system.srcdir = os.path.join(self.specfem3d_cartesian.stagedir, 'specfem3d')
+        # Out of source builds do not seem to be supported
+        #self.build_system.builddir = 'build'
+        #self.build_system.configuredir = os.path.join(self.specfem3d_cartesian.stagedir, 'specfem3d')
+        # Change into fetched source dir 
+        self.build_system.sourcesdir = os.path.join(self.specfem3d_cartesian.stagedir, 'specfem3d')
+        self.prebuild_cmds = [
+            f'cd {self.build_system.sourcesdir}'
+        ]
         self.build_system.flags_from_environ= True
+        #omp_flag = self.current_environ.extras.get('omp_flag')
         self.build_system.cflags = ['-O3']
         self.build_system.fflags = ['-O3']
         
@@ -73,6 +80,7 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
             'MPIFC=mpif90',
             '--with-mpi',
             f'--with-cuda={target_gpu_arch}',
+            '--with-scotch-dir=$SCOTCH_HOME'
         ]
         #self.build_system.srcdir = fullpath
         self.build_system.options = [
@@ -89,7 +97,11 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
         #self.prebuild_cmds = [
         #    f"sed -i 's/NPX_config *= *[0-9]\+/NPX_config = {npx}/g; s/NPY_config *= *[0-9]\+/NPY_config = {npy}/g' {os.path.join(fullpath, 'config_mod.f90')}",
         #]
-
+        
+    @sanity_function
+    def validate_download(self):
+        return sn.assert_eq(self.job.exitcode, 0)
+    
 # ========================================================
 # SPECFEM3D Base Test Class with Conditional Dependencies
 # ========================================================
