@@ -10,7 +10,7 @@ class MpirunLauncher(JobLauncher):
         return ['mpirun', 
                 '-np', str(job.num_tasks),
                 f'--map-by socket:PE={job.num_cpus_per_task}',
-                '--rank-by-core',
+                '--rank-by core',
                 '--report-bindings']
 
 @register_launcher('mpirun-nsys')
