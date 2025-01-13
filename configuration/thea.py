@@ -12,7 +12,7 @@ class MpirunLauncher(JobLauncher):
                 f'--map-by ppr:{job.num_tasks_per_node}:node:PE={job.num_cpus_per_task}',
                 '--report-bindings']
 
-@register_launcher('mpirun-nsys')
+@register_launcher('mpirun-mapby-nsys')
 class MpirunLauncher(JobLauncher):
     def command(self, job):
         return ['mpirun', 

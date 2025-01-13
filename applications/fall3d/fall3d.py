@@ -1,9 +1,11 @@
 import os
+import datetime
 import reframe as rfm
 import reframe.utility.typecheck as typ
 import reframe.utility.sanity as sn
-from reframe.core.backends import getlauncher
 import reframe.utility.udeps as udeps
+from reframe.core.backends import getlauncher
+
 
 class fetch_fall3d(rfm.RunOnlyRegressionTest):  
     descr = 'Fetch FALL3D'
@@ -139,7 +141,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             #This does not have any effect for the Singularity container platform.
             #self.container_platform.pull_image = False
             # adds --nv flag to singularity exec
-            self.container_platform.with_cuda= True # if self.container_platform=='Singularity'
+            self.container_platform.with_cuda = True # if self.container_platform=='Singularity'
             # https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html#reframe.core.containers.ContainerPlatform.mount_points
             input_dir = os.path.join(os.path.dirname(__file__), self.sourcesdir) # handle symlinks of read only input files
             self.container_platform.mount_points = [
@@ -195,6 +197,28 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             sn.assert_found(r'^<LOG>\s+The program has been run successfully\s*$', self.stdout)
         ]
         return sn.all(conditions)
+    
+    @performance_function('s')
+    def elapsed_time(self):
+        # Extract the start and end times from the output (self.stdout)
+        # Example lines:
+        #   Run start time     : 27 oct 2024 at 12:42:53 
+        #   End time           : 27 oct 2024 at 12:47:54 
+        start_time_str = sn.extractsingle(
+            r"Run start time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
+            f'{self.test_prefix}.Fall3d.log', 1
+        )
+        end_time_str = sn.extractsingle(
+            r"End time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
+            f'{self.test_prefix}.Fall3d.log', 1
+        )
+        
+        dt_format = "%d %b %Y at %H:%M:%S"
+        start_time = datetime.datetime.strptime(start_time_str.evaluate(), dt_format) 
+        end_time = datetime.datetime.strptime(end_time_str.evaluate(), dt_format)
+        
+        return (end_time - start_time).total_seconds()
+        
 
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
