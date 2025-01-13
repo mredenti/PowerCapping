@@ -173,14 +173,6 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             launcher_cls = getlauncher("mpirun")
         self.job.launcher = launcher_cls()
 
-    @sanity_function
-    def validate_run(self):
-        '''Check that a line indicating a successful run is present.'''
-        return sn.assert_found(
-            r'^<LOG>\s+The program has been run successfully\s*$', 
-            self.stdout
-        )
-
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
     descr = 'Fall3d raikoke test'
@@ -225,4 +217,14 @@ class fall3d_raikoke_test(fall3d_base_test):
             sn.assert_found(r'^  Task FALL3D\s*:\s*ends NORMALLY\s*$', log_fname)
         ])
 
+    @sanity_function
+    def assert_simulation_success(self):
+        '''Check that a line indicating a successful run is present.'''
+        return sn.all([
+            sn.assert_found(r'^.*Task\s+SetTgsd\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetTgsd.log'),
+            sn.assert_found(r'^.*Task\s+SetDbs\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetDbs.log'),            
+            sn.assert_found(r'^.*Task\s+SetSrc\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetSrc.log'),            
+            sn.assert_found(r'^.*Task\s+FALL3D\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.Fall3d.log'),
+            sn.assert_found(r'^<LOG>\s+The program has been run successfully\s*$', self.stdout)
+        ])
     
