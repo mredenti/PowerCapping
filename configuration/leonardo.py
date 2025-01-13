@@ -4,6 +4,15 @@
 from reframe.core.backends import register_launcher
 from reframe.core.launchers import JobLauncher
 
+@register_launcher('mpirun-mapby')
+class MpirunLauncher(JobLauncher):
+    def command(self, job):
+        return ['mpirun', 
+                '-np', str(job.num_tasks),
+                f'--map-by socket:PE={job.num_cpus_per_task}',
+                '--rank-by-core',
+                '--report-bindings']
+
 @register_launcher('mpirun-nsys')
 class MpirunLauncher(JobLauncher):
     def command(self, job):
