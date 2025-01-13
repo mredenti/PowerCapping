@@ -202,20 +202,6 @@ class fall3d_raikoke_test(fall3d_base_test):
     
     num_gpus = 2
     time_limit = '1200'
-    
-    @sanity_function
-    def validate_test(self):
-        """
-        If the run was successful, you should obtain a log file Example.Fall3d.log a successful end message
-        https://fall3d-suite.gitlab.io/fall3d/chapters/example.html#checking-the-results
-        """
-        log_fname = 'Raikoke-2019.Fall3d.log'
-        
-        return sn.all([
-            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', log_fname),
-            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', log_fname),
-            sn.assert_found(r'^  Task FALL3D\s*:\s*ends NORMALLY\s*$', log_fname)
-        ])
 
     @sanity_function
     def assert_simulation_success(self):
@@ -223,7 +209,9 @@ class fall3d_raikoke_test(fall3d_base_test):
         return sn.all([
             sn.assert_found(r'^.*Task\s+SetTgsd\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetTgsd.log'),
             sn.assert_found(r'^.*Task\s+SetDbs\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetDbs.log'),            
-            sn.assert_found(r'^.*Task\s+SetSrc\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetSrc.log'),            
+            sn.assert_found(r'^.*Task\s+SetSrc\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetSrc.log'),   
+            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', 'Raikoke-2019.Fall3d.log'),
+            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', 'Raikoke-2019.Fall3d.log'),         
             sn.assert_found(r'^.*Task\s+FALL3D\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.Fall3d.log'),
             sn.assert_found(r'^<LOG>\s+The program has been run successfully\s*$', self.stdout)
         ])
