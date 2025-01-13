@@ -32,7 +32,6 @@ class fetch_fall3d(rfm.RunOnlyRegressionTest):
 # ========================================================
 # Fall3d CMake build logic
 # ========================================================
-
 @rfm.simple_test
 class build_fall3d(rfm.CompileOnlyRegressionTest):
     descr = 'Build FALL3D'
@@ -85,7 +84,6 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
 # ========================================================
 # Fall3d Base Test Class with Conditional Dependencies
 # ========================================================
-
 class fall3d_base_test(rfm.RunOnlyRegressionTest):
     '''Base class of Fall3d runtime tests'''
     
@@ -177,47 +175,53 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         except Exception:
             launcher_cls = getlauncher("mpirun")
         self.job.launcher = launcher_cls()
+        
+    @sanity_function
+    def assert_simulation_success(self):
+        log_prefix = self.test_prefix  # Using the class attribute
+        # Generate log file names dynamically.
+        log_setsrc  = f'{log_prefix}.SetSrc.log'
+        log_settgsd = f'{log_prefix}.SetTgsd.log'
+        log_setdbs  = f'{log_prefix}.SetDbs.log'
+        log_fall3d  = f'{log_prefix}.Fall3d.log'
+
+        conditions = [
+            sn.assert_found(r'^.*Task\s+SetTgsd\s*:\s*ends NORMALLY\s*$', log_settgsd),
+            sn.assert_found(r'^.*Task\s+SetDbs\s*:\s*ends NORMALLY\s*$', log_setdbs),
+            sn.assert_found(r'^.*Task\s+SetSrc\s*:\s*ends NORMALLY\s*$', log_setsrc),
+            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', log_fall3d),
+            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', log_fall3d),
+            sn.assert_found(r'^.*Task\s+FALL3D\s*:\s*ends NORMALLY\s*$', log_fall3d),
+            sn.assert_found(r'^<LOG>\s+The program has been run successfully\s*$', self.stdout)
+        ]
+        return sn.all(conditions)
 
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
-    descr = 'Fall3d raikoke test'
-    #kind = 'mpi/openacc' # 'openacc', 'mpi'
-    #metric = 'bandwidth'
+    descr = 'Fall3d Raikoke-2019 test'
+    # This should also match Fall3d's tasks log prefix
+    test_prefix = 'Raikoke-2019'
     sourcesdir = 'raikoke-2019/Input'
     readonly_files = [
-        'Raikoke-2019.inp',
-        'Raikoke-2019.sat.nc',
+        f'{test_prefix}.inp',
+        f'{test_prefix}.sat.nc',
         'raikoke-2019.gfs.nc',
         'GFS.tbl',
         'Sat.tbl'
     ]
     executable_opts = ['All', 'Raikoke-2019.inp']
     prerun_cmds = [
-        # There is a typo in the name of the file
-        '[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
-    ]    
+        # There is a typo in the name of the file. We use test_prefix to rename the file.
+        f'[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
+    ]  
     # maybe we can run a prerun hook which fetches the lfs
     # show define an test case name variable and make keep files the default in the base
     keep_files = [
-        'Raikoke-2019.SetSrc.log', 
-        'Raikoke-2019.SetTgsd.log',
-        'Raikoke-2019.SetDbs.log',
-        'Raikoke-2019.Fall3d.log'
+        f'{test_prefix}.SetSrc.log', 
+        f'{test_prefix}.SetTgsd.log',
+        f'{test_prefix}.SetDbs.log',
+        f'{test_prefix}.Fall3d.log'
     ]
     
     num_gpus = 2
     time_limit = '1200'
-
-    @sanity_function
-    def assert_simulation_success(self):
-        '''Check that a line indicating a successful run is present.'''
-        return sn.all([
-            sn.assert_found(r'^.*Task\s+SetTgsd\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetTgsd.log'),
-            sn.assert_found(r'^.*Task\s+SetDbs\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetDbs.log'),            
-            sn.assert_found(r'^.*Task\s+SetSrc\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetSrc.log'),   
-            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', 'Raikoke-2019.Fall3d.log'),
-            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', 'Raikoke-2019.Fall3d.log'),         
-            sn.assert_found(r'^.*Task\s+FALL3D\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.Fall3d.log'),
-            sn.assert_found(r'^<LOG>\s+The program has been run successfully\s*$', self.stdout)
-        ])
-    
