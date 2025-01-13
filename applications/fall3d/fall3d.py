@@ -29,6 +29,10 @@ class fetch_fall3d(rfm.RunOnlyRegressionTest):
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
 
+# ========================================================
+# Fall3d CMake build logic
+# ========================================================
+
 @rfm.simple_test
 class build_fall3d(rfm.CompileOnlyRegressionTest):
     descr = 'Build FALL3D'
@@ -77,6 +81,7 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
     def validate_build(self):
         # Check that the output contains the string 'Built target Fall3d.x'
         return sn.assert_found(r'Built target Fall3d\.x', self.stdout)
+    
 # ========================================================
 # Fall3d Base Test Class with Conditional Dependencies
 # ========================================================
