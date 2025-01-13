@@ -44,13 +44,14 @@ The following codes are to be considered if any of the main targeted codes does 
 <details>
   <summary>Click me</summary>
 
-| Code                                                                    | leonardo-baremetal                                                         | leonardo-container | thea-baremetal | thea-container | Test Case Identified |
-|-------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------|----------------|----------------|----------------------|
-| [FALL3D](applications/fall3d/README.md)                                             | Ok                                                                          | Ok       | Ok   | Ok   | No       |
-| [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)            | OK                          | Not started        | Not started    | Not started    | No         |
-| [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)          | OK                                                                 | Not started        | Not started    | Not started    | No         |
-| [XSHELLS](applications/xshells/README.md)                                           | OK | Not started        | Waiting to test fix to compilation issues (x86 pre-processor macros)    | Not started    | No         |
-| [TANDEM](https://tandem.readthedocs.io/en/latest/)                     | Ok   | Not started        | Ok    | Not started    | No          |
+| Code                                                                    | leonardo-baremetal                                                         | leonardo-container | thea-baremetal | thea-container | Validation Test | Test Case Identified |
+|-------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------|----------------|----------------|-----------------|----------------------|
+| [FALL3D](applications/fall3d/README.md)                                 | OK                                                                          | OK                 | OK             | OK             |       OK          | Waiting Data From Developers                   |
+| [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)              | OK                                                                          | Not started        | Not started    | Not started    |      No           | No                   |
+| [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)            | OK                                                                          | Not started        | Not started    | Not started    |        No         | No                   |
+| [XSHELLS](applications/xshells/README.md)                              | OK                                                                          | Not started        | OK | Not started    |       No          | No                   |
+| [TANDEM](https://tandem.readthedocs.io/en/latest/)                      | Ok                                                                          | Not started        | Ok             | Not started    |          No       | No                   |
+
 
 
 _Note: The table will be updated as we make progress. Once the applications are successfully compiled and tested, suitable test cases will be chosen and documented._
