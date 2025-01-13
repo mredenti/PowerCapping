@@ -203,7 +203,7 @@ site_configuration = {
                         "%(check_partition)s,"
                         "%(check_environ)s,"
                         "%(check_descr)s,"
-                        "%(check_num_nodes)s,"
+                        "%(check_job_nodelist)s,"
                         "%(check_num_tasks_per_node)s,"
                         "%(check_num_cpus_per_task)s,"
                         "%(check_num_gpus_per_node)s,"
