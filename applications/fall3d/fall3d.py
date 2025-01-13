@@ -29,6 +29,10 @@ class fetch_fall3d(rfm.RunOnlyRegressionTest):
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
 
+# ========================================================
+# Fall3d CMake build logic
+# ========================================================
+
 @rfm.simple_test
 class build_fall3d(rfm.CompileOnlyRegressionTest):
     descr = 'Build FALL3D'
@@ -77,6 +81,7 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
     def validate_build(self):
         # Check that the output contains the string 'Built target Fall3d.x'
         return sn.assert_found(r'Built target Fall3d\.x', self.stdout)
+    
 # ========================================================
 # Fall3d Base Test Class with Conditional Dependencies
 # ========================================================
@@ -173,14 +178,6 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             launcher_cls = getlauncher("mpirun")
         self.job.launcher = launcher_cls()
 
-    @sanity_function
-    def validate_run(self):
-        '''Check that a line indicating a successful run is present.'''
-        return sn.assert_found(
-            r'^<LOG>\s+The program has been run successfully\s*$', 
-            self.stdout
-        )
-
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
     descr = 'Fall3d raikoke test'
@@ -193,12 +190,12 @@ class fall3d_raikoke_test(fall3d_base_test):
         'raikoke-2019.gfs.nc',
         'GFS.tbl',
         'Sat.tbl'
-        ]
+    ]
     executable_opts = ['All', 'Raikoke-2019.inp']
     prerun_cmds = [
         # There is a typo in the name of the file
         '[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
-        ]    
+    ]    
     # maybe we can run a prerun hook which fetches the lfs
     # show define an test case name variable and make keep files the default in the base
     keep_files = [
@@ -206,23 +203,21 @@ class fall3d_raikoke_test(fall3d_base_test):
         'Raikoke-2019.SetTgsd.log',
         'Raikoke-2019.SetDbs.log',
         'Raikoke-2019.Fall3d.log'
-        ]
+    ]
     
     num_gpus = 2
     time_limit = '1200'
-    
-    @sanity_function
-    def validate_test(self):
-        """
-        If the run was successful, you should obtain a log file Example.Fall3d.log a successful end message
-        https://fall3d-suite.gitlab.io/fall3d/chapters/example.html#checking-the-results
-        """
-        log_fname = 'Raikoke-2019.Fall3d.log'
-        
-        return sn.all([
-            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', log_fname),
-            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', log_fname),
-            sn.assert_found(r'^  Task FALL3D\s*:\s*ends NORMALLY\s*$', log_fname)
-        ])
 
+    @sanity_function
+    def assert_simulation_success(self):
+        '''Check that a line indicating a successful run is present.'''
+        return sn.all([
+            sn.assert_found(r'^.*Task\s+SetTgsd\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetTgsd.log'),
+            sn.assert_found(r'^.*Task\s+SetDbs\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetDbs.log'),            
+            sn.assert_found(r'^.*Task\s+SetSrc\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.SetSrc.log'),   
+            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', 'Raikoke-2019.Fall3d.log'),
+            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', 'Raikoke-2019.Fall3d.log'),         
+            sn.assert_found(r'^.*Task\s+FALL3D\s*:\s*ends NORMALLY\s*$', 'Raikoke-2019.Fall3d.log'),
+            sn.assert_found(r'^<LOG>\s+The program has been run successfully\s*$', self.stdout)
+        ])
     
