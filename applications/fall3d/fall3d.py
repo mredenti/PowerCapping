@@ -6,24 +6,6 @@ import reframe.utility.sanity as sn
 import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher
 
-@sn.deferrable
-def extract_elapsed_time(log_file):
-    # Extract the start and end times from the output (self.stdout)
-    # Example lines:
-    #   Run start time     : 27 oct 2024 at 12:42:53 
-    #   End time           : 27 oct 2024 at 12:47:54 
-    start_time_str = sn.extractsingle(
-        r"Run start time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
-        log_file, 1
-    )
-    end_time_str = sn.extractsingle(
-        r"End time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
-        log_file, 1
-    )
-    dt_format = "%d %b %Y at %H:%M:%S"
-    start_time = datetime.datetime.strptime(start_time_str.evaluate(), dt_format) 
-    end_time = datetime.datetime.strptime(end_time_str.evaluate(), dt_format)
-    return (end_time - start_time).total_seconds()
 
 class fetch_fall3d(rfm.RunOnlyRegressionTest):  
     descr = 'Fetch FALL3D'
@@ -217,34 +199,25 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         return sn.all(conditions)
     
     @performance_function('s')
-    def tgsd_elapsed_time(self):
-        """
-        The task SetTGSD generates particle Total Grain Size Distributions (TGSD) 
-        for species of category particles or radionuclides.
-        """
-        return extract_elapsed_time(f'{self.test_prefix}.SetTgsd.log')
-    
-    @performance_function('s')
-    def dbs_elapsed_time(self):
-        """
-        The task SetDbs interpolates meteorological variables from the 
-        meteorological model grid to the FALL3D computational domain.
-        """
-        return extract_elapsed_time(f'{self.test_prefix}.SetDbs.log')
-    
-    @performance_function('s')
-    def src_elapsed_time(self):
-        """
-        The task SetSrc generates emission source terms for the different species. 
-        """
-        return extract_elapsed_time(f'{self.test_prefix}.SetSrc.log')
-    
-    @performance_function('s')
-    def fall3d_elapsed_time(self):
-        """
-        The task FALL3D runs the solver.
-        """
-        return extract_elapsed_time(f'{self.test_prefix}.Fall3d.log')
+    def elapsed_time(self):
+        # Extract the start and end times from the output (self.stdout)
+        # Example lines:
+        #   Run start time     : 27 oct 2024 at 12:42:53 
+        #   End time           : 27 oct 2024 at 12:47:54 
+        start_time_str = sn.extractsingle(
+            r"Run start time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
+            f'{self.test_prefix}.Fall3d.log', 1
+        )
+        end_time_str = sn.extractsingle(
+            r"End time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
+            f'{self.test_prefix}.Fall3d.log', 1
+        )
+        
+        dt_format = "%d %b %Y at %H:%M:%S"
+        start_time = datetime.datetime.strptime(start_time_str.evaluate(), dt_format) 
+        end_time = datetime.datetime.strptime(end_time_str.evaluate(), dt_format)
+        
+        return (end_time - start_time).total_seconds()
         
 
 @rfm.simple_test
