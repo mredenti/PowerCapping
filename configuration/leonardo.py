@@ -54,7 +54,6 @@ site_configuration = {
                     ],
                     "access": ["--partition=boost_usr_prod"],
                     "resources": [
-                        {"name": "nodes", "options": ["--nodes={nodes}"]},
                         {"name": "qos", "options": ["--qos={qos}"]},
                         {"name": "account", "options": ["--account={account}"]},
                         {"name": "gpu", "options": ["--gres=gpu:{num_gpus_per_node}"]},
