@@ -192,15 +192,14 @@ site_configuration = {
                     "level": "info",
                     "format": (
                         "%(asctime)s,"
-                        "%(check_job_completion_time)s,"
                         "reframe %(version)s,"
+                        "%(check_job_completion_time)s,"
                         "%(check_info)s,"
                         "%(check_modules)s,"
                         "%(check_result)s,"
                         "%(check_executable)s,"
                         "%(check_executable_opts)s,"
                         "%(check_system)s,"
-                        "%(check_environ)s,"
                         "%(check_partition)s,"
                         "%(check_environ)s,"
                         "%(check_descr)s,"

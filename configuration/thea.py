@@ -212,7 +212,6 @@ site_configuration = {
                         "%(check_system)s,"
                         "%(check_environ)s,"
                         "%(check_partition)s,"
-                        "%(check_environ)s,"
                         "%(check_descr)s,"
                         "%(check_num_nodes)s,"
                         "%(check_num_tasks_per_node)s,"
