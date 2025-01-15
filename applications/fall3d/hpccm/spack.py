@@ -25,6 +25,8 @@ cluster_configs = {
         'nvhpc_version': '24.11',
         'cuda_version': '11.8',
         'base_os': 'ubuntu22.04',
+        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30',
+        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a',
         'arch': 'x86_64',
     },
     'thea': {
@@ -35,6 +37,8 @@ cluster_configs = {
         'nvhpc_version': '24.11',
         'cuda_version': '12.6',
         'base_os': 'ubuntu22.04', # 
+        'digest_devel': 'sha256:e31ab97e8c5914f80b277bd24d9c07c1947355f605967ba65a07ebaeb4eea224',
+        'digest_runtime': 'sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914',
         'arch': 'aarch64',
     }
 }
