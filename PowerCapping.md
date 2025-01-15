@@ -46,9 +46,9 @@ The following codes are to be considered if any of the main targeted codes does 
 
 | Code                                                                    | leonardo-baremetal                                                         | leonardo-container | thea-baremetal | thea-container | Validation Test | Test Case Identified |
 |-------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------|----------------|----------------|-----------------|----------------------|
-| [FALL3D](applications/fall3d/README.md)                                 | OK                                                                          | OK                 | OK             | OK             |       OK          | Waiting Data From Developers                   |
-| [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)              | OK                                                                          | Not started        | Not started    | Not started    |      Not started            | Waiting Response From Developers                  | 
-| [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)            | OK                                                                          | Not started        | Not started    | Not started    |        Not started          | Waiting Response From Developers                   |
+| [FALL3D](applications/fall3d/README.md)                                 | OK                                                                          | OK                 | OK             | OK             |       OK          | Accepted, Waiting Data From Developers                   |
+| [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)              | OK                                                                          | Not started        | Not started    | Not started    |      Not started            | Accepted, Waiting Data From Developers                  | 
+| [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)            | OK                                                                          | Not started        | Not started    | Not started    |        Not started          | Accepted, Waiting Data From Developers                   |
 | [XSHELLS](applications/xshells/README.md)                              | OK                                                                          | Not started        | OK | Not started    |      Not started           | Waiting Response From Developers                  |
 | [TANDEM](https://tandem.readthedocs.io/en/latest/)                      | Ok                                                                          | Not started        | Ok             | Not started    |         Not started        | Backup                   |
 
@@ -69,7 +69,50 @@ _Note: The table will be updated as we make progress. Once the applications are 
 - [HPC CONTAINER MAKER DOCS](https://docs.nvidia.com/hpc-sdk//hpc-sdk-container/index.html)
 - [NVIDIA HPC SDK CATALOG - NVIDIA GPU Cloud](https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags)
 
-### UCX Configuration base devel image 
+### UCX Configuration Information 
+
+**Thea**
+
+<details>
+  <summary>Click me</summary>
+
+```shell
+singularity pull nvhpc-24.11-devel.sif docker://nvcr.io/nvidia/nvhpc@sha256:e31ab97e8c5914f80b277bd24d9c07c1947355f605967ba65a07ebaeb4eea224
+# corresponding to docker://nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
+singularity shell --nv --no-home nvhpc-24.11-devel.sif 
+source /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/12.6/hpcx/latest/hpcx-init.sh
+hpcx_load
+ucx_info -v
+# Library version: 1.17.0
+# Library path: /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/12.6/hpcx/latest/ucx/lib/libucs.so.0
+# API headers version: 1.17.0
+# Git branch '', revision 39c8f9b
+# Configured with: --disable-logging --disable-debug --disable-assertions --disable-params-check --without-knem --with-xpmem=/hpc/local/oss/xpmem/v2.7.1 --without-java --enable-devel-headers --with-fuse3-static --with-cuda=/hpc/local/oss/cuda12.5.1/redhat8 --with-gdrcopy --prefix=/build-result/hpcx-v2.20-gcc-inbox-redhat8-cuda12-aarch64/ucx --with-bfd=/hpc/local/oss/binutils/2.37/redhat8
+
+ucx_info -d | grep Transport
+#      Transport: self
+#      Transport: tcp
+#      Transport: tcp
+#      Transport: tcp
+#      Transport: sysv
+#      Transport: posix
+#      Transport: cuda_copy
+#      Transport: cuda_ipc
+#      Transport: gdr_copy
+#      Transport: dc_mlx5
+#      Transport: rc_verbs
+#      Transport: rc_mlx5
+#      Transport: ud_verbs
+#      Transport: ud_mlx5
+#      Transport: cma
+```
+
+</details>
+
+**Leonardo**
+
+<details>
+  <summary>Click me</summary>
 
 ```shell
 $ singularity pull nvhpc-devel-24.11.sif  docker://nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
@@ -114,6 +157,7 @@ Singularity> ucx_info -d | grep Transport
 #      Transport: cma
 ```
 
+</details>
 
 ### Apptainer (Thea) and Singularity (Leonardo)
 
