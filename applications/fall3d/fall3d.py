@@ -67,6 +67,8 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
         self.build_system.commands= [
             'cmake'
             ' -B build'
+            # Generate output of compile commands during generation: compile_commands.json.
+            ' -D CMAKE_EXPORT_COMPILE_COMMANDS=ON' 
             ' -D CMAKE_Fortran_COMPILER=nvfortran'
             ' -D DETAIL_BIN=NO'
             ' -D WITH-MPI=YES'
