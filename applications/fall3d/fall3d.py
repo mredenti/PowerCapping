@@ -74,6 +74,8 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
             ' -D WITH-MPI=YES'
             ' -D WITH-ACC=YES' 
             ' -D WITH-R4=NO'
+            # -fast: Common optimizations; includes -O2 -Munroll=c:1 -Mlre -Mautoinline
+            f' -D CUSTOM_COMPILER_FLAGS="-fast -tp={self.current_partition.processor.arch}"'
             f' -D CMAKE_INSTALL_PREFIX={installdir}'
             f' -S {configuredir}',
             'cmake --build ./build --parallel 8'
