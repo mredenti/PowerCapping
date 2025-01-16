@@ -38,6 +38,8 @@ site_configuration = {
                     "max_jobs": 1,
                     "environs": ["default", "gcc", "openmpi-gcc", "openmpi-nvhpc"],
                     "processor": {
+                        "arch": "icelake",
+                        "platform": "x86_64",
                         "num_cpus": 32,
                         "num_cpus_per_core": 1,
                         "num_cpus_per_socket": 32,
@@ -77,6 +79,8 @@ site_configuration = {
                         "openmpi-nvhpc",
                     ],
                     "processor": {
+                        "arch": "icelake",
+                        "platform": "x86_64",
                         "num_cpus": 32,
                         "num_cpus_per_core": 1,
                         "num_cpus_per_socket": 32,
@@ -86,6 +90,7 @@ site_configuration = {
                         {
                             'type': 'gpu',
                             'arch': 'sm_80',
+                            'model': 'Ampere',
                             'num_devices': 4,
                         }
                     ],
