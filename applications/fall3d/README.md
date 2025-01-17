@@ -136,7 +136,7 @@ reframe \
     -p default \
     -J qos=normal \
     -J account=cin_staff \
-    -n 'fall3d_raikoke_large_test' \
+    -n fall3d_raikoke_large_test \
     -S fall3d_raikoke_large_test.execution_mode=baremetal \
     --dry-run
 ```
