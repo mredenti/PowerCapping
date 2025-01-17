@@ -98,7 +98,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     valid_systems = ['leonardo:booster', 'thea:gh']
     valid_prog_environs = ['*'] # ['+mpi']
 
-    execution_mode = variable(typ.Str[r'baremetal|container']) #platform
+    execution_mode = variable(typ.Str[r'baremetal|container']) # platform
     image = variable(str) 
     
     num_tasks = None
@@ -122,12 +122,10 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         npx=npy=npz=1
         while npx*npy*npz != self.num_gpus:
             # Find which dimension is smallest and increment it
-            if npx <= npy and npx <= npz:
+            if npx <= npy:
                 npx *= 2
-            elif npy <= npz:
-                npy *= 2
             else:
-                npz *= 2
+                npy *= 2
         
         self.executable_opts += [str(npx), str(npy), str(npz)]
         
@@ -251,5 +249,28 @@ class fall3d_raikoke_test(fall3d_base_test):
         f'{test_prefix}.Fall3d.log'
     ]
     
-    num_gpus = 2
-    time_limit = '1200'
+    num_gpus = 8
+    time_limit = '600'
+    
+@rfm.simple_test
+class fall3d_raikoke_large_test(fall3d_base_test):
+    descr = 'Fall3d Raikoke-2019 large test'
+    # This should also match Fall3d's tasks log prefix
+    test_prefix = 'Raikoke-2019'
+    sourcesdir = 'raikoke-2019-large'
+    readonly_files = [
+        f'{test_prefix}.inp',
+        'Raikoke-2019.gfs.nc',
+    ]
+    executable_opts = ['All', 'Raikoke-2019.inp']
+    # maybe we can run a prerun hook which fetches the lfs
+    # show define an test case name variable and make keep files the default in the base
+    keep_files = [
+        f'{test_prefix}.SetSrc.log', 
+        f'{test_prefix}.SetTgsd.log',
+        f'{test_prefix}.SetDbs.log',
+        f'{test_prefix}.Fall3d.log'
+    ]
+    
+    num_gpus = parameter([1, 2, 4, 8])
+    time_limit = '1800'
