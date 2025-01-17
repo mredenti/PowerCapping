@@ -30,7 +30,7 @@
    MONTH = 06
    DAY   = 21
    RUN_START_(HOURS_AFTER_00) = 18
-   RUN_END_(HOURS_AFTER_00)   = 90   ! 18 + 72h 
+   RUN_END_(HOURS_AFTER_00)   = 19   ! 18 + 72h 
    INITIAL_CONDITION          = NONE
    RESTART_FILE               = ./
    RESTART_ROOT_PATH          = ./
