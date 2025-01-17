@@ -63,7 +63,7 @@
    !
    METEO_DATA_FORMAT          = GFS
    METEO_DATA_DICTIONARY_FILE = 
-   METEO_DATA_FILE            = GFS.0p25deg.nc
+   METEO_DATA_FILE            = Raikoke-2019.gfs.nc
    METEO_LEVELS_FILE          = 
    !
    DBS_BEGIN_METEO_DATA_(HOURS_AFTER_00) = 18
