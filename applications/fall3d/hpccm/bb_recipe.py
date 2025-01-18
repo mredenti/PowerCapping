@@ -161,10 +161,11 @@ else:
 Stage0 += environment(variables={'CC' : 'mpicc', 'FC' : 'mpif90'}, _export=True)
 
 hdf5 = hdf5(
-    version='1.14.5',
+    version='1.14.3',
     prefix='/opt/hdf5',
     check=True,
     configure_opts=['--disable-cxx',
+                    '--disable-shared',
                     '--enable-fortran',
                     '--enable-build-mode=production',
                     '--enable-parallel'
