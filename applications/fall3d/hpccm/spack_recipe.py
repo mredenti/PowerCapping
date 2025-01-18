@@ -255,7 +255,7 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     '-D WITH-MPI=YES',
                                     '-D WITH-ACC=YES',
                                     '-D CMAKE_Fortran_COMPILER=nvfortran',
-                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]} -gpu=sm_{params["cuda_arch"]}"'
+                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]} -gpu=sm_{params["cuda_arch"]}"',
                                     f'-D WITH-R4={fall3d_single_precision}',
                                     ],
                         prefix='/opt/fall3d', 
