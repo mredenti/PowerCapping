@@ -1,47 +1,13 @@
-"""Spack container (https://github.com/spack/spack)
-   Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
-   Optionally, set the user argument 'package' to install additional Spack packages.
-   Otherwise, it will install the predefined packages based on the cluster.
+"""
+Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
 
-   Sample workflow:
-$ hpccm --recipe spack.py --userarg cluster="leonardo" > Dockerfile.leonardo.spack
-$ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
+Sample workflow:
+    $ hpccm --recipe spack.py --userarg cluster="leonardo" > Dockerfile.leonardo.spack
+    $ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
 """
 
 from hpccm.templates.git import git
 from hpccm.common import container_type
-
-###############################################################################
-# Define Cluster Configurations
-###############################################################################
-
-# Configuration mappings for different clusters
-cluster_configs = {
-    'leonardo': {
-        'spack_version': '0.21.0',
-        'spack_arch': 'linux-rhel8-icelake',
-        'spack_branch_or_tag': 'v0.21.0',  # Tag for Spack version 0.21.0
-        'cuda_arch': '80',  # CUDA architecture for 'leonardo'
-        'nvhpc_version': '24.11',
-        'cuda_version': '11.8',
-        'base_os': 'ubuntu22.04',
-        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30',
-        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a',
-        'arch': 'x86_64',
-    },
-    'thea': {
-        'spack_version': '0.23.0',
-        'spack_arch': 'linux-rocky9-neoverse_v2',
-        'spack_branch_or_tag': 'v0.23.0',  # Tag for Spack version 0.23.0
-        'cuda_arch': '90',  # CUDA architecture for 'thea'
-        'nvhpc_version': '24.11',
-        'cuda_version': '12.6',
-        'base_os': 'ubuntu22.04', # 
-        'digest_devel': 'sha256:e31ab97e8c5914f80b277bd24d9c07c1947355f605967ba65a07ebaeb4eea224',
-        'digest_runtime': 'sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914',
-        'arch': 'aarch64',
-    }
-}
 
 ###############################################################################
 # Get User Arguments
@@ -50,11 +16,97 @@ cluster_configs = {
 # Fall3d Optional arguments
 fall3d_version = USERARG.get('fall3d_version', '9.0.1')
 fall3d_single_precision = USERARG.get('fall3d_single_precision', 'NO')
-
 # Required arguments
 cluster_name = USERARG.get('cluster', None)
 if cluster_name is None:
     raise RuntimeError("You must specify the 'cluster' argument (e.g., 'leonardo' or 'thea').")
+
+###############################################################################
+# Define Cluster Configurations
+###############################################################################
+
+# Configuration mappings for different clusters
+cluster_configs = {
+    'leonardo': {
+        # --------------------
+        # Base operating system
+        # --------------------
+        'base_os': 'ubuntu22.04',
+
+        # --------------------
+        # Spack version and specs to be installed in environment
+        # --------------------
+        'spack_version': '0.21.0',
+        'spack_arch': 'linux-rhel8-icelake',
+        'spack_branch_or_tag': 'v0.21.0',
+        'spack_specs' : [
+            'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
+            'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
+            'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
+            'parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
+            'zlib-ng%gcc',
+        ],
+
+        # --------------------
+        # NVHPC, CUDA setup for A100
+        # --------------------
+        'nvhpc_version': '24.11',
+        'cuda_version': '11.8',
+        'cuda_arch': '80',
+
+        # --------------------
+        # Use a (unique) content-based identifier for images
+        # --------------------
+        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30',
+        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a',
+
+        # --------------------
+        # Cluster arch and micro arch
+        # --------------------
+        'arch': 'x86_64',
+        'march': 'icelake'
+    },
+    'thea': {
+        # --------------------
+        # Base operating system
+        # --------------------
+        'base_os': 'ubuntu22.04',
+        
+        # --------------------
+        # Spack version and specs to be installed in environment
+        # --------------------
+        'spack_version': '0.21.0',
+        'spack_arch': 'linux-rocky9-neoverse_v2',
+        'spack_branch_or_tag': 'v0.21.0',
+        'spack_specs' : [
+            'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
+            'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
+            'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
+            'parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
+            'zlib-ng%gcc',
+        ],
+        
+        # --------------------
+        # NVHPC, CUDA setup for A100
+        # --------------------
+        'nvhpc_version': '24.11',
+        'cuda_version': '12.6',
+        'cuda_arch': '90',
+        
+        # --------------------
+        # Use a (unique) content-based identifier for images
+        # --------------------
+        'digest_devel': 'sha256:e31ab97e8c5914f80b277bd24d9c07c1947355f605967ba65a07ebaeb4eea224',
+        'digest_runtime': 'sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914',
+        
+        # --------------------
+        # Cluster arch and micro arch
+        # --------------------
+        'arch': 'aarch64',
+        'march': 'neoverse-v2'
+    }
+}
+
 
 # Validate cluster name
 if cluster_name not in cluster_configs:
@@ -64,30 +116,12 @@ if cluster_name not in cluster_configs:
     )
 
 # Retrieve cluster-specific settings
-settings = cluster_configs[cluster_name]
-spack_version = settings['spack_version']
-spack_arch = settings['spack_arch']
-arch = settings['arch']
-spack_branch_or_tag = settings['spack_branch_or_tag']
-cuda_arch = settings['cuda_arch']
-nvhpc_version = settings['nvhpc_version']
-cuda_version = settings['cuda_version']
-base_os = settings['base_os']
-
+params = cluster_configs[cluster_name]
+#arch = settings['arch'] # fall3d 
+#cuda_arch = settings['cuda_arch'] # fall3d
 
 ###############################################################################
-# Spack specs to be installed in environment
-###############################################################################
-spack_specs = [
-    'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
-    'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
-    'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
-    'parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
-    'zlib-ng%gcc',
-]
-
-###############################################################################
-# Add descriptive comments
+# Add descriptive comments to the container definition file
 ###############################################################################
 
 Stage0 += comment(__doc__, reformat=False)
@@ -96,10 +130,13 @@ Stage0 += comment(__doc__, reformat=False)
 # Base Image:
 ###############################################################################
 
-Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-devel-cuda_multi-{base_os}',
-                _distro=f'{base_os}',
-                _arch=f'{arch}',
-                _as='devel') # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
+# see # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
+# It seems Singularity does not allow specifying both a tag and a digest in the same reference
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{params['nvhpc_version']}-devel-cuda_multi-{params['base_os']}'
+Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params['digest_devel']}',
+                _distro=f'{params['base_os']}',
+                _arch=f'{params['arch']}',
+                _as='devel') 
 
 ###############################################################################
 # Install Base Dependencies
@@ -110,16 +147,16 @@ os_common_packages = ['autoconf',
                     'python3',
                     'environment-modules']
 
-if cluster_name == "thea" and base_os == "ubuntu22.04":
+if cluster_name == "thea" and params['base_os'] == "ubuntu22.04":
     os_common_packages += ['libcurl4-openssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages + ['curl-devel', '--allowerasing'])
 
-cuda_major = cuda_version.split('.')[0]  # e.g. '11.8' -> '11'
+cuda_major = cuda_version.split('.')[0]  # e.g. '11.8' -> '11' # I think there is a version function
 
-if base_os == "rockylinux9":
+if params['base_os'] == "rockylinux9":
     Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load hpcx-cuda{cuda_major}'])
@@ -133,28 +170,7 @@ Stage0 += shell(commands=[
                           '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
                           'hpcx_load'
                           ])
-
-ospackages = ['autoconf', 
-              'build-essential', 
-              'bzip2', 
-              'ca-certificates', 
-              'coreutils', 
-              'curl', 
-              'environment-modules', 
-              'gzip',
-              'libssl-dev', 
-              'openssh-client', 
-              'patch', 
-              'pkg-config', 
-              'tcl', 
-              'tar', 
-              'unzip', 
-              'zlib1g']
-
-Stage0 += shell(commands=['yum update -y rocky-release',
-                          'rm -rf /var/cache/yum/*'])
-
-"""
+""" 
 
 ###############################################################################
 # Setup and install Spack
@@ -162,7 +178,7 @@ Stage0 += shell(commands=['yum update -y rocky-release',
 
 # Setup and install Spack
 Stage0 += shell(commands=[
-    f'git clone --branch {spack_branch_or_tag} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
+    f'git clone --branch {params['spack_branch_or_tag']} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
     '. /opt/spack/share/spack/setup-env.sh' 
     ])
 
@@ -201,7 +217,7 @@ EOF''',
     'spack external find --all --scope env:/opt/spack-environment'
     ] + [  
         # Add user specified specs
-        f'spack add {spec}' for spec in spack_specs
+        f'spack add {spec}' for spec in params['spack_specs']
     ] + [
         # Spack install
         'spack concretize -f', 
@@ -215,8 +231,6 @@ grep 'charset=binary' | \
 grep 'x-executable\|x-archive\|x-sharedlib' | \
 awk -F: '{print $1}' | xargs strip -s''',
     ])
-
-# ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l"] at runtime
 
 #############################
 # FALL3D
@@ -260,16 +274,17 @@ Stage0 += shell(commands=[
 ###############################################################################
 # Finalize Container with Runtime Environment
 ###############################################################################
- 
-Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-runtime-cuda{cuda_version}-{base_os}',
-                    _distro=f'{base_os}',
-                    _arch=f'{arch}',
+
+# It seems Singularity does not allow specifying both a tag and a digest in the same reference
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{params['nvhpc_version']}-runtime-cuda{params['cuda_version']}-{params['base_os']}'
+Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params['digest_runtime']}',
+                    _distro=f'{params['base_os']}',
+                    _arch=f'{params['arch']}',
                     _as='runtime')
 
 Stage1 += Stage0.runtime(_from='devel') 
 
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#copy
-
 Stage1 += copy(
     files = {
         '/opt/software'         : '/opt/software',
@@ -279,7 +294,6 @@ Stage1 += copy(
         }, _from='devel')
     
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript
-
 if hpccm.config.g_ctype == container_type.DOCKER:
   # Docker automatically passes through command line arguments
   Stage1+= runscript(commands = ['/bin/sh', '--rcfile', '/etc/profile', '-l'], _args=True, _exec=True)
@@ -287,7 +301,6 @@ if hpccm.config.g_ctype == container_type.DOCKER:
 elif hpccm.config.g_ctype == container_type.SINGULARITY:
   # Singularity does not automatically pass through command line arguments
   #Stage1 += runscript(commands=['hpccm $@'])
-  
   # Modify the environment without relying on sourcing shell specific files at startup
   Stage1 += shell(commands = ['cat /etc/profile.d/z10_spack_environment.sh >> $SINGULARITY_ENVIRONMENT'])
 

@@ -69,6 +69,8 @@ site_configuration = {
                         "nvhpc-24.9",
                     ],
                     "processor": {
+                        "arch": "neoverse-v2",
+                        "platform": "arm64",
                         "num_cpus": 144,
                         "num_cpus_per_core": 1,
                         "num_cpus_per_socket": 72,
@@ -111,7 +113,7 @@ site_configuration = {
                         "nvhpc-24.9",
                     ],
                     "processor": {
-                        "arch": "arm_neoverse_v2",
+                        "arch": "neoverse-v2",
                         "platform": "arm64",
                         "num_cpus": 72,
                         "num_cpus_per_core": 1,
