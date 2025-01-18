@@ -2,8 +2,8 @@
 Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
 
 Sample workflow:
-    $ hpccm --recipe spack.py --userarg cluster="leonardo" > Dockerfile.leonardo.spack
-    $ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
+    $ hpccm --recipe spack_recipe.py --userarg cluster="leonardo" --format singularity --singularity-version=3.2
+    $ hpccm --recipe spack_recipe.py --userarg cluster="thea" --format singularity --singularity-version=3.2
 """
 
 from hpccm.templates.git import git
