@@ -1,11 +1,9 @@
-"""Spack container (https://github.com/spack/spack)
-   Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
-   Optionally, set the user argument 'package' to install additional Spack packages.
-   Otherwise, it will install the predefined packages based on the cluster.
+"""
+Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
 
-   Sample workflow:
-$ hpccm --recipe spack.py --userarg cluster="leonardo" > Dockerfile.leonardo.spack
-$ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
+Sample workflow:
+    $ hpccm --recipe spack.py --userarg cluster="leonardo" > Dockerfile.leonardo.spack
+    $ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
 """
 
 from hpccm.templates.git import git
