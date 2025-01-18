@@ -139,7 +139,7 @@ Stage0 += comment(__doc__, reformat=False)
 
 # see # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
 # It seems Singularity does not allow specifying both a tag and a digest in the same reference
-# alternative: image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-devel-cuda_multi-{base_os}'
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{params['nvhpc_version']}-devel-cuda_multi-{params['base_os']}'
 Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params['digest_devel']}',
                 _distro=f'{params['base_os']}',
                 _arch=f'{params['arch']}',
@@ -283,7 +283,7 @@ Stage0 += shell(commands=[
 ###############################################################################
 
 # It seems Singularity does not allow specifying both a tag and a digest in the same reference
-# alternative: image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-runtime-cuda{cuda_version}-{base_os}'
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{params['nvhpc_version']}-runtime-cuda{params['cuda_version']}-{params['base_os']}'
 Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params['digest_runtime']}',
                     _distro=f'{params['base_os']}',
                     _arch=f'{params['arch']}',
