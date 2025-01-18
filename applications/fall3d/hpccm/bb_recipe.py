@@ -116,11 +116,7 @@ params = cluster_configs[cluster_name]
 Stage0 += comment(__doc__, reformat=False)
 
 ###############################################################################
-# Devel stage
-###############################################################################
-
-###############################################################################
-# Base Image:
+# Devel stage Base Image
 ###############################################################################
 # see # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
 # It seems Singularity does not allow specifying both a tag and a digest in the same reference
@@ -148,6 +144,7 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
 
 cuda_major = params["cuda_version"].split('.')[0]  # e.g. '11.8' -> '11' # I think there is a version function
 
+# Load NVIDIA HPC-X module
 if params["base_os"] == "rockylinux9":
     Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
@@ -161,19 +158,23 @@ else:
 # HDF5
 #############################
 
+Stage0 += environment(variables={'CC' : 'mpicc', 'FC' : 'mpif90'}, _export=True)
+
 hdf5 = hdf5(
-    version='1.14.3',
+    version='1.14.5',
     prefix='/opt/hdf5',
-    cxx=False,                       # Disable C++ library
-    fortran=True,
-    configure_opts=['--enable-fortran',
+    check=True,
+    configure_opts=['--disable-cxx',
+                    '--enable-fortran',
                     '--enable-build-mode=production',
                     '--enable-parallel'
                     ]
 )
 
-Stage0 += hdf5
+#Configure options: -DALLOW_UNSUPPORTED:BOOL=ON -DHDF5_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DHDF5_ENABLE_MAP_API:BOOL=OFF -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF -DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF -DBUILD_SHARED_LIBS:BOOL=ON -DONLY_SHARED_LIBS:BOOL=OFF -DHDF5_ENABLE_PARALLEL:BOOL=ON -DHDF5_ENABLE_THREADSAFE:BOOL=OFF -DHDF5_BUILD_HL_LIB:BOOL=ON -DHDF5_BUILD_CPP_LIB:BOOL=OFF -DHDF5_BUILD_FORTRAN:BOOL=ON -DHDF5_BUILD_JAVA:BOOL=OFF -DHDF5_BUILD_TOOLS:BOOL=ON -DMPI_CXX_COMPILER:PATH=/leonardo/prod/opt/libraries/openmpi/4.1.6/nvhpc--23.11/bin/mpic++ -DMPI_C_COMPILER:PATH=/leonardo/prod/opt/libraries/openmpi/4.1.6/nvhpc--23.11/bin/mpicc -DMPI_Fortran_COMPILER:PATH=/leonardo/prod/opt/libraries/openmpi/4.1.6/nvhpc--23.11/bin/mpif90
 
+Stage0 += hdf5
+"""
 
 #############################
 # PnetCDF (Parallel netCDF) ≠ NetCDF4  [I don't think FALL3D actually supports this in practice at the moment, although the documentation says they do]
@@ -299,6 +300,7 @@ Stage0 += shell(commands=[
         # Generate modifications to the environment that are necessary to run
         'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh'
 ])
+"""
 
 ###############################################################################
 # Finalize Container with Runtime Environment
@@ -312,6 +314,8 @@ Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_runtime"]}',
                     _as='runtime')
 
 Stage1 += Stage0.runtime(_from='devel') 
+
+"""
 
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#copy
 Stage1 += copy(
@@ -333,7 +337,7 @@ elif hpccm.config.g_ctype == container_type.SINGULARITY:
   # Modify the environment without relying on sourcing shell specific files at startup
   Stage1 += shell(commands = ['cat /etc/profile.d/z10_spack_environment.sh >> $SINGULARITY_ENVIRONMENT'])
 
-
+"""
 
 """
 Stage0 += openmpi(infiniband=False, version=ompi_version) # we have been using the hpc sdk communication libraries so far
