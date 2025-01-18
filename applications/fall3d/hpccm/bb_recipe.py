@@ -9,12 +9,12 @@ The generation is parameterized solely using the provided user arguments, which 
 
 For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
 
-    $ hpccm --recipe spack_recipe.py --userarg cluster="leonardo" \
+    $ hpccm --recipe bb_recipe.py --userarg cluster="leonardo" \
             --format singularity --singularity-version=3.2
 
 Similarly, for the 'thea' cluster:
 
-    $ hpccm --recipe spack_recipe.py --userarg cluster="thea" \
+    $ hpccm --recipe bb_recipe.py --userarg cluster="thea" \
             --format singularity --singularity-version=3.2
 
 Note:
@@ -22,8 +22,11 @@ Note:
       runtime base images. These digests ensure safety and reproducibility.
 """
 
+from packaging.version import Version
 from hpccm.templates.git import git
 from hpccm.common import container_type
+import re
+
 
 ###############################################################################
 # Get User Arguments
@@ -50,20 +53,6 @@ cluster_configs = {
         'base_os': 'ubuntu22.04',
 
         # --------------------
-        # Spack version and specs to be installed in environment
-        # --------------------
-        'spack_version': '0.21.0',
-        'spack_arch': 'linux-rhel8-icelake',
-        'spack_branch_or_tag': 'v0.21.0',
-        'spack_specs' : [
-            'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
-            'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
-            'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
-            'parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
-            'zlib-ng%gcc',
-        ],
-
-        # --------------------
         # NVHPC, CUDA setup for A100
         # --------------------
         'nvhpc_version': '24.11',
@@ -87,20 +76,6 @@ cluster_configs = {
         # Base operating system
         # --------------------
         'base_os': 'ubuntu22.04',
-        
-        # --------------------
-        # Spack version and specs to be installed in environment
-        # --------------------
-        'spack_version': '0.21.0',
-        'spack_arch': 'linux-rocky9-neoverse_v2',
-        'spack_branch_or_tag': 'v0.21.0',
-        'spack_specs' : [
-            'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
-            'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
-            'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
-            'parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
-            'zlib-ng%gcc',
-        ],
         
         # --------------------
         # NVHPC, CUDA setup for A100
@@ -141,6 +116,10 @@ params = cluster_configs[cluster_name]
 Stage0 += comment(__doc__, reformat=False)
 
 ###############################################################################
+# Devel stage
+###############################################################################
+
+###############################################################################
 # Base Image:
 ###############################################################################
 # see # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
@@ -178,72 +157,108 @@ else:
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load nvhpc-hpcx-cuda{cuda_major}'])
 
-"""
-Stage0 += shell(commands=[
-                          '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
-                          'hpcx_load'
-                          ])
-""" 
+#############################
+# HDF5
+#############################
+
+hdf5 = hdf5(
+    version='1.14.3',
+    prefix='/opt/hdf5',
+    cxx=False,                       # Disable C++ library
+    fortran=True,
+    configure_opts=['--enable-fortran',
+                    '--enable-build-mode=production',
+                    '--enable-parallel'
+                    ]
+)
+
+Stage0 += hdf5
+
+
+#############################
+# PnetCDF (Parallel netCDF) ≠ NetCDF4  [I don't think FALL3D actually supports this in practice at the moment, although the documentation says they do]
+# I think they just use parallel I/O in NetCDF4
+#############################
+
+## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#pnetcdf
+## Installation Instructions https://github.com/Parallel-NetCDF/PnetCDF/blob/master/INSTALL
+parallel_netcdf = pnetcdf( # It will use the nvhpc communication libraries (is this what we want?)
+  prefix='/opt/pnetcdf/', 
+  version='1.12.3', # PnetCDF 1.6.0 or later is required for FALL3D
+  disable_cxx=True, # Turn off support for the C++ interface
+  enable_fortran=True, # Fall3d requires the NetCDF C and Fortran libraries
+  )
+
+Stage0 += parallel_netcdf
+
+
+#############################
+# netCDF - NetCDF does not provide a parallel API prior to 4.0 (NetCDF4 uses HDF5 parallel capabilities)
+#############################
+
+## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#netcdf
+# Fall3d requires the NetCDF C and Fortran libraries (https://gitlab.com/fall3d-suite/fall3d/-/blob/9.0.1/CMakeLists.txt?ref_type=tags#L30)
+
+netcdf = netcdf(
+    version='4.7.4',
+    version_fortran='4.5.3',
+    prefix='/opt/netcdf',
+    cxx=False,                       # Disable C++ library
+    fortran=True,
+    enable_mpi=True,                # +mpi
+    with_pnetcdf='/opt/pnetcdf',    # --with-pnetcdf=/opt/pnetcdf
+    enable_shared=True,             # --enable-shared
+    disable_doxygen=True,           # --disable-doxygen
+    disable_parallel_tests=True,    # --disable-parallel-tests
+    disable_tests=True,             # --disable-tests
+)
+
+Stage0 += netcdf
+
+
+#############################
+# FALL3D
+#############################
+
+## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#generic_cmake
+Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
+                                    '-D DETAIL_BIN=NO', # name of the binary will be Fall3d.x
+                                    '-D WITH-MPI=YES',
+                                    '-D WITH-ACC=YES',
+                                    f'-D WITH-R4={fall3d_single_precision}',
+                                    '-D CMAKE_RUNTIME_OUTPUT_DIRECTORY=/opt/fall3d/bin'
+                                    ],
+                        prefix='/opt/fall3d', 
+                        postinstall=[
+                                    # e.g., If 'Fall3d.x' ended up somewhere else, copy it manually
+                                    ## Unfortunately the upstream CMakeLists.txt has no install(TARGETS) logic
+                                    ## and can’t rely on -D CMAKE_RUNTIME_OUTPUT_DIRECTORY=... because the upstream CMakeLists.txt unconditionally overrides it
+                                    'mkdir /opt/fall3d/bin',
+                                    'cp /var/tmp/fall3d-9.0.1/build/Fall3d.x /opt/fall3d/bin/'
+                                  ],
+                        # Dictionary of environment variables and values, e.g., LD_LIBRARY_PATH and PATH, to set in the runtime stage. 
+                        runtime_environment = {
+                                    "PATH" : "/opt/fall3d/bin"
+                        },
+                        url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
 ###############################################################################
-# Setup and install Spack
+# Runtime image stage
 ###############################################################################
 
-# Setup and install Spack
-Stage0 += shell(commands=[
-    f'git clone --branch {params["spack_branch_or_tag"]} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
-    '. /opt/spack/share/spack/setup-env.sh' 
-    ])
-
-# Configure Environment Variables
-Stage0 += environment(variables={'LD_LIBRARY_PATH': '/opt/spack/lib:$LD_LIBRARY_PATH',
-                                 'FORCE_UNSAFE_CONFIGURE': '1'}) 
-
-###############################################################################
-# Create Spack environment
-###############################################################################
-Stage0 += shell(commands=[
-    # Create the Spack environment directory
-    'mkdir -p /opt/spack-environment',
-
-    # Create the spack.yaml configuration file using a Here Document
-    '''cat <<EOF > /opt/spack-environment/spack.yaml
-spack:
-  specs: []
-  concretizer:
-    unify: true
-  config:
-    install_tree: /opt/software
-  view: /opt/view
-EOF''',
-
-    # Activate spack environment
-    'spack env activate /opt/spack-environment',
-
-    # Find nvhpc, gcc compilers
-    'spack compiler find --scope env:/opt/spack-environment',
+# you should be able to get away just with cuda? which is a lot more lightweight? what about comm libraries though?
+# If user typed exactly two segments, e.g. '12.6', then append '.0'
+if re.match(r'^\d+\.\d+$', cuda_version):
+    cuda_version += '.0'
     
-    # Find OpenMPI as part of NVIDIA HPCX package 
-    'spack external find --not-buildable openmpi --scope env:/opt/spack-environment',
-    
-    # Find all other external packages
-    'spack external find --all --scope env:/opt/spack-environment'
-    ] + [  
-        # Add user specified specs
-        f'spack add {spec}' for spec in params["spack_specs"]
-    ] + [
-        # Spack install
-        'spack concretize -f', 
-        'spack install --fail-fast',
-        'spack clean --all',
-        
-        # Strip all the binaries in /opt/view to reduce container size
-    '''find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
-xargs file -i | \
-grep 'charset=binary' | \
-grep 'x-executable\|x-archive\|x-sharedlib' | \
-awk -F: '{print $1}' | xargs strip -s''',
-    ])
+#Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-runtime-cuda{cuda_version}.0-{base_os}')
+Stage1 += baseimage(image=f'nvcr.io/nvidia/cuda:{cuda_version}-runtime-{base_os}',
+                    _distro=f'{base_os}',
+                    _arch=f'{arch}',)
+
+Stage1 += Stage0.runtime(_from='devel') 
+ 
+
 
 #############################
 # FALL3D
@@ -318,3 +333,81 @@ elif hpccm.config.g_ctype == container_type.SINGULARITY:
   # Modify the environment without relying on sourcing shell specific files at startup
   Stage1 += shell(commands = ['cat /etc/profile.d/z10_spack_environment.sh >> $SINGULARITY_ENVIRONMENT'])
 
+
+
+"""
+Stage0 += openmpi(infiniband=False, version=ompi_version) # we have been using the hpc sdk communication libraries so far
+
+# Python building block (put link)
+#Stage0 += python(python3=False) # what about version
+
+# add docstring to Dockerfile/Singularity file
+Stage0 += comment(__doc__.strip(), reformat=False)
+
+Stage0 += label(metadata={'fall3d.version': fall3d_version})
+
+Stage0 += environment(variables={'PATH': '$PATH:/usr/local/fall3d/bin'})
+
+###############################################################################
+# Runtime image stage
+###############################################################################
+
+# you should be able to get away just with cuda? which is a lot more lightweight? what about comm libraries though?
+# If user typed exactly two segments, e.g. '12.6', then append '.0'
+if re.match(r'^\d+\.\d+$', cuda_version_str):
+    cuda_version_str += '.0'
+    
+Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-runtime-cuda{cuda_version}.0-{base_os}')
+Stage1 += baseimage(image=f'nvcr.io/nvidia/cuda:{cuda_version}.0-runtime-{base_os}')
+
+Stage1 += packages(ospackages=['cuda-cufft-10-1'])
+
+Stage1 += Stage0.runtime(_from='devel') # Maybe this will take care of all of them?
+
+Stage1 += parallel_netcdf.runtime(_from='devel')
+
+Stage1 += environment(variables={'PATH': '$PATH:/usr/local/fall3d/bin'})
+
+Stage1 += label(metadata={'fall3d.version': fall3d_version})
+
+
+###############################################################################
+# Release stage
+###############################################################################
+
+Stage1 += baseimage(image='nvcr.io/nvidia/cuda:11.2.0-base-ubuntu18.04')
+
+Stage1 += packages(ospackages=['libcublas-11-2'])
+
+Stage1 += Stage0.runtime()
+
+Stage1 += environment(variables={'PATH': '/usr/local/milc/bin:$PATH'})
+"""
+
+"""
+Recipe for a HPC Container Maker (HPCCM) container image
+
+Docker:
+$ sudo docker build -t hpccm -f Dockerfile .
+$ sudo docker run --rm -v $(pwd):/recipes hpccm --recipe /recipes/...
+
+Singularity:
+$ sudo singularity build hpccm.simg Singularity.def
+$ ./hpccm.simg --recipe ...
+"""
+"""
+from hpccm.common import container_type
+
+Stage0 += comment(__doc__, reformat=False)
+
+Stage0 += baseimage(image='python:3-slim', _distro='ubuntu', _docker_env=False)
+
+Stage0 += shell(commands=['pip install --no-cache-dir hpccm'], chdir=False)
+
+if hpccm.config.g_ctype == container_type.DOCKER:
+  # Docker automatically passes through command line arguments
+  Stage0 += runscript(commands=['hpccm'])
+elif hpccm.config.g_ctype == container_type.SINGULARITY:
+  # Singularity does not automatically pass through command line arguments
+  Stage0 += runscript(commands=['hpccm $@'])
+"""

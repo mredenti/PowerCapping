@@ -1,17 +1,29 @@
-# Spack container (https://github.com/spack/spack)
-#    Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
-#    Optionally, set the user argument 'package' to install additional Spack packages.
-#    Otherwise, it will install the predefined packages based on the cluster.
 # 
-#    Sample workflow:
-# $ hpccm --recipe spack.py --userarg cluster="leonardo" > Dockerfile.leonardo.spack
-# $ hpccm --recipe spack.py --userarg cluster="thea" > Dockerfile.thea.spack
+# This recipe builds a container definition for FALL3D that currently targets an environment with MPI
+# and OpenACC support.
+# The generation is parameterized solely using the provided user arguments, which include:
+# 
+# - `cluster`: Specifies the target cluster ('leonardo' or 'thea').
+# - `fall3d_version`: Fall3d version to build (default is '9.0.1').
+# - `fall3d_single_precision`: Indicates whether to build Fall3d for single precision (default is 'NO').
+# 
+# For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
+# 
+#     $ hpccm --recipe spack_recipe.py --userarg cluster="leonardo"             --format singularity --singularity-version=3.2
+# 
+# Similarly, for the 'thea' cluster:
+# 
+#     $ hpccm --recipe spack_recipe.py --userarg cluster="thea"             --format singularity --singularity-version=3.2
+# 
+# Note:
+#     - This recipe uses SHA-256 content digests as unique identifiers for both the devel and 
+#       runtime base images. These digests ensure safety and reproducibility.
 # 
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
+From: nvcr.io/nvidia/nvhpc@sha256:e31ab97e8c5914f80b277bd24d9c07c1947355f605967ba65a07ebaeb4eea224
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -36,7 +48,7 @@ Stage: devel
 
 %post
     cd /
-    git clone --branch v0.23.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
+    git clone --branch v0.21.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
     . /opt/spack/share/spack/setup-env.sh
 
 %environment
@@ -79,7 +91,7 @@ EOF
     mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
     cd /var/tmp/fall3d-9.0.1
     mkdir -p /opt/fall3d/bin
-    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D WITH-R4=NO /var/tmp/fall3d-9.0.1
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=neoverse-v2 -gpu=sm_90"-D WITH-R4=NO /var/tmp/fall3d-9.0.1
     cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
     cd /opt/fall3d
     cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
@@ -95,7 +107,7 @@ EOF
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: docker
-From: nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
+From: nvcr.io/nvidia/nvhpc@sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
