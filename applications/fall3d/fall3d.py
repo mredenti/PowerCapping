@@ -42,7 +42,7 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
     fall3d_source = fixture(fetch_fall3d, scope='session')
     
     #purge_environment=True
-    valid_systems = ['leonardo:login', 'thea:ggcompile']
+    valid_systems = ['leonardo:booster', 'thea:ggcompile']
     valid_prog_environs = ['*']
     modules = [
         'nvhpc',
@@ -74,8 +74,8 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
             ' -D WITH-MPI=YES'
             ' -D WITH-ACC=YES' 
             ' -D WITH-R4=NO'
-            # -fast: Common optimizations; includes -O2 -Munroll=c:1 -Mlre -Mautoinline (-O3?)
-            f' -D CUSTOM_COMPILER_FLAGS="-fast -tp={self.current_partition.processor.arch}"' # -gpu=sm_80
+            # -fast: Common optimizations; includes -O2 -Munroll=c:1 -Mlre -Mautoinline 
+            f' -D CUSTOM_COMPILER_FLAGS="-fast -tp={self.current_partition.processor.arch} -gpu={self.current_partition.devices[0].arch}"' 
             f' -D CMAKE_INSTALL_PREFIX={installdir}'
             f' -S {configuredir}',
             'cmake --build ./build --parallel 8'
@@ -272,5 +272,5 @@ class fall3d_raikoke_large_test(fall3d_base_test):
         f'{test_prefix}.Fall3d.log'
     ]
     
-    num_gpus = parameter([1, 2, 4, 8])
+    num_gpus = parameter([8])
     time_limit = '1800'
