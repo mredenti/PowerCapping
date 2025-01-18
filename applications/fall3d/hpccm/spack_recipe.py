@@ -65,12 +65,8 @@ cluster_configs = {
         # --------------------
         # Use a (unique) content-based identifier for images
         # --------------------
-        'digest_devel': (
-            'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30'
-        ),
-        'digest_runtime': (
-            'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a'
-        ),
+        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30',
+        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a',
 
         # --------------------
         # Cluster arch and micro arch
@@ -79,15 +75,41 @@ cluster_configs = {
         'march': 'icelake'
     },
     'thea': {
+        # --------------------
+        # Base operating system
+        # --------------------
+        'base_os': 'ubuntu22.04',
+        
+        # --------------------
+        # Spack version and specs to be installed in environment
+        # --------------------
         'spack_version': '0.21.0',
-        'spack_arch': 'linux-rocky9-neoverse_v2', # can be omitted if building on cluster or seeking portability
-        'spack_branch_or_tag': 'v0.21.0',  # Tag for Spack version 0.23.0
-        'cuda_arch': '90',  # CUDA architecture for 'thea'
+        'spack_arch': 'linux-rocky9-neoverse_v2',
+        'spack_branch_or_tag': 'v0.21.0',
+        'spack_specs' : [
+            'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
+            'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
+            'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
+            'parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
+            'zlib-ng%gcc',
+        ],
+        
+        # --------------------
+        # NVHPC, CUDA setup for A100
+        # --------------------
         'nvhpc_version': '24.11',
         'cuda_version': '12.6',
-        'base_os': 'ubuntu22.04', # 
+        'cuda_arch': '90',
+        
+        # --------------------
+        # Use a (unique) content-based identifier for images
+        # --------------------
         'digest_devel': 'sha256:e31ab97e8c5914f80b277bd24d9c07c1947355f605967ba65a07ebaeb4eea224',
         'digest_runtime': 'sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914',
+        
+        # --------------------
+        # Cluster arch and micro arch
+        # --------------------
         'arch': 'aarch64',
         'march': 'neoverse-v2'
     }
