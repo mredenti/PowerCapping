@@ -9,7 +9,7 @@ Below you can find the instructions to generate the Singularity definition file 
 hpccm \
     --format singularity \
     --singularity-version=3.2 \
-    --recipe spack.py \
+    --recipe spack_recipe.py \
     --userarg cluster=leonardo > singularity_leonardo.def
 ```
 
@@ -19,7 +19,7 @@ hpccm \
 hpccm \
     --format singularity \
     --singularity-version=3.2 \
-    --recipe spack.py \
+    --recipe spack_recipe.py \
     --userarg cluster=thea > singularity_thea.def
 ```
 
