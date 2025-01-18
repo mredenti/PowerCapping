@@ -128,7 +128,7 @@ base_os = settings['base_os']
 
 
 ###############################################################################
-# Add descriptive comments
+# Add descriptive comments to the container definition file
 ###############################################################################
 
 Stage0 += comment(__doc__, reformat=False)
