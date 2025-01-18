@@ -143,13 +143,12 @@ Stage0 += comment(__doc__, reformat=False)
 ###############################################################################
 # Base Image:
 ###############################################################################
-
 # see # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
 # It seems Singularity does not allow specifying both a tag and a digest in the same reference
-# alternative: image=f'nvcr.io/nvidia/nvhpc:{params['nvhpc_version']}-devel-cuda_multi-{params['base_os']}'
-Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params['digest_devel']}',
-                _distro=f'{params['base_os']}',
-                _arch=f'{params['arch']}',
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{params["nvhpc_version"]}-devel-cuda_multi-{params["base_os"]}'
+Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_devel"]}',
+                _distro=f'{params["base_os"]}',
+                _arch=f'{params["arch"]}',
                 _as='devel') 
 
 ###############################################################################
@@ -161,16 +160,16 @@ os_common_packages = ['autoconf',
                     'python3',
                     'environment-modules']
 
-if cluster_name == "thea" and params['base_os'] == "ubuntu22.04":
+if cluster_name == "thea" and params["base_os"] == "ubuntu22.04":
     os_common_packages += ['libcurl4-openssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages + ['curl-devel', '--allowerasing'])
 
-cuda_major = cuda_version.split('.')[0]  # e.g. '11.8' -> '11' # I think there is a version function
+cuda_major = params["cuda_version"].split('.')[0]  # e.g. '11.8' -> '11' # I think there is a version function
 
-if params['base_os'] == "rockylinux9":
+if params["base_os"] == "rockylinux9":
     Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load hpcx-cuda{cuda_major}'])
@@ -192,7 +191,7 @@ Stage0 += shell(commands=[
 
 # Setup and install Spack
 Stage0 += shell(commands=[
-    f'git clone --branch {params['spack_branch_or_tag']} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
+    f'git clone --branch {params["spack_branch_or_tag"]} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
     '. /opt/spack/share/spack/setup-env.sh' 
     ])
 
@@ -231,7 +230,7 @@ EOF''',
     'spack external find --all --scope env:/opt/spack-environment'
     ] + [  
         # Add user specified specs
-        f'spack add {spec}' for spec in params['spack_specs']
+        f'spack add {spec}' for spec in params["spack_specs"]
     ] + [
         # Spack install
         'spack concretize -f', 
@@ -256,7 +255,7 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     '-D WITH-MPI=YES',
                                     '-D WITH-ACC=YES',
                                     '-D CMAKE_Fortran_COMPILER=nvfortran',
-                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params['march']} -gpu=sm_{params['cuda_arch']}"'
+                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]} -gpu=sm_{params["cuda_arch"]}"'
                                     f'-D WITH-R4={fall3d_single_precision}',
                                     ],
                         prefix='/opt/fall3d', 
@@ -291,10 +290,10 @@ Stage0 += shell(commands=[
 ###############################################################################
 
 # It seems Singularity does not allow specifying both a tag and a digest in the same reference
-# alternative: image=f'nvcr.io/nvidia/nvhpc:{params['nvhpc_version']}-runtime-cuda{params['cuda_version']}-{params['base_os']}'
-Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params['digest_runtime']}',
-                    _distro=f'{params['base_os']}',
-                    _arch=f'{params['arch']}',
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{params["nvhpc_version"]}-runtime-cuda{params["cuda_version"]}-{params["base_os"]}'
+Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_runtime"]}',
+                    _distro=f'{params["base_os"]}',
+                    _arch=f'{params["arch"]}',
                     _as='runtime')
 
 Stage1 += Stage0.runtime(_from='devel') 
