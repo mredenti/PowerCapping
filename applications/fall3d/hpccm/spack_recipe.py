@@ -16,18 +16,10 @@ from hpccm.common import container_type
 # Fall3d Optional arguments
 fall3d_version = USERARG.get('fall3d_version', '9.0.1')
 fall3d_single_precision = USERARG.get('fall3d_single_precision', 'NO')
-
 # Required arguments
 cluster_name = USERARG.get('cluster', None)
 if cluster_name is None:
     raise RuntimeError("You must specify the 'cluster' argument (e.g., 'leonardo' or 'thea').")
-
-# Validate cluster name
-if cluster_name not in cluster_configs:
-    raise RuntimeError(
-        f"Invalid cluster name: '{cluster_name}'. "
-        f"Valid options are: {', '.join(cluster_configs.keys())}."
-    )
 
 ###############################################################################
 # Define Cluster Configurations
@@ -115,16 +107,24 @@ cluster_configs = {
     }
 }
 
+
+# Validate cluster name
+if cluster_name not in cluster_configs:
+    raise RuntimeError(
+        f"Invalid cluster name: '{cluster_name}'. "
+        f"Valid options are: {', '.join(cluster_configs.keys())}."
+    )
+
 # Retrieve cluster-specific settings
-settings = cluster_configs[cluster_name]
-spack_version = settings['spack_version']
-spack_arch = settings['spack_arch']
-arch = settings['arch']
-spack_branch_or_tag = settings['spack_branch_or_tag']
-cuda_arch = settings['cuda_arch']
-nvhpc_version = settings['nvhpc_version']
-cuda_version = settings['cuda_version']
-base_os = settings['base_os']
+params = cluster_configs[cluster_name]
+#spack_version = settings['spack_version']
+#spack_arch = settings['spack_arch']
+#arch = settings['arch']
+#spack_branch_or_tag = settings['spack_branch_or_tag']
+#cuda_arch = settings['cuda_arch']
+#nvhpc_version = settings['nvhpc_version']
+#cuda_version = settings['cuda_version']
+#base_os = settings['base_os']
 
 
 ###############################################################################
@@ -137,10 +137,13 @@ Stage0 += comment(__doc__, reformat=False)
 # Base Image:
 ###############################################################################
 
-Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-devel-cuda_multi-{base_os}',
-                _distro=f'{base_os}',
-                _arch=f'{arch}',
-                _as='devel') # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
+# see # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
+# It seems Singularity does not allow specifying both a tag and a digest in the same reference
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-devel-cuda_multi-{base_os}'
+Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params['digest_devel']}',
+                _distro=f'{params['base_os']}',
+                _arch=f'{params['arch']}',
+                _as='devel') 
 
 ###############################################################################
 # Install Base Dependencies
@@ -158,7 +161,7 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages + ['curl-devel', '--allowerasing'])
 
-cuda_major = cuda_version.split('.')[0]  # e.g. '11.8' -> '11'
+cuda_major = cuda_version.split('.')[0]  # e.g. '11.8' -> '11' # I think there is a version function
 
 if base_os == "rockylinux9":
     Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
@@ -301,8 +304,10 @@ Stage0 += shell(commands=[
 ###############################################################################
 # Finalize Container with Runtime Environment
 ###############################################################################
- 
-Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-runtime-cuda{cuda_version}-{base_os}',
+
+# It seems Singularity does not allow specifying both a tag and a digest in the same reference
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-runtime-cuda{cuda_version}-{base_os}'
+Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params['digest_runtime']}',
                     _distro=f'{base_os}',
                     _arch=f'{arch}',
                     _as='runtime')
