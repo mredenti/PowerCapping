@@ -1,8 +1,6 @@
 # Docker/Singularity container specification files with Nnvidia HPCCM
 
-
-Below you can find the instructions to generate the Singularity definition file for Fall3d targeting the Leonardo and Thea supercomputers
-
+Below you can find the instructions to generate the Singularity definition file for Fall3d targeting the Leonardo and Thea clusters.
 **Leonardo**
 
 ```shell
