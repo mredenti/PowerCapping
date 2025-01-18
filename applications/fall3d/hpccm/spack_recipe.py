@@ -154,7 +154,7 @@ os_common_packages = ['autoconf',
                     'python3',
                     'environment-modules']
 
-if cluster_name == "thea" and base_os == "ubuntu22.04":
+if cluster_name == "thea" and params['base_os'] == "ubuntu22.04":
     os_common_packages += ['libcurl4-openssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
@@ -163,7 +163,7 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
 
 cuda_major = cuda_version.split('.')[0]  # e.g. '11.8' -> '11' # I think there is a version function
 
-if base_os == "rockylinux9":
+if params['base_os'] == "rockylinux9":
     Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load hpcx-cuda{cuda_major}'])
@@ -177,28 +177,7 @@ Stage0 += shell(commands=[
                           '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
                           'hpcx_load'
                           ])
-
-ospackages = ['autoconf', 
-              'build-essential', 
-              'bzip2', 
-              'ca-certificates', 
-              'coreutils', 
-              'curl', 
-              'environment-modules', 
-              'gzip',
-              'libssl-dev', 
-              'openssh-client', 
-              'patch', 
-              'pkg-config', 
-              'tcl', 
-              'tar', 
-              'unzip', 
-              'zlib1g']
-
-Stage0 += shell(commands=['yum update -y rocky-release',
-                          'rm -rf /var/cache/yum/*'])
-
-"""
+""" 
 
 ###############################################################################
 # Setup and install Spack
@@ -206,7 +185,7 @@ Stage0 += shell(commands=['yum update -y rocky-release',
 
 # Setup and install Spack
 Stage0 += shell(commands=[
-    f'git clone --branch {spack_branch_or_tag} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
+    f'git clone --branch {params['spack_branch_or_tag']} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
     '. /opt/spack/share/spack/setup-env.sh' 
     ])
 
@@ -245,7 +224,7 @@ EOF''',
     'spack external find --all --scope env:/opt/spack-environment'
     ] + [  
         # Add user specified specs
-        f'spack add {spec}' for spec in spack_specs
+        f'spack add {spec}' for spec in params['spack_specs']
     ] + [
         # Spack install
         'spack concretize -f', 
@@ -259,8 +238,6 @@ grep 'charset=binary' | \
 grep 'x-executable\|x-archive\|x-sharedlib' | \
 awk -F: '{print $1}' | xargs strip -s''',
     ])
-
-# ENTRYPOINT ["/bin/bash", "--rcfile", "/etc/profile", "-l"] at runtime
 
 #############################
 # FALL3D
@@ -308,14 +285,13 @@ Stage0 += shell(commands=[
 # It seems Singularity does not allow specifying both a tag and a digest in the same reference
 # alternative: image=f'nvcr.io/nvidia/nvhpc:{nvhpc_version}-runtime-cuda{cuda_version}-{base_os}'
 Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params['digest_runtime']}',
-                    _distro=f'{base_os}',
-                    _arch=f'{arch}',
+                    _distro=f'{params['base_os']}',
+                    _arch=f'{params['arch']}',
                     _as='runtime')
 
 Stage1 += Stage0.runtime(_from='devel') 
 
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#copy
-
 Stage1 += copy(
     files = {
         '/opt/software'         : '/opt/software',
@@ -325,7 +301,6 @@ Stage1 += copy(
         }, _from='devel')
     
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript
-
 if hpccm.config.g_ctype == container_type.DOCKER:
   # Docker automatically passes through command line arguments
   Stage1+= runscript(commands = ['/bin/sh', '--rcfile', '/etc/profile', '-l'], _args=True, _exec=True)
@@ -333,7 +308,6 @@ if hpccm.config.g_ctype == container_type.DOCKER:
 elif hpccm.config.g_ctype == container_type.SINGULARITY:
   # Singularity does not automatically pass through command line arguments
   #Stage1 += runscript(commands=['hpccm $@'])
-  
   # Modify the environment without relying on sourcing shell specific files at startup
   Stage1 += shell(commands = ['cat /etc/profile.d/z10_spack_environment.sh >> $SINGULARITY_ENVIRONMENT'])
 
