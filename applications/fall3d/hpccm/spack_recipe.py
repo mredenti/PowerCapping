@@ -1,9 +1,25 @@
 """
-Set the user argument 'cluster' to specify the cluster ('leonardo' or 'thea').
+This recipe builds a container definition for FALL3D that currently targets an environment with MPI
+and OpenACC support.
+The generation is parameterized solely using the provided user arguments, which include:
 
-Sample workflow:
-    $ hpccm --recipe spack_recipe.py --userarg cluster="leonardo" --format singularity --singularity-version=3.2
-    $ hpccm --recipe spack_recipe.py --userarg cluster="thea" --format singularity --singularity-version=3.2
+- `cluster`: Specifies the target cluster ('leonardo' or 'thea').
+- `fall3d_version`: Fall3d version to build (default is '9.0.1').
+- `fall3d_single_precision`: Indicates whether to build Fall3d for single precision (default is 'NO').
+
+For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
+
+    $ hpccm --recipe spack_recipe.py --userarg cluster="leonardo" \
+            --format singularity --singularity-version=3.2
+
+Similarly, for the 'thea' cluster:
+
+    $ hpccm --recipe spack_recipe.py --userarg cluster="thea" \
+            --format singularity --singularity-version=3.2
+
+Note:
+    - This recipe uses SHA-256 content digests as unique identifiers for both the devel and 
+      runtime base images. These digests ensure safety and reproducibility.
 """
 
 from hpccm.templates.git import git
@@ -117,8 +133,6 @@ if cluster_name not in cluster_configs:
 
 # Retrieve cluster-specific settings
 params = cluster_configs[cluster_name]
-#arch = settings['arch'] # fall3d 
-#cuda_arch = settings['cuda_arch'] # fall3d
 
 ###############################################################################
 # Add descriptive comments to the container definition file
