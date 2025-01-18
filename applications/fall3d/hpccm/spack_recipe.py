@@ -117,15 +117,8 @@ if cluster_name not in cluster_configs:
 
 # Retrieve cluster-specific settings
 params = cluster_configs[cluster_name]
-#spack_version = settings['spack_version']
-#spack_arch = settings['spack_arch']
-#arch = settings['arch']
-#spack_branch_or_tag = settings['spack_branch_or_tag']
-#cuda_arch = settings['cuda_arch']
-#nvhpc_version = settings['nvhpc_version']
-#cuda_version = settings['cuda_version']
-#base_os = settings['base_os']
-
+#arch = settings['arch'] # fall3d 
+#cuda_arch = settings['cuda_arch'] # fall3d
 
 ###############################################################################
 # Add descriptive comments to the container definition file
