@@ -90,7 +90,7 @@ EOF
     mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
     cd /var/tmp/fall3d-9.0.1
     mkdir -p /opt/fall3d/bin
-    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=icelake -gpu=sm_80"-D WITH-R4=NO /var/tmp/fall3d-9.0.1
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=icelake -gpu=sm_80" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
     cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
     cd /opt/fall3d
     cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
