@@ -137,10 +137,8 @@ os_common_packages = ['autoconf',
                     'libxml2-dev',
                     'bzip2',
                     'file',
-                    'zlib1g-dev']
-
-if cluster_name == "thea" and params["base_os"] == "ubuntu22.04":
-    os_common_packages += ['libcurl4-openssl-dev']
+                    'zlib1g-dev',
+                    'libcurl4-openssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
@@ -240,15 +238,18 @@ Stage0 += parallel_netcdf
 # Fall3d requires the NetCDF C and Fortran libraries (https://gitlab.com/fall3d-suite/fall3d/-/blob/9.0.1/CMakeLists.txt?ref_type=tags#L30)
 
 netcdf_c = generic_cmake(
-    url='https://github.com/Unidata/netcdf-c/archive/v4.9.2.tar.gz',
+    url='https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz',
+    directory='netcdf-c-4.9.2',
     prefix='/opt/netcdf',
     install=True,
     cmake_opts=[
         '-DCMAKE_BUILD_TYPE=Release',
-        '-DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/pnetcdf',
+        '-DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/pnetcdf"',
         '-DENABLE_PNETCDF=ON', 
         '-DENABLE_PARALLEL4=ON', 
         '-DENABLE_HDF5=ON', 
+        '-DENABLE_DAP=OFF',
+        '-DENABLE_BYTERANGE=OFF',
         '-DENABLE_EXAMPLES=OFF', 
         '-DMPI_CXX_COMPILER=mpic++',
         '-DMPI_C_COMPILER=mpicc',
@@ -266,22 +267,19 @@ Stage0 += netcdf_c
 
 
 netcdf_fortran = generic_cmake(
-    url='https://github.com/Unidata/netcdf-fortran/archive/v4.6.1.tar.gz',
+    url='https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz',
+    directory='netcdf-fortran-4.6.1',
     prefix='/opt/netcdf',
     install=True,
     cmake_opts=[
         '-DCMAKE_BUILD_TYPE=Release',
-        '-DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/netcdf;/opt/pnetcdf',
-        '-DNETCDF_C_LIBRARY=/opt/netcdf',
+        '-DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/netcdf;/opt/pnetcdf;${NetCDF_C_PATH}"',
+        '-DNETCDF_C_LIBRARY=/opt/netcdf/lib/libnetcdf.so',
         '-DMPI_C_COMPILER=mpicc',
         '-DMPI_Fortran_COMPILER=mpif90',
+        '-DnetCDF_DIR=/opt/netcdf',
+        '-DCMAKE_Fortran_FLAGS="-fPIC"'
     ],
-    runtime_environment = {
-                                    "PATH" : "/opt/netcdf:$PATH"
-                        },
-    devel_environment = {
-                                    "PATH" : "/opt/netcdf:$PATH"
-                        },
 )
 
 Stage0 += netcdf_fortran
