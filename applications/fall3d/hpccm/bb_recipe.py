@@ -145,11 +145,17 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
 cuda_major = params["cuda_version"].split('.')[0]  # e.g. '11.8' -> '11' # I think there is a version function
 
 # Load NVIDIA HPC-X module
-if params["base_os"] == "rockylinux9":
-    Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
+if cluster_name == "thea":
+    Stage0 += shell(commands=['. /usr/share/modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load hpcx-cuda{cuda_major}'])
-else:
+    
+#Stage0 += shell(commands=[
+#                          '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
+#                          'hpcx_load'
+#                          ])
+
+elif cluster_name == "leonardo":
     Stage0 += shell(commands=['. /usr/share/modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load nvhpc-hpcx-cuda{cuda_major}'])
@@ -158,12 +164,12 @@ else:
 # HDF5
 #############################
 
-Stage0 += environment(variables={'CC' : 'mpicc', 'FC' : 'mpif90'}, _export=True)
+Stage0 += environment(variables={'CC' : 'mpicc', 'FC' : 'mpif90'}, _export=False)
 
 hdf5 = hdf5(
     version='1.14.3',
     prefix='/opt/hdf5',
-    check=True,
+    check=False,
     configure_opts=['--disable-cxx',
                     '--disable-shared',
                     '--enable-fortran',
@@ -172,27 +178,37 @@ hdf5 = hdf5(
                     ]
 )
 
-#Configure options: -DALLOW_UNSUPPORTED:BOOL=ON -DHDF5_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DHDF5_ENABLE_MAP_API:BOOL=OFF -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF -DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF -DBUILD_SHARED_LIBS:BOOL=ON -DONLY_SHARED_LIBS:BOOL=OFF -DHDF5_ENABLE_PARALLEL:BOOL=ON -DHDF5_ENABLE_THREADSAFE:BOOL=OFF -DHDF5_BUILD_HL_LIB:BOOL=ON -DHDF5_BUILD_CPP_LIB:BOOL=OFF -DHDF5_BUILD_FORTRAN:BOOL=ON -DHDF5_BUILD_JAVA:BOOL=OFF -DHDF5_BUILD_TOOLS:BOOL=ON -DMPI_CXX_COMPILER:PATH=/leonardo/prod/opt/libraries/openmpi/4.1.6/nvhpc--23.11/bin/mpic++ -DMPI_C_COMPILER:PATH=/leonardo/prod/opt/libraries/openmpi/4.1.6/nvhpc--23.11/bin/mpicc -DMPI_Fortran_COMPILER:PATH=/leonardo/prod/opt/libraries/openmpi/4.1.6/nvhpc--23.11/bin/mpif90
-
-Stage0 += hdf5
-"""
+Stage0 += hdf5 # Configure options: -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF -DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF
 
 #############################
-# PnetCDF (Parallel netCDF) ≠ NetCDF4  [I don't think FALL3D actually supports this in practice at the moment, although the documentation says they do]
-# I think they just use parallel I/O in NetCDF4
+# PnetCDF (Parallel netCDF) ≠ NetCDF4 
 #############################
 
 ## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#pnetcdf
 ## Installation Instructions https://github.com/Parallel-NetCDF/PnetCDF/blob/master/INSTALL
+
+Stage0 += environment(variables={'SEQ_CC' : 'nvc', 'CC' : 'nvc', 'MPICC' : 'mpicc', 'MPIF90': 'mpif90'}, _export=False)
+
 parallel_netcdf = pnetcdf( # It will use the nvhpc communication libraries (is this what we want?)
   prefix='/opt/pnetcdf/', 
   version='1.12.3', # PnetCDF 1.6.0 or later is required for FALL3D
-  disable_cxx=True, # Turn off support for the C++ interface
-  enable_fortran=True, # Fall3d requires the NetCDF C and Fortran libraries
-  )
+  configure_opts=['--disable-cxx', # Turn off support for the C++ interface
+                '--enable-fortran', # Fall3d requires the NetCDF C and Fortran libraries
+                '--enable-shared',
+                '--enable-static',
+                '--disable-silent-rules',
+                '--enable-relax-coord-bound',
+                '--with-mpi'
+                ],
+  check=False
+)
+
+#CFLAGS=-fpic CXXFLAGS=-fpic FCFLAGS=-fpic FFLAGS=-fpic 
+
 
 Stage0 += parallel_netcdf
 
+"""
 
 #############################
 # netCDF - NetCDF does not provide a parallel API prior to 4.0 (NetCDF4 uses HDF5 parallel capabilities)

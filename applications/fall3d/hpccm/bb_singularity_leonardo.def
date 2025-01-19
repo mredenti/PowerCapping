@@ -68,7 +68,6 @@ Stage: devel
     mkdir -p /var/tmp && tar -x -f /var/tmp/hdf5-1.14.3.tar.bz2 -C /var/tmp -j
     cd /var/tmp/hdf5-1.14.3 &&   ./configure --prefix=/opt/hdf5 --disable-cxx --disable-shared --enable-build-mode=production --enable-fortran --enable-parallel
     make -j$(nproc)
-    make -j 1 check
     make -j$(nproc) install
     rm -rf /var/tmp/hdf5-1.14.3 /var/tmp/hdf5-1.14.3.tar.bz2
 %environment

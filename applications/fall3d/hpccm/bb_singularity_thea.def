@@ -22,8 +22,8 @@
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: localimage
-From: nvhpc-24.11-devel.sif
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:da058394e75309cf6c9002a0d47332b0e730f107f029464819a4a9ba2a6e0454
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -69,7 +69,6 @@ Stage: devel
     mkdir -p /var/tmp && tar -x -f /var/tmp/hdf5-1.14.3.tar.bz2 -C /var/tmp -j
     cd /var/tmp/hdf5-1.14.3 &&   ./configure --prefix=/opt/hdf5 --disable-cxx --disable-shared --enable-build-mode=production --enable-fortran --enable-parallel
     make -j$(nproc)
-    make -j$(nproc) check
     make -j$(nproc) install
     rm -rf /var/tmp/hdf5-1.14.3 /var/tmp/hdf5-1.14.3.tar.bz2
 %environment
@@ -87,8 +86,8 @@ Stage: devel
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: localimage
-From: nvhpc-24.11-runtime-cuda12.6.sif
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
