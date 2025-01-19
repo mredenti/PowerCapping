@@ -218,6 +218,13 @@ netcdf = netcdf(
 Stage0 += netcdf
 
 
+echo "Build NetCDF"
+wget --progress=bar:force:noscroll https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz 
+tar -xf v4.9.2.tar.gz && cd netcdf-c-4.9.2 
+CFLAGS="-fPIC" CC=/home/tools/bin/h5pcc ./configure --enable-shared=no --disable-dap --disable-libxml2 --disable-byterange --prefix=/home/tools 
+make -j$(nproc) && make install && cd /tmp
+
+
 #############################
 # FALL3D
 #############################

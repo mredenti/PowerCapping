@@ -1,0 +1,114 @@
+# 
+# This recipe builds a container definition for FALL3D that currently targets an environment with MPI
+# and OpenACC support.
+# The generation is parameterized solely using the provided user arguments, which include:
+# 
+# - `cluster`: Specifies the target cluster ('leonardo' or 'thea').
+# - `fall3d_version`: Fall3d version to build (default is '9.0.1').
+# - `fall3d_single_precision`: Indicates whether to build Fall3d for single precision (default is 'NO').
+# 
+# For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
+# 
+#     $ hpccm --recipe bb_recipe.py --userarg cluster="leonardo"             --format singularity --singularity-version=3.2
+# 
+# Similarly, for the 'thea' cluster:
+# 
+#     $ hpccm --recipe bb_recipe.py --userarg cluster="thea"             --format singularity --singularity-version=3.2
+# 
+# Note:
+#     - This recipe uses SHA-256 content digests as unique identifiers for both the devel and 
+#       runtime base images. These digests ensure safety and reproducibility.
+# 
+
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: localimage
+From: nvhpc-24.11-devel.sif
+Stage: devel
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        autoconf \
+        ca-certificates \
+        curl \
+        environment-modules \
+        pkg-config \
+        python3
+    rm -rf /var/lib/apt/lists/*
+
+%post
+    cd /
+    . /usr/share/modules/init/sh
+    module use /opt/nvidia/hpc_sdk/modulefiles
+    module load nvhpc-hpcx-cuda11
+
+%environment
+    export CC=mpicc
+    export FC=mpif90
+%post
+    export CC=mpicc
+    export FC=mpif90
+
+# HDF5 version 1.14.3
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        bzip2 \
+        file \
+        make \
+        wget \
+        zlib1g-dev
+    rm -rf /var/lib/apt/lists/*
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2
+    mkdir -p /var/tmp && tar -x -f /var/tmp/hdf5-1.14.3.tar.bz2 -C /var/tmp -j
+    cd /var/tmp/hdf5-1.14.3 &&   ./configure --prefix=/opt/hdf5 --disable-cxx --disable-shared --enable-build-mode=production --enable-fortran --enable-parallel
+    make -j$(nproc)
+    make -j 1 check
+    make -j$(nproc) install
+    rm -rf /var/tmp/hdf5-1.14.3 /var/tmp/hdf5-1.14.3.tar.bz2
+%environment
+    export CPATH=/opt/hdf5/include:$CPATH
+    export HDF5_DIR=/opt/hdf5
+    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
+    export PATH=/opt/hdf5/bin:$PATH
+%post
+    export CPATH=/opt/hdf5/include:$CPATH
+    export HDF5_DIR=/opt/hdf5
+    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
+    export PATH=/opt/hdf5/bin:$PATH
+
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: localimage
+From: nvhpc-24.11-runtime-cuda11.8.sif
+Stage: runtime
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+# HDF5
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        zlib1g
+    rm -rf /var/lib/apt/lists/*
+%files from devel
+    /opt/hdf5 /opt/hdf5
+%environment
+    export CPATH=/opt/hdf5/include:$CPATH
+    export HDF5_DIR=/opt/hdf5
+    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
+    export PATH=/opt/hdf5/bin:$PATH
+%post
+    export CPATH=/opt/hdf5/include:$CPATH
+    export HDF5_DIR=/opt/hdf5
+    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
+    export PATH=/opt/hdf5/bin:$PATH
