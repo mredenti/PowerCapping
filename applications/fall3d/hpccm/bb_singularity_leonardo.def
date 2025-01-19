@@ -35,6 +35,7 @@ Stage: devel
         ca-certificates \
         curl \
         environment-modules \
+        libxml2-dev \
         pkg-config \
         python3
     rm -rf /var/lib/apt/lists/*
@@ -44,10 +45,6 @@ Stage: devel
     . /usr/share/modules/init/sh
     module use /opt/nvidia/hpc_sdk/modulefiles
     module load nvhpc-hpcx-cuda11
-
-%environment
-    export CC=mpicc
-    export FC=mpif90
 
 # HDF5 version 1.14.3
 %post
@@ -63,7 +60,7 @@ Stage: devel
     cd /
     mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2
     mkdir -p /var/tmp && tar -x -f /var/tmp/hdf5-1.14.3.tar.bz2 -C /var/tmp -j
-    cd /var/tmp/hdf5-1.14.3 &&   ./configure --prefix=/opt/hdf5 --disable-cxx --disable-shared --enable-build-mode=production --enable-fortran --enable-parallel
+    cd /var/tmp/hdf5-1.14.3 &&   ./configure --prefix=/opt/hdf5 --disable-cxx --enable-build-mode=production --enable-fortran --enable-parallel --enable-shared --enable-static --with-zlib CC=mpicc CFLAGS="-fPIC" F77=mpifort FC=mpif90 FCFLAGS="-fPIC" FFLAGS="-fPIC"
     make -j$(nproc)
     make -j$(nproc) install
     rm -rf /var/tmp/hdf5-1.14.3 /var/tmp/hdf5-1.14.3.tar.bz2
@@ -80,9 +77,6 @@ Stage: devel
     export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
     export PATH=/opt/hdf5/bin:$PATH
 
-%environment
-    export SEQ_CC=nvc
-
 # PnetCDF version 1.12.3
 %post
     apt-get update -y
@@ -98,9 +92,7 @@ Stage: devel
     cd /
     mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://parallel-netcdf.github.io/Release/pnetcdf-1.12.3.tar.gz
     mkdir -p /var/tmp && tar -x -f /var/tmp/pnetcdf-1.12.3.tar.gz -C /var/tmp -z
-    cd /var/tmp/pnetcdf-1.12.3 &&  CC=mpicc CXX=mpicxx F77=mpif77 F90=mpif90 FC=mpifort ./configure --prefix=/opt/pnetcdf/ --disable-cxx --disable-silent-rules --enable-fortran --enable-relax-coord-bound --enable-shared --enable-static --with-mpi
-    cd /var/tmp/pnetcdf-1.12.3
-    sed -i -e 's#pic_flag=""#pic_flag=" -fpic -DPIC"#' -e 's#wl=""#wl="-Wl,"#' libtool
+    cd /var/tmp/pnetcdf-1.12.3 &&  CC=mpicc CXX=mpicxx F77=mpif77 F90=mpif90 FC=mpifort ./configure --prefix=/opt/pnetcdf/ --disable-cxx --disable-shared --disable-silent-rules --enable-fortran --enable-relax-coord-bound --enable-static --with-mpi CFLAGS="-fPIC" FCFLAGS="-fPIC" FFLAGS="-fPIC" SEQ_CC=nvc
     make -j$(nproc)
     make -j$(nproc) install
     rm -rf /var/tmp/pnetcdf-1.12.3 /var/tmp/pnetcdf-1.12.3.tar.gz

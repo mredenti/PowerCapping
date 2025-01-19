@@ -133,7 +133,8 @@ os_common_packages = ['autoconf',
                     'ca-certificates',
                     'pkg-config',
                     'python3',
-                    'environment-modules']
+                    'environment-modules',
+                    'libxml2-dev']
 
 if cluster_name == "thea" and params["base_os"] == "ubuntu22.04":
     os_common_packages += ['libcurl4-openssl-dev']
@@ -144,37 +145,42 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
 
 cuda_major = params["cuda_version"].split('.')[0]  # e.g. '11.8' -> '11' # I think there is a version function
 
+
 # Load NVIDIA HPC-X module
-if cluster_name == "thea":
-    Stage0 += shell(commands=['. /usr/share/modules/init/sh',
+if params["base_os"] == "rockylinux9":
+    Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load hpcx-cuda{cuda_major}'])
-    
+else:
+    Stage0 += shell(commands=['. /usr/share/modules/init/sh',
+                            'module use /opt/nvidia/hpc_sdk/modulefiles',
+                            f'module load nvhpc-hpcx-cuda{cuda_major}'])
 #Stage0 += shell(commands=[
 #                          '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
 #                          'hpcx_load'
 #                          ])
 
-elif cluster_name == "leonardo":
-    Stage0 += shell(commands=['. /usr/share/modules/init/sh',
-                            'module use /opt/nvidia/hpc_sdk/modulefiles',
-                            f'module load nvhpc-hpcx-cuda{cuda_major}'])
-
 #############################
 # HDF5
 #############################
-
-Stage0 += environment(variables={'CC' : 'mpicc', 'FC' : 'mpif90'}, _export=False)
 
 hdf5 = hdf5(
     version='1.14.3',
     prefix='/opt/hdf5',
     check=False,
     configure_opts=['--disable-cxx',
-                    '--disable-shared',
                     '--enable-fortran',
                     '--enable-build-mode=production',
-                    '--enable-parallel'
+                    '--enable-parallel',
+                    '--with-zlib',
+                    '--enable-shared',
+                    '--enable-static',
+                    'CC=mpicc',
+                    'FC=mpif90', 
+                    'F77=mpifort',
+                    'CFLAGS="-fPIC"',
+                    'FCFLAGS="-fPIC"',
+                    'FFLAGS="-fPIC"'
                     ]
 )
 
@@ -187,18 +193,20 @@ Stage0 += hdf5 # Configure options: -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON -DHDF5_E
 ## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#pnetcdf
 ## Installation Instructions https://github.com/Parallel-NetCDF/PnetCDF/blob/master/INSTALL
 
-Stage0 += environment(variables={'SEQ_CC' : 'nvc'}, _export=False)
-
 parallel_netcdf = pnetcdf( # It will use the nvhpc communication libraries (is this what we want?)
   prefix='/opt/pnetcdf/', 
   version='1.12.3', # PnetCDF 1.6.0 or later is required for FALL3D
   configure_opts=['--disable-cxx', # Turn off support for the C++ interface
                 '--enable-fortran', # Fall3d requires the NetCDF C and Fortran libraries
-                '--enable-shared',
+                '--disable-shared',
                 '--enable-static',
                 '--disable-silent-rules',
-                '--enable-relax-coord-bound', # CFLAGS=-fpic CXXFLAGS=-fpic FCFLAGS=-fpic FFLAGS=-fpic 
-                '--with-mpi'
+                '--enable-relax-coord-bound',
+                '--with-mpi',
+                'SEQ_CC=nvc',
+                'CFLAGS="-fPIC"',
+                'FCFLAGS="-fPIC"',
+                'FFLAGS="-fPIC"'
                 ],
   check=False  
 )
