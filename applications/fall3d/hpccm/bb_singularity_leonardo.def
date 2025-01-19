@@ -22,8 +22,8 @@
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: localimage
-From: nvhpc-24.11-devel.sif
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -46,9 +46,6 @@ Stage: devel
     module load nvhpc-hpcx-cuda11
 
 %environment
-    export CC=mpicc
-    export FC=mpif90
-%post
     export CC=mpicc
     export FC=mpif90
 
@@ -83,10 +80,97 @@ Stage: devel
     export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
     export PATH=/opt/hdf5/bin:$PATH
 
+%environment
+    export SEQ_CC=nvc
+
+# PnetCDF version 1.12.3
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        file \
+        m4 \
+        make \
+        perl \
+        tar \
+        wget
+    rm -rf /var/lib/apt/lists/*
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://parallel-netcdf.github.io/Release/pnetcdf-1.12.3.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/pnetcdf-1.12.3.tar.gz -C /var/tmp -z
+    cd /var/tmp/pnetcdf-1.12.3 &&  CC=mpicc CXX=mpicxx F77=mpif77 F90=mpif90 FC=mpifort ./configure --prefix=/opt/pnetcdf/ --disable-cxx --disable-silent-rules --enable-fortran --enable-relax-coord-bound --enable-shared --enable-static --with-mpi
+    cd /var/tmp/pnetcdf-1.12.3
+    sed -i -e 's#pic_flag=""#pic_flag=" -fpic -DPIC"#' -e 's#wl=""#wl="-Wl,"#' libtool
+    make -j$(nproc)
+    make -j$(nproc) install
+    rm -rf /var/tmp/pnetcdf-1.12.3 /var/tmp/pnetcdf-1.12.3.tar.gz
+%environment
+    export CPATH=/opt/pnetcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/pnetcdf/bin:$PATH
+%post
+    export CPATH=/opt/pnetcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/pnetcdf/bin:$PATH
+
+# NetCDF version 4.9.2, NetCDF Fortran version 4.6.1
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ca-certificates \
+        file \
+        libcurl4-openssl-dev \
+        m4 \
+        make \
+        wget \
+        zlib1g-dev
+    rm -rf /var/lib/apt/lists/*
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Unidata/netcdf-c/archive/v4.9.2.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/v4.9.2.tar.gz -C /var/tmp -z
+    cd /var/tmp/netcdf-c-4.9.2 &&   ./configure --prefix=/opt/netcdf --disable-doxygen --disable-parallel-tests --disable-tests --enable-mpi --enable-shared --enable-static --with-pnetcdf=/opt/pnetcdf
+    make -j$(nproc)
+    make -j$(nproc) install
+    rm -rf /var/tmp/netcdf-c-4.9.2 /var/tmp/v4.9.2.tar.gz
+%environment
+    export CPATH=/opt/netcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/netcdf/bin:$PATH
+%post
+    export CPATH=/opt/netcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/netcdf/bin:$PATH
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Unidata/netcdf-fortran/archive/v4.6.1.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/v4.6.1.tar.gz -C /var/tmp -z
+    cd /var/tmp/netcdf-fortran-4.6.1 &&   ./configure --prefix=/opt/netcdf --disable-doxygen --disable-parallel-tests --disable-tests --enable-mpi --enable-shared --enable-static --with-pnetcdf=/opt/pnetcdf
+    make -j$(nproc)
+    make -j$(nproc) install
+    rm -rf /var/tmp/netcdf-fortran-4.6.1 /var/tmp/v4.6.1.tar.gz
+
+# https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
+    cd /var/tmp/fall3d-9.0.1
+    mkdir -p /opt/fall3d/bin
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=icelake -gpu=sm_80" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
+    cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
+    cd /opt/fall3d
+    cp /var/tmp/fall3d-9.0.1/build/Fall3d.x /opt/fall3d/bin/
+    rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
+
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: localimage
-From: nvhpc-24.11-runtime-cuda11.8.sif
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -111,3 +195,49 @@ Stage: runtime
     export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
     export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
     export PATH=/opt/hdf5/bin:$PATH
+
+# PnetCDF
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libatomic1
+    rm -rf /var/lib/apt/lists/*
+%files from devel
+    /opt/pnetcdf/ /opt/pnetcdf/
+%environment
+    export CPATH=/opt/pnetcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/pnetcdf/bin:$PATH
+%post
+    export CPATH=/opt/pnetcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/pnetcdf/bin:$PATH
+
+# NetCDF
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        zlib1g
+    rm -rf /var/lib/apt/lists/*
+%files from devel
+    /opt/netcdf /opt/netcdf
+%environment
+    export CPATH=/opt/netcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/netcdf/bin:$PATH
+%post
+    export CPATH=/opt/netcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/netcdf/bin:$PATH
+
+# https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
+%files from devel
+    /opt/fall3d /opt/fall3d
+%environment
+    export PATH=/opt/fall3d/bin
+%post
+    export PATH=/opt/fall3d/bin
