@@ -134,7 +134,10 @@ os_common_packages = ['autoconf',
                     'pkg-config',
                     'python3',
                     'environment-modules',
-                    'libxml2-dev']
+                    'libxml2-dev',
+                    'bzip2',
+                    'file',
+                    'zlib1g-dev']
 
 if cluster_name == "thea" and params["base_os"] == "ubuntu22.04":
     os_common_packages += ['libcurl4-openssl-dev']
@@ -164,25 +167,40 @@ else:
 # HDF5
 #############################
 
-hdf5 = hdf5(
-    version='1.14.3',
+hdf5 = generic_cmake(
+    url='https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2',
     prefix='/opt/hdf5',
-    check=False,
-    configure_opts=['--disable-cxx',
-                    '--enable-fortran',
-                    '--enable-build-mode=production',
-                    '--enable-parallel',
-                    '--with-zlib',
-                    '--enable-shared',
-                    '--enable-static',
-                    'CC=mpicc',
-                    'FC=mpif90', 
-                    'F77=mpifort',
-                    'CFLAGS="-fPIC"',
-                    'FCFLAGS="-fPIC"',
-                    'FFLAGS="-fPIC"'
-                    ]
+    install=True,
+    cmake_opts=[
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DALLOW_UNSUPPORTED:BOOL=ON',
+        '-DHDF5_BUILD_EXAMPLES:BOOL=OFF',
+        '-DBUILD_TESTING:BOOL=OFF',
+        '-DHDF5_ENABLE_MAP_API:BOOL=OFF',
+        '-DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON',
+        '-DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF',
+        '-DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF',
+        '-DBUILD_SHARED_LIBS:BOOL=ON',
+        '-DONLY_SHARED_LIBS:BOOL=OFF',
+        '-DHDF5_ENABLE_PARALLEL:BOOL=ON',
+        '-DHDF5_ENABLE_THREADSAFE:BOOL=OFF',
+        '-DHDF5_BUILD_HL_LIB:BOOL=ON',
+        '-DHDF5_BUILD_CPP_LIB:BOOL=OFF',
+        '-DHDF5_BUILD_FORTRAN:BOOL=ON',
+        '-DHDF5_BUILD_JAVA:BOOL=OFF',
+        '-DHDF5_BUILD_TOOLS:BOOL=ON',
+        '-DMPI_CXX_COMPILER=mpic++',
+        '-DMPI_C_COMPILER=mpicc',
+        '-DMPI_Fortran_COMPILER=mpif90',
+    ],
+    runtime_environment = {
+                                    "PATH" : "/opt/hdf5:$PATH"
+                        },
+    devel_environment = {
+                                    "PATH" : "/opt/hdf5:$PATH"
+                        },
 )
+
 
 Stage0 += hdf5 # Configure options: -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF -DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF
 
@@ -202,12 +220,13 @@ parallel_netcdf = pnetcdf( # It will use the nvhpc communication libraries (is t
                 '--enable-static',
                 '--disable-silent-rules',
                 '--enable-relax-coord-bound',
-                '--with-mpi',
+                '--with-mpi=$HPCX_MPI_DIR',
                 'SEQ_CC=nvc',
                 'CFLAGS="-fPIC"',
                 'FCFLAGS="-fPIC"',
                 'FFLAGS="-fPIC"'
                 ],
+  with_hdf5='/opt/hdf5',
   check=False  
 )
 
@@ -220,22 +239,52 @@ Stage0 += parallel_netcdf
 ## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#netcdf
 # Fall3d requires the NetCDF C and Fortran libraries (https://gitlab.com/fall3d-suite/fall3d/-/blob/9.0.1/CMakeLists.txt?ref_type=tags#L30)
 
-netcdf = netcdf(
-    version='4.9.2',
-    version_fortran='4.6.1',
+netcdf_c = generic_cmake(
+    url='https://github.com/Unidata/netcdf-c/archive/v4.9.2.tar.gz',
     prefix='/opt/netcdf',
-    cxx=False,                       # Disable C++ library
-    fortran=True,
-    enable_mpi=True,                # +mpi
-    with_pnetcdf='/opt/pnetcdf',    # --with-pnetcdf=/opt/pnetcdf
-    enable_shared=True,             # --enable-shared
-    disable_doxygen=True,           # --disable-doxygen
-    disable_parallel_tests=True,    # --disable-parallel-tests
-    disable_tests=True,             # --disable-tests
-    enable_static=True, 
+    install=True,
+    cmake_opts=[
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/pnetcdf',
+        '-DENABLE_PNETCDF=ON', 
+        '-DENABLE_PARALLEL4=ON', 
+        '-DENABLE_HDF5=ON', 
+        '-DENABLE_EXAMPLES=OFF', 
+        '-DMPI_CXX_COMPILER=mpic++',
+        '-DMPI_C_COMPILER=mpicc',
+        '-DMPI_Fortran_COMPILER=mpif90',
+    ],
+    runtime_environment = {
+                                    "PATH" : "/opt/netcdf:$PATH"
+                        },
+    devel_environment = {
+                                    "PATH" : "/opt/netcdf:$PATH"
+                        },
 )
 
-Stage0 += netcdf
+Stage0 += netcdf_c
+
+
+netcdf_fortran = generic_cmake(
+    url='https://github.com/Unidata/netcdf-fortran/archive/v4.6.1.tar.gz',
+    prefix='/opt/netcdf',
+    install=True,
+    cmake_opts=[
+        '-DCMAKE_BUILD_TYPE=Release',
+        '-DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/netcdf;/opt/pnetcdf',
+        '-DNETCDF_C_LIBRARY=/opt/netcdf',
+        '-DMPI_C_COMPILER=mpicc',
+        '-DMPI_Fortran_COMPILER=mpif90',
+    ],
+    runtime_environment = {
+                                    "PATH" : "/opt/netcdf:$PATH"
+                        },
+    devel_environment = {
+                                    "PATH" : "/opt/netcdf:$PATH"
+                        },
+)
+
+Stage0 += netcdf_fortran
 
 #############################
 # FALL3D
@@ -247,7 +296,7 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     '-D WITH-MPI=YES',
                                     '-D WITH-ACC=YES',
                                     '-D CMAKE_Fortran_COMPILER=nvfortran',
-                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]} -gpu=sm_{params["cuda_arch"]}"',
+                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]}"',
                                     f'-D WITH-R4={fall3d_single_precision}'
                         ],
                         prefix='/opt/fall3d', 
