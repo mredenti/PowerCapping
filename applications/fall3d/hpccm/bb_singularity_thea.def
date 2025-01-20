@@ -32,13 +32,16 @@ Stage: devel
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         autoconf \
+        bzip2 \
         ca-certificates \
         curl \
         environment-modules \
+        file \
         libcurl4-openssl-dev \
         libxml2-dev \
         pkg-config \
-        python3
+        python3 \
+        zlib1g-dev
     rm -rf /var/lib/apt/lists/*
 
 %post
@@ -47,36 +50,19 @@ Stage: devel
     module use /opt/nvidia/hpc_sdk/modulefiles
     module load nvhpc-hpcx-cuda12
 
-# HDF5 version 1.14.3
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        bzip2 \
-        file \
-        make \
-        wget \
-        zlib1g-dev
-    rm -rf /var/lib/apt/lists/*
+# https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2
 %post
     cd /
     mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2
     mkdir -p /var/tmp && tar -x -f /var/tmp/hdf5-1.14.3.tar.bz2 -C /var/tmp -j
-    cd /var/tmp/hdf5-1.14.3 &&   ./configure --prefix=/opt/hdf5 --disable-cxx --enable-build-mode=production --enable-fortran --enable-parallel --enable-shared --enable-static --with-zlib CC=mpicc CFLAGS="-fPIC" F77=mpifort FC=mpif90 FCFLAGS="-fPIC" FFLAGS="-fPIC"
-    make -j$(nproc)
-    make -j$(nproc) install
+    mkdir -p /var/tmp/hdf5-1.14.3/build && cd /var/tmp/hdf5-1.14.3/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/hdf5 -DCMAKE_BUILD_TYPE=Release -DALLOW_UNSUPPORTED:BOOL=ON -DHDF5_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DHDF5_ENABLE_MAP_API:BOOL=OFF -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF -DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF -DBUILD_SHARED_LIBS:BOOL=ON -DONLY_SHARED_LIBS:BOOL=OFF -DHDF5_ENABLE_PARALLEL:BOOL=ON -DHDF5_ENABLE_THREADSAFE:BOOL=OFF -DHDF5_BUILD_HL_LIB:BOOL=ON -DHDF5_BUILD_CPP_LIB:BOOL=OFF -DHDF5_BUILD_FORTRAN:BOOL=ON -DHDF5_BUILD_JAVA:BOOL=OFF -DHDF5_BUILD_TOOLS:BOOL=ON -DMPI_CXX_COMPILER=mpic++ -DMPI_C_COMPILER=mpicc -DMPI_Fortran_COMPILER=mpif90 /var/tmp/hdf5-1.14.3
+    cmake --build /var/tmp/hdf5-1.14.3/build --target all -- -j$(nproc)
+    cmake --build /var/tmp/hdf5-1.14.3/build --target install -- -j$(nproc)
     rm -rf /var/tmp/hdf5-1.14.3 /var/tmp/hdf5-1.14.3.tar.bz2
 %environment
-    export CPATH=/opt/hdf5/include:$CPATH
-    export HDF5_DIR=/opt/hdf5
-    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
-    export PATH=/opt/hdf5/bin:$PATH
+    export PATH=/opt/hdf5:$PATH
 %post
-    export CPATH=/opt/hdf5/include:$CPATH
-    export HDF5_DIR=/opt/hdf5
-    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
-    export PATH=/opt/hdf5/bin:$PATH
+    export PATH=/opt/hdf5:$PATH
 
 # PnetCDF version 1.12.3
 %post
@@ -93,7 +79,7 @@ Stage: devel
     cd /
     mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://parallel-netcdf.github.io/Release/pnetcdf-1.12.3.tar.gz
     mkdir -p /var/tmp && tar -x -f /var/tmp/pnetcdf-1.12.3.tar.gz -C /var/tmp -z
-    cd /var/tmp/pnetcdf-1.12.3 &&  CC=mpicc CXX=mpicxx F77=mpif77 F90=mpif90 FC=mpifort ./configure --prefix=/opt/pnetcdf/ --disable-cxx --disable-shared --disable-silent-rules --enable-fortran --enable-relax-coord-bound --enable-static --with-mpi CFLAGS="-fPIC" FCFLAGS="-fPIC" FFLAGS="-fPIC" SEQ_CC=nvc
+    cd /var/tmp/pnetcdf-1.12.3 &&  CC=mpicc CXX=mpicxx F77=mpif77 F90=mpif90 FC=mpifort ./configure --prefix=/opt/pnetcdf/ --disable-cxx --disable-shared --disable-silent-rules --enable-fortran --enable-relax-coord-bound --enable-static --with-hdf5=/opt/hdf5 --with-mpi=$HPCX_MPI_DIR CFLAGS="-fPIC" FCFLAGS="-fPIC" FFLAGS="-fPIC" SEQ_CC=nvc
     make -j$(nproc)
     make -j$(nproc) install
     rm -rf /var/tmp/pnetcdf-1.12.3 /var/tmp/pnetcdf-1.12.3.tar.gz
@@ -108,43 +94,28 @@ Stage: devel
     export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
     export PATH=/opt/pnetcdf/bin:$PATH
 
-# NetCDF version 4.9.2, NetCDF Fortran version 4.6.1
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates \
-        file \
-        libcurl4-openssl-dev \
-        m4 \
-        make \
-        wget \
-        zlib1g-dev
-    rm -rf /var/lib/apt/lists/*
+# https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Unidata/netcdf-c/archive/v4.9.2.tar.gz
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz
     mkdir -p /var/tmp && tar -x -f /var/tmp/v4.9.2.tar.gz -C /var/tmp -z
-    cd /var/tmp/netcdf-c-4.9.2 &&   ./configure --prefix=/opt/netcdf --disable-doxygen --disable-parallel-tests --disable-tests --enable-mpi --enable-shared --enable-static --with-pnetcdf=/opt/pnetcdf
-    make -j$(nproc)
-    make -j$(nproc) install
+    mkdir -p /var/tmp/netcdf-c-4.9.2/build && cd /var/tmp/netcdf-c-4.9.2/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/netcdf -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/pnetcdf" -DENABLE_PNETCDF=ON -DENABLE_PARALLEL4=ON -DENABLE_HDF5=ON -DENABLE_DAP=OFF -DENABLE_BYTERANGE=OFF -DENABLE_EXAMPLES=OFF -DMPI_CXX_COMPILER=mpic++ -DMPI_C_COMPILER=mpicc -DMPI_Fortran_COMPILER=mpif90 /var/tmp/netcdf-c-4.9.2
+    cmake --build /var/tmp/netcdf-c-4.9.2/build --target all -- -j$(nproc)
+    cmake --build /var/tmp/netcdf-c-4.9.2/build --target install -- -j$(nproc)
     rm -rf /var/tmp/netcdf-c-4.9.2 /var/tmp/v4.9.2.tar.gz
 %environment
-    export CPATH=/opt/netcdf/include:$CPATH
-    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
-    export PATH=/opt/netcdf/bin:$PATH
+    export PATH=/opt/netcdf:$PATH
 %post
-    export CPATH=/opt/netcdf/include:$CPATH
-    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
-    export PATH=/opt/netcdf/bin:$PATH
+    export PATH=/opt/netcdf:$PATH
+
+# https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Unidata/netcdf-fortran/archive/v4.6.1.tar.gz
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
     mkdir -p /var/tmp && tar -x -f /var/tmp/v4.6.1.tar.gz -C /var/tmp -z
-    cd /var/tmp/netcdf-fortran-4.6.1 &&   ./configure --prefix=/opt/netcdf --disable-doxygen --disable-parallel-tests --disable-tests --enable-mpi --enable-shared --enable-static --with-pnetcdf=/opt/pnetcdf
-    make -j$(nproc)
-    make -j$(nproc) install
+    mkdir -p /var/tmp/netcdf-fortran-4.6.1/build && cd /var/tmp/netcdf-fortran-4.6.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/netcdf -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/netcdf;/opt/pnetcdf;${NetCDF_C_PATH}" -DNETCDF_C_LIBRARY=/opt/netcdf/lib/libnetcdf.so -DMPI_C_COMPILER=mpicc -DMPI_Fortran_COMPILER=mpif90 -DnetCDF_DIR=/opt/netcdf -DCMAKE_Fortran_FLAGS="-fPIC" /var/tmp/netcdf-fortran-4.6.1
+    cmake --build /var/tmp/netcdf-fortran-4.6.1/build --target all -- -j$(nproc)
+    cmake --build /var/tmp/netcdf-fortran-4.6.1/build --target install -- -j$(nproc)
     rm -rf /var/tmp/netcdf-fortran-4.6.1 /var/tmp/v4.6.1.tar.gz
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
@@ -154,7 +125,7 @@ Stage: devel
     mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
     cd /var/tmp/fall3d-9.0.1
     mkdir -p /opt/fall3d/bin
-    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=neoverse-v2 -gpu=sm_90" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=neoverse-v2" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
     cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
     cd /opt/fall3d
     cp /var/tmp/fall3d-9.0.1/build/Fall3d.x /opt/fall3d/bin/
@@ -168,26 +139,13 @@ Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
 
-# HDF5
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        zlib1g
-    rm -rf /var/lib/apt/lists/*
+# https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2
 %files from devel
     /opt/hdf5 /opt/hdf5
 %environment
-    export CPATH=/opt/hdf5/include:$CPATH
-    export HDF5_DIR=/opt/hdf5
-    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
-    export PATH=/opt/hdf5/bin:$PATH
+    export PATH=/opt/hdf5:$PATH
 %post
-    export CPATH=/opt/hdf5/include:$CPATH
-    export HDF5_DIR=/opt/hdf5
-    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
-    export PATH=/opt/hdf5/bin:$PATH
+    export PATH=/opt/hdf5:$PATH
 
 # PnetCDF
 %post
@@ -208,24 +166,17 @@ Stage: runtime
     export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
     export PATH=/opt/pnetcdf/bin:$PATH
 
-# NetCDF
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        zlib1g
-    rm -rf /var/lib/apt/lists/*
+# https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz
 %files from devel
     /opt/netcdf /opt/netcdf
 %environment
-    export CPATH=/opt/netcdf/include:$CPATH
-    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
-    export PATH=/opt/netcdf/bin:$PATH
+    export PATH=/opt/netcdf:$PATH
 %post
-    export CPATH=/opt/netcdf/include:$CPATH
-    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
-    export PATH=/opt/netcdf/bin:$PATH
+    export PATH=/opt/netcdf:$PATH
+
+# https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
+%files from devel
+    /opt/netcdf /opt/netcdf
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
 %files from devel
