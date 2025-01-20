@@ -97,7 +97,11 @@ reframe \
     --prefix $SCRATCH/REFRAME-FALL3D \
     --keep-stage-files \
     --performance-report \
+<<<<<<< Updated upstream
     -M openmpi:openmpi/5.0.3-gcc-12.3.0-cuda-12.5.1-rs7 \
+=======
+    -M openmpi:nvhpc/24.11-gcc-12.3.0-ixv \
+>>>>>>> Stashed changes
     -p default \
     -n fall3d_raikoke_test \
     -S fall3d_raikoke_test.execution_mode=container \
@@ -195,7 +199,7 @@ reframe \
     --prefix $SCRATCH/REFRAME-FALL3D \
     --keep-stage-files \
     --performance-report \
-    -M openmpi:openmpi/5.0.3-gcc-12.3.0-cuda-12.5.1-rs7 \
+    -M openmpi:nvhpc/24.11-gcc-12.3.0-ixv \
     -p default \
     -n fall3d_raikoke_test \
     -S fall3d_raikoke_test.execution_mode=container \

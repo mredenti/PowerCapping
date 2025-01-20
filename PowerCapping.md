@@ -197,11 +197,13 @@ mkdir /local/tmp_singularity_cache
 export APPTAINER_TMPDIR=/local/tmp_singularity
 export APPTAINER_CACHEDIR=/local/tmp_singularity_cache
 ```
+# singularity build fall3d_take3.sif singularity_thea.def
 
 **Example:**
 
 ```shell
 singularity pull nvhpc-24.11-devel.sif docker://nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
+#  singularity pull nvhpc-24.11-devel-sha.sif docker://nvcr.io/nvidia/nvhpc@sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30 (thea arm)
 singularity pull nvhpc-24.11-runtime.sif docker://nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
 ```
 
