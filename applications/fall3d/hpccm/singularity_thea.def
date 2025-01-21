@@ -23,7 +23,7 @@
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: localimage
-From: nvhpc-24.11-runtime-cuda12.6.sif
+From: nvhpc-24.11-devel-cuda12.6.sif
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -79,6 +79,7 @@ EOF
     spack concretize -f
     spack install --fail-fast
     spack clean --all
+    spack gc -y
     find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
@@ -94,18 +95,10 @@ EOF
     cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
     rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
 
-%post
-    cd /
-    spack env activate /opt/spack-environment
-    export PATH=/opt/fall3d/bin:$PATH
-    spack gc -y
-    spack env deactivate
-    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
-
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: localimage
-From: nvhpc-24.11-devel-cuda12.6.sif
+From: nvhpc-24.11-runtime-cuda12.6.sif
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -122,6 +115,13 @@ Stage: runtime
     /opt/software /opt/software
     /opt/spack-environment /opt/spack-environment
     /opt/view /opt/view
+
+%post
+    cd /
+    spack env activate /opt/spack-environment
+    export PATH=/opt/fall3d/bin:$PATH
+    spack env deactivate
+    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
 
 %post
     cd /
