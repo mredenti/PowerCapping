@@ -69,11 +69,11 @@ EOF
     spack external find --all --scope env:/opt/spack-environment
     spack add openmpi@5.0.3%gcc~atomics+cuda+pmi cuda_arch=90 fabrics=knem,ucx
     spack add ucx@1.18.0-rc3%gcc~cma+cuda+gdrcopy+knem cuda_arch=90
-    spack add hwloc@2.11.1%gcc+cuda cuda_arch=90
+    spack add hwloc@2.9.3%gcc+cuda cuda_arch=90
     spack add hdf5@1.14.3%gcc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make
     spack add netcdf-c@4.9.2%gcc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8
     spack add netcdf-fortran@4.6.1%gcc~doc+pic+shared build_system=autotools
-    spack add parallel-netcdf@1.14.0%gcc~burstbuffer+cxx+fortran+pic+shared build_system=autotools
+    spack add parallel-netcdf@1.12.3%gcc~burstbuffer+cxx+fortran+pic+shared build_system=autotools
     spack add zlib-ng%gcc
     spack concretize -f
     spack install --fail-fast
