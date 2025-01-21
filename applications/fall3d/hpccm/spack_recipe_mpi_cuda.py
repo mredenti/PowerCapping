@@ -76,8 +76,8 @@ cluster_configs = {
         # --------------------
         # Use a (unique) content-based identifier for images
         # --------------------
-        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
-        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda11.8-ubuntu22.04
+        'digest_devel': 'sha256:1608a19a5d6f013d36abfb9ad50a42b4c0ef86f4ab48e351c6899f0280b946c1', # nvidia/cuda:12.6.3-devel-ubuntu22.04
+        'digest_runtime': 'sha256:4cf7f8137bdeeb099b1f2de126e505aa1f01b6e4471d13faf93727a9bf83d539', # nvidia/cuda:12.6.3-runtime-ubuntu22.04
 
         # --------------------
         # Cluster arch and micro arch
@@ -98,6 +98,7 @@ cluster_configs = {
         'spack_arch': 'linux-rocky9-neoverse_v2',
         'spack_branch_or_tag': 'v0.23.0',
         'spack_specs' : [
+            'nvhpc@24.11 %gcc',
             'openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx ^numactl%gcc',
             'ucx@1.17.0%gcc~cma+cuda+gdrcopy cuda_arch=90',
             'hwloc@2.11.1%gcc+cuda cuda_arch=90',
@@ -118,8 +119,8 @@ cluster_configs = {
         # --------------------
         # Use a (unique) content-based identifier for images
         # --------------------
-        'digest_devel': 'sha256:da058394e75309cf6c9002a0d47332b0e730f107f029464819a4a9ba2a6e0454', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda12.6-ubuntu22.04
-        'digest_runtime': 'sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
+        'digest_devel': 'sha256:12cf7fda869f87f821113f010ee64b3a230a3fed2a56fb6d3c93fb8a82472816', # nvidia/cuda:12.6.3-devel-ubuntu22.04
+        'digest_runtime': 'sha256:77e5fa9d1849bdba5a340be90d8ca30fb13d8f62fb433b1fa9d2903bb7a68498', # nvidia/cuda:12.6.3-runtime-ubuntu22.04
         
         # --------------------
         # Cluster arch and micro arch
@@ -173,11 +174,6 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages + ['curl-devel', '--allowerasing'])
 
-
-Stage0 += shell(commands=['. /usr/share/modules/init/sh',
-                            'module use /opt/nvidia/hpc_sdk/modulefiles',
-                            f'module load nvhpc'])
-
 ###############################################################################
 # Setup and install Spack
 ###############################################################################
@@ -227,12 +223,6 @@ EOF''',
         'spack install --fail-fast',
         'spack clean --all',
         
-        # Strip all the binaries in /opt/view to reduce container size
-    '''find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
-xargs file -i | \
-grep 'charset=binary' | \
-grep 'x-executable\|x-archive\|x-sharedlib' | \
-awk -F: '{print $1}' | xargs strip -s''',
     ])
 
 #############################
