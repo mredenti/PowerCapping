@@ -43,6 +43,12 @@ Stage: devel
 
 %post
     cd /
+    . /usr/share/modules/init/sh
+    module use /opt/nvidia/hpc_sdk/modulefiles
+    module load nvhpc
+
+%post
+    cd /
     git clone --branch v0.23.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
     . /opt/spack/share/spack/setup-env.sh
 
@@ -79,7 +85,6 @@ EOF
     spack concretize -f
     spack install --fail-fast
     spack clean --all
-    spack gc -y
     find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
@@ -94,6 +99,13 @@ EOF
     cd /opt/fall3d
     cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
     rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
+
+%post
+    cd /
+    export PATH=/opt/fall3d/bin:$PATH
+    spack gc -y
+    spack env deactivate
+    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
@@ -112,16 +124,10 @@ Stage: runtime
     export PATH=/opt/fall3d/bin:$PATH
 
 %files from devel
+    /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
     /opt/software /opt/software
     /opt/spack-environment /opt/spack-environment
     /opt/view /opt/view
-
-%post
-    cd /
-    spack env activate /opt/spack-environment
-    export PATH=/opt/fall3d/bin:$PATH
-    spack env deactivate
-    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
 
 %post
     cd /
