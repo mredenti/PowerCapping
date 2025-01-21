@@ -175,7 +175,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     @run_before("run")
     def replace_launcher(self):
         try:
-            launcher_cls = getlauncher("mpirun-mapby")
+            launcher_cls = getlauncher("srun") if self.system.name == 'thea' else getlauncher("mpirun-mapby")
         except Exception:
             launcher_cls = getlauncher("mpirun")
         self.job.launcher = launcher_cls()
