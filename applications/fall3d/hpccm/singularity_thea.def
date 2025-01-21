@@ -107,6 +107,9 @@ EOF
     spack add zlib-ng%gcc
     spack concretize -f
     spack install --fail-fast
+    spack clean --all
+    spack env deactivate
+    spack env activate /opt/spack-environment
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
 %post
@@ -124,7 +127,6 @@ EOF
 %post
     cd /
     export PATH=/opt/fall3d/bin:$PATH
-    spack clean --all
     spack gc -y
     spack env deactivate
     spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh

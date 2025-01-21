@@ -229,7 +229,9 @@ EOF''',
         # Spack install
         'spack concretize -f', 
         'spack install --fail-fast',
-        
+        'spack clean --all',
+        'spack env deactivate',
+        'spack env activate /opt/spack-environment'
     ])
 
 #############################
@@ -265,7 +267,6 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
 
 Stage0 += shell(commands=[
         'export PATH=/opt/fall3d/bin:$PATH',
-        'spack clean --all',
         # remove specs which are no longer needed - perhpas do it at the end
         'spack gc -y',
         # Deactivate 
