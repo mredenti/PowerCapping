@@ -35,12 +35,51 @@ Stage: devel
         ca-certificates \
         curl \
         environment-modules \
+        git \
         libcurl4-openssl-dev \
         libssl-dev \
         pkg-config \
-        python3 \
-        git
+        python3
     rm -rf /var/lib/apt/lists/*
+
+# NVIDIA HPC SDK version 24.11
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        ca-certificates \
+        gnupg \
+        wget
+    rm -rf /var/lib/apt/lists/*
+%post
+    mkdir -p /usr/share/keyrings
+    rm -f /usr/share/keyrings/DEB-GPG-KEY-NVIDIA-HPC-SDK.gpg
+    wget -qO - https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK | gpg --dearmor -o /usr/share/keyrings/DEB-GPG-KEY-NVIDIA-HPC-SDK.gpg
+    echo "deb [signed-by=/usr/share/keyrings/DEB-GPG-KEY-NVIDIA-HPC-SDK.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/arm64 /" >> /etc/apt/sources.list.d/hpccm.list
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        nvhpc-24-11
+    rm -rf /var/lib/apt/lists/*
+%environment
+    export CPATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/include:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/include:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/extras/qd/include/qd:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/math_libs/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/math_libs/lib64:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/lib64:$LD_LIBRARY_PATH
+    export MANPATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/man:$MANPATH
+    export PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/profilers/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/bin:$PATH
+%post
+    export CPATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/include:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/include:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/extras/qd/include/qd:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/math_libs/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/math_libs/lib64:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/lib64:$LD_LIBRARY_PATH
+    export MANPATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/man:$MANPATH
+    export PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/profilers/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/bin:$PATH
+
+%environment
+    export MELLANOX_VISIBLE_DEVICES=all
+    export NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    export NVIDIA_REQUIRE_CUDA="cuda>=12.0"
+    export NVIDIA_VISIBLE_DEVICES=all
+%post
+    export MELLANOX_VISIBLE_DEVICES=all
+    export NVIDIA_DRIVER_CAPABILITIES=compute,utility
+    export NVIDIA_REQUIRE_CUDA="cuda>=12.0"
+    export NVIDIA_VISIBLE_DEVICES=all
 
 %post
     cd /
@@ -69,7 +108,6 @@ EOF
     spack env activate /opt/spack-environment
     spack compiler find --scope env:/opt/spack-environment
     spack external find --all --scope env:/opt/spack-environment
-    spack add nvhpc@24.11 %gcc
     spack add openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx ^numactl%gcc
     spack add ucx@1.17.0%gcc~cma+cuda+gdrcopy cuda_arch=90
     spack add hwloc@2.11.1%gcc+cuda cuda_arch=90

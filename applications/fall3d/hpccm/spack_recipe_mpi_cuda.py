@@ -99,7 +99,6 @@ cluster_configs = {
         'spack_arch': 'linux-rocky9-neoverse_v2',
         'spack_branch_or_tag': 'v0.23.0',
         'spack_specs' : [
-            'nvhpc@24.11 %gcc',
             'openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx ^numactl%gcc',
             'ucx@1.17.0%gcc~cma+cuda+gdrcopy cuda_arch=90',
             'hwloc@2.11.1%gcc+cuda cuda_arch=90',
@@ -166,7 +165,8 @@ os_common_packages = ['autoconf',
                     'ca-certificates',
                     'pkg-config',
                     'python3',
-                    'environment-modules']
+                    'environment-modules',
+                    'git']
 
 if cluster_name == "thea" and params["base_os"] == "ubuntu22.04":
     os_common_packages += ['libcurl4-openssl-dev', 'libssl-dev']
@@ -178,6 +178,15 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
 ###############################################################################
 # Setup and install Spack
 ###############################################################################
+
+Stage0 += nvhpc(eula=True, tarball=False, version="24.11",  _hpcx=False, mpi=False, cuda_multi=False)
+
+# nvidia-container-runtime and enroot
+Stage0 += environment(variables={
+    'MELLANOX_VISIBLE_DEVICES': 'all', # enroot
+    'NVIDIA_VISIBLE_DEVICES': 'all',
+    'NVIDIA_DRIVER_CAPABILITIES': 'compute,utility',
+    'NVIDIA_REQUIRE_CUDA': '"cuda>=12.0"'})
 
 # Setup and install Spack
 Stage0 += shell(commands=[
