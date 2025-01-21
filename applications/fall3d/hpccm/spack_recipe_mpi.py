@@ -98,9 +98,9 @@ cluster_configs = {
         'spack_arch': 'linux-rocky9-neoverse_v2',
         'spack_branch_or_tag': 'v0.23.0',
         'spack_specs' : [
-            'openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx',
-            'ucx@1.17.0%nvhpc~cma+cuda+gdrcopy cuda_arch=90',
-            'hwloc@2.11.1%nvhpc+cuda cuda_arch=90',
+            'openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx ^numactl%gcc',
+            'ucx@1.17.0%gcc~cma+cuda+gdrcopy cuda_arch=90',
+            'hwloc@2.11.1%gcc+cuda cuda_arch=90',
             'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
             'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
             'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
@@ -221,6 +221,8 @@ EOF''',
         'spack concretize -f', 
         'spack install --fail-fast',
         'spack clean --all',
+        # remove specs which are no longer needed - perhpas do it at the end
+        'spack gc -y'
         
         # Strip all the binaries in /opt/view to reduce container size
     '''find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
@@ -261,15 +263,6 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                         },
                         url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
-Stage0 += shell(commands=[
-        'export PATH=/opt/fall3d/bin:$PATH',
-        # remove specs which are no longer needed - perhpas do it at the end
-        'spack gc -y',
-        # Deactivate 
-        'spack env deactivate',
-        # Generate modifications to the environment that are necessary to run
-        'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh'
-])
 
 ###############################################################################
 # Finalize Container with Runtime Environment
@@ -289,10 +282,20 @@ Stage1 += copy(
     files = {
         '/opt/software'         : '/opt/software',
         '/opt/view'             : '/opt/view',
-        '/opt/spack-environment': '/opt/spack-environment',
-        '/etc/profile.d/z10_spack_environment.sh' : '/etc/profile.d/z10_spack_environment.sh'
+        '/opt/spack-environment': '/opt/spack-environment'
         }, _from='devel')
     
+Stage1 += shell(commands=[
+        # Activate spack environment
+        'spack env activate /opt/spack-environment',
+        # Export fall3d PATH
+        'export PATH=/opt/fall3d/bin:$PATH',
+        # Deactivate 
+        'spack env deactivate',
+        # Generate modifications to the environment that are necessary to run
+        'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh'
+])
+
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript
 if hpccm.config.g_ctype == container_type.DOCKER:
   # Docker automatically passes through command line arguments
