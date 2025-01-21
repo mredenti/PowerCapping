@@ -56,7 +56,6 @@ cluster_configs = {
         'spack_arch': 'linux-rhel8-icelake',
         'spack_branch_or_tag': 'v0.21.0',
         'spack_specs' : [
-            'nvhpc@24.11 %gcc',
             'openmpi@4.1.6%gcc~atomics+cuda+pmi+lustre+romio+rsh cuda_arch=80 fabrics=cma,hcoll,knem,ucx,xpmem',
             'ucx@1.17.0%gcc+cuda+gdrcopy+knem cuda_arch=80',
             'hwloc@2.11.1%gcc+cuda cuda_arch=80',
@@ -159,6 +158,13 @@ Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_devel"]}',
                 _as='devel') 
 
 ###############################################################################
+# NVHPC
+###############################################################################
+
+Stage0 += nvhpc(eula=True, tarball=False, version="24.11",  _hpcx=False, mpi=False, cuda_multi=False)
+
+
+###############################################################################
 # Install Base Dependencies
 ###############################################################################
 os_common_packages = ['autoconf',
@@ -175,11 +181,10 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages + ['curl-devel', '--allowerasing'])
 
+
 ###############################################################################
 # Setup and install Spack
 ###############################################################################
-
-Stage0 += nvhpc(eula=True, tarball=False, version="24.11",  _hpcx=False, mpi=False, cuda_multi=False)
 
 # Setup and install Spack
 Stage0 += shell(commands=[
@@ -224,7 +229,6 @@ EOF''',
         # Spack install
         'spack concretize -f', 
         'spack install --fail-fast',
-        'spack clean --all',
         
     ])
 
@@ -261,6 +265,7 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
 
 Stage0 += shell(commands=[
         'export PATH=/opt/fall3d/bin:$PATH',
+        'spack clean --all',
         # remove specs which are no longer needed - perhpas do it at the end
         'spack gc -y',
         # Deactivate 
