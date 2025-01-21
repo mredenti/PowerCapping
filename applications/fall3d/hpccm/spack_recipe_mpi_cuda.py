@@ -181,13 +181,6 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
 
 Stage0 += nvhpc(eula=True, tarball=False, version="24.11",  _hpcx=False, mpi=False, cuda_multi=False)
 
-# nvidia-container-runtime and enroot
-Stage0 += environment(variables={
-    'MELLANOX_VISIBLE_DEVICES': 'all', # enroot
-    'NVIDIA_VISIBLE_DEVICES': 'all',
-    'NVIDIA_DRIVER_CAPABILITIES': 'compute,utility',
-    'NVIDIA_REQUIRE_CUDA': '"cuda>=12.0"'})
-
 # Setup and install Spack
 Stage0 += shell(commands=[
     f'git clone --branch {params["spack_branch_or_tag"]} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
