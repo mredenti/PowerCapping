@@ -98,8 +98,8 @@ cluster_configs = {
         'spack_arch': 'linux-rocky9-neoverse_v2',
         'spack_branch_or_tag': 'v0.23.0',
         'spack_specs' : [
-            'openmpi@5.0.3%gcc~atomics+cuda+pmi cuda_arch=90 fabrics=knem,ucx',
-            'ucx@1.18.0-rc3%gcc~cma+cuda+gdrcopy+knem cuda_arch=90',
+            'openmpi@5.0.3%gcc~atomics+cuda cuda_arch=90 fabrics=ucx',
+            'ucx@1.17.0%gcc~cma+cuda+gdrcopy cuda_arch=90',
             'hwloc@2.11.1%gcc+cuda cuda_arch=90',
             'hdf5@1.14.3%gcc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
             'netcdf-c@4.9.2%gcc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
@@ -167,7 +167,7 @@ os_common_packages = ['autoconf',
                     'environment-modules']
 
 if cluster_name == "thea" and params["base_os"] == "ubuntu22.04":
-    os_common_packages += ['libcurl4-openssl-dev']
+    os_common_packages += ['libcurl4-openssl-dev', 'libssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
