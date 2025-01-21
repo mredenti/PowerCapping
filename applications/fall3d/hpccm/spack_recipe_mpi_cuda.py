@@ -63,6 +63,7 @@ cluster_configs = {
             'netcdf-c@4.9.2%gcc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
             'netcdf-fortran@4.6.1%gcc~doc+pic+shared build_system=autotools',
             'parallel-netcdf@1.12.3%gcc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
+            'cmake',
             'zlib-ng%gcc',
         ],
 
@@ -105,6 +106,7 @@ cluster_configs = {
             'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
             'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
             'parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
+            'cmake',
             'zlib-ng%gcc',
         ],
         
@@ -230,8 +232,6 @@ EOF''',
         'spack concretize -f', 
         'spack install --fail-fast',
         'spack clean --all',
-        'spack env deactivate',
-        'spack env activate /opt/spack-environment'
     ])
 
 #############################
