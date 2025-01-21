@@ -56,6 +56,7 @@ cluster_configs = {
         'spack_arch': 'linux-rhel8-icelake',
         'spack_branch_or_tag': 'v0.21.0',
         'spack_specs' : [
+            'nvhpc@24.11 %gcc',
             'openmpi@4.1.6%gcc~atomics+cuda+pmi+lustre+romio+rsh cuda_arch=80 fabrics=cma,hcoll,knem,ucx,xpmem',
             'ucx@1.17.0%gcc+cuda+gdrcopy+knem cuda_arch=80',
             'hwloc@2.11.1%gcc+cuda cuda_arch=80',
@@ -209,7 +210,7 @@ EOF''',
     # Activate spack environment
     'spack env activate /opt/spack-environment',
 
-    # Find nvhpc, gcc compilers
+    # Find gcc compilers
     'spack compiler find --scope env:/opt/spack-environment',
     
     # Find all other external packages
@@ -234,8 +235,6 @@ EOF''',
 Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     '-D DETAIL_BIN=NO', # name of the binary will be Fall3d.x
                                     '-D WITH-MPI=YES',
-                                    '-D MPIEXEC_EXECUTABLE=/opt/view/bin/mpiexec',
-                                    '-D MPI_Fortran_COMPILER=/opt/view/bin/mpif90',
                                     '-D WITH-ACC=YES',
                                     '-D CMAKE_Fortran_COMPILER=nvfortran',
                                     f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]}"',
