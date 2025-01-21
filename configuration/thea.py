@@ -16,7 +16,7 @@ class MpirunLauncher(JobLauncher):
 class MpirunLauncher(JobLauncher):
     def command(self, job):
         return ['srun', 
-                '--mpi=pmix',
+                '--mpi=pmi2',
                 f'-N {job.num_tasks}',
                 f'-n {job.num_tasks}',
                 f'--cpus-per-task={job.num_cpus_per_task}',
