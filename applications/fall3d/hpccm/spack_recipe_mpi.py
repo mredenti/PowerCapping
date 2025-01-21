@@ -173,11 +173,6 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages + ['curl-devel', '--allowerasing'])
 
-
-Stage0 += shell(commands=['. /usr/share/modules/init/sh',
-                            'module use /opt/nvidia/hpc_sdk/modulefiles',
-                            f'module load nvhpc'])
-
 ###############################################################################
 # Setup and install Spack
 ###############################################################################
@@ -268,16 +263,6 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                         },
                         url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
-Stage0 += shell(commands=[
-        'export PATH=/opt/fall3d/bin:$PATH',
-        # remove specs which are no longer needed - perhpas do it at the end
-        'spack gc -y',
-        # Deactivate 
-        'spack env deactivate',
-        # Generate modifications to the environment that are necessary to run
-        'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh'
-])
-
 ###############################################################################
 # Finalize Container with Runtime Environment
 ###############################################################################
@@ -297,8 +282,24 @@ Stage1 += copy(
         '/opt/software'         : '/opt/software',
         '/opt/view'             : '/opt/view',
         '/opt/spack-environment': '/opt/spack-environment',
-        '/etc/profile.d/z10_spack_environment.sh' : '/etc/profile.d/z10_spack_environment.sh'
+        '/opt/spack' : '/opt/spack'
         }, _from='devel')
+    
+    
+Stage0 += shell(commands=[
+    '. /opt/spack/share/spack/setup-env.sh', 
+    'spack env activate /opt/spack-environment',
+    # Export path to Fall3D
+    'export PATH=/opt/fall3d/bin:$PATH',
+    # remove specs which are no longer needed - perhpas do it at the end
+    'spack gc -y',
+    # Deactivate 
+    'spack env deactivate',
+    # Generate modifications to the environment that are necessary to run
+    'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh',
+    # Remove Spack repository
+    'rm -rf /opt/spack'
+])
     
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript
 if hpccm.config.g_ctype == container_type.DOCKER:
