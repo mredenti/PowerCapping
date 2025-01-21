@@ -22,8 +22,8 @@
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: devel
-From: cuda-12.6.3-runtime.sif
+BootStrap: localimage
+From: cuda-12.6.3-devel.sif
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
