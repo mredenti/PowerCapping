@@ -249,7 +249,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         f'{test_prefix}.Fall3d.log'
     ]
     
-    num_gpus = 2
+    num_gpus = 4
     time_limit = '600'
     
 @rfm.simple_test
