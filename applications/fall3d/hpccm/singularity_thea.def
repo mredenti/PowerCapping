@@ -35,7 +35,7 @@ Stage: devel
         ca-certificates \
         curl \
         environment-modules \
-        libcurl4-openssl-dev \
+        libssl-dev \
         pkg-config \
         python3
     rm -rf /var/lib/apt/lists/*
