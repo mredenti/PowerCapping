@@ -23,7 +23,7 @@
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: localimage
-From: nvhpc-24.11-devel-cuda12.6.sif
+From: nvhpc-24.11-runtime-cuda12.6.sif
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -68,14 +68,13 @@ EOF
     spack env activate /opt/spack-environment
     spack compiler find --scope env:/opt/spack-environment
     spack external find --all --scope env:/opt/spack-environment
-    spack add openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx
+    spack add openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx ^numactl%gcc
     spack add ucx@1.17.0%gcc~cma+cuda+gdrcopy cuda_arch=90
     spack add hwloc@2.11.1%gcc+cuda cuda_arch=90
     spack add hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make
     spack add netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8
     spack add netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools
     spack add parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools
-    spack add numactl%gcc
     spack add zlib-ng%gcc
     spack concretize -f
     spack install --fail-fast
@@ -97,6 +96,7 @@ EOF
 
 %post
     cd /
+    spack env activate /opt/spack-environment
     export PATH=/opt/fall3d/bin:$PATH
     spack gc -y
     spack env deactivate
@@ -105,7 +105,7 @@ EOF
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: localimage
-From: nvhpc-24.11-runtime-cuda12.6.sif
+From: nvhpc-24.11-devel-cuda12.6.sif
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -119,7 +119,6 @@ Stage: runtime
     export PATH=/opt/fall3d/bin:$PATH
 
 %files from devel
-    /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
     /opt/software /opt/software
     /opt/spack-environment /opt/spack-environment
     /opt/view /opt/view
