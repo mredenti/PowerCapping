@@ -177,12 +177,6 @@ else:
     Stage0 += shell(commands=['. /usr/share/modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load nvhpc-hpcx-cuda{cuda_major}'])
-"""
-Stage0 += shell(commands=[
-                          '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
-                          'hpcx_load'
-                          ])
-""" 
 
 ###############################################################################
 # Setup and install Spack
@@ -235,13 +229,6 @@ EOF''',
         'spack concretize -f', 
         'spack install --fail-fast',
         'spack clean --all',
-        
-        # Strip all the binaries in /opt/view to reduce container size
-    '''find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
-xargs file -i | \
-grep 'charset=binary' | \
-grep 'x-executable\|x-archive\|x-sharedlib' | \
-awk -F: '{print $1}' | xargs strip -s''',
     ])
 
 #############################
@@ -255,7 +242,7 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     '-D WITH-MPI=YES',
                                     '-D WITH-ACC=YES',
                                     '-D CMAKE_Fortran_COMPILER=nvfortran',
-                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]} -gpu=sm_{params["cuda_arch"]}' + (f' -gpu=cuda{params["cuda_version"]}"' if cluster_name == "thea" else '"'),
+                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]}"',
                                     f'-D WITH-R4={fall3d_single_precision}',
                                     ],
                         prefix='/opt/fall3d', 
@@ -275,15 +262,6 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                         },
                         url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
-Stage0 += shell(commands=[
-        'export PATH=/opt/fall3d/bin:$PATH',
-        # remove specs which are no longer needed - perhpas do it at the end
-        'spack gc -y',
-        # Deactivate 
-        'spack env deactivate',
-        # Generate modifications to the environment that are necessary to run
-        'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh'
-])
 
 ###############################################################################
 # Finalize Container with Runtime Environment
@@ -298,14 +276,36 @@ Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_runtime"]}',
 
 Stage1 += Stage0.runtime(_from='devel') 
 
+Stage1 += packages(apt=['python3'], epel=True)
+
+Stage1 += shell(commands=[
+                          '. $HPCX_HOME/hpcx-init-ompi.sh',
+                          'hpcx_load'
+                          ])
+
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#copy
 Stage1 += copy(
     files = {
         '/opt/software'         : '/opt/software',
         '/opt/view'             : '/opt/view',
         '/opt/spack-environment': '/opt/spack-environment',
-        '/etc/profile.d/z10_spack_environment.sh' : '/etc/profile.d/z10_spack_environment.sh'
+        '/opt/spack' : '/opt/spack'
         }, _from='devel')
+
+Stage1 += shell(commands=[
+    '. /opt/spack/share/spack/setup-env.sh', 
+    'spack env activate /opt/spack-environment',
+    # Export path to Fall3D
+    'export PATH=/opt/fall3d/bin:$PATH',
+    # remove specs which are no longer needed - perhpas do it at the end
+    'spack gc -y',
+    # Deactivate 
+    'spack env deactivate',
+    # Generate modifications to the environment that are necessary to run
+    'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh',
+    # Remove Spack repository
+    'rm -rf /opt/spack'
+])
     
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript
 if hpccm.config.g_ctype == container_type.DOCKER:
