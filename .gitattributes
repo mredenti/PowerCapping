@@ -1,1 +1,0 @@
-applications/fall3d/raikoke-2019-large/Raikoke-2019.gfs.nc filter=lfs diff=lfs merge=lfs -text
