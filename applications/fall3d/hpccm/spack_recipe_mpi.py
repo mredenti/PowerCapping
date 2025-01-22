@@ -221,13 +221,6 @@ EOF''',
         'spack concretize -f', 
         'spack install --fail-fast',
         'spack clean --all',
-        
-        # Strip all the binaries in /opt/view to reduce container size
-    '''find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
-xargs file -i | \
-grep 'charset=binary' | \
-grep 'x-executable\|x-archive\|x-sharedlib' | \
-awk -F: '{print $1}' | xargs strip -s''',
     ])
 
 #############################
@@ -275,6 +268,9 @@ Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_runtime"]}',
                     _as='runtime')
 
 Stage1 += Stage0.runtime(_from='devel') 
+
+Stage1 += packages(apt=['python3'],
+                   epel=True)
 
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#copy
 Stage1 += copy(

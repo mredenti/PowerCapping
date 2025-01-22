@@ -79,7 +79,6 @@ EOF
     spack concretize -f
     spack install --fail-fast
     spack clean --all
-    find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
 %post
@@ -109,6 +108,12 @@ Stage: runtime
     export PATH=/opt/fall3d/bin:$PATH
 %post
     export PATH=/opt/fall3d/bin:$PATH
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3
+    rm -rf /var/lib/apt/lists/*
 
 %files from devel
     /opt/software /opt/software
