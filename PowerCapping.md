@@ -52,7 +52,7 @@ The following codes are to be considered if any of the main targeted codes does 
 | [SPECFEM3D_Cartesian](https://github.com/SPECFEM/specfem3d)              | :heavy_check_mark:                                                                          | Not started        | Not started    | Not started    |      Not started            | :heavy_check_mark:, Waiting Data From Developers                  | 
 | [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)            | :heavy_check_mark:                                                                         | Not started        | Not started    | Not started    |        Not started          | :heavy_check_mark:, Waiting Data From Developers                   |
 | [ELMER_ICE](https://elmerice.elmerfem.org/)            | Not Started                                                                          | Not started        | Not started    | Not started    |        Not started          | :heavy_check_mark:, Waiting Data From Developers                   |
-| [XSHELLS](applications/xshells/README.md)                              | OK                                                                          | Not started        | OK | Not started    |      Not started           | Waiting Response From Developers                  |
+| [XSHELLS](applications/xshells/README.md)                              | OK                                                                          | Not started        | OK | Not started    |      Not started           | :heavy_check_mark: , waiting data from developers                  |
 | [TANDEM](https://tandem.readthedocs.io/en/latest/)                      | Ok                                                                          | Not started        | Ok             | Not started    |         Not started        | Backup if no response from XSHELLS                   |
 
 
@@ -197,11 +197,13 @@ mkdir /local/tmp_singularity_cache
 export APPTAINER_TMPDIR=/local/tmp_singularity
 export APPTAINER_CACHEDIR=/local/tmp_singularity_cache
 ```
+# singularity build fall3d_take3.sif singularity_thea.def
 
 **Example:**
 
 ```shell
 singularity pull nvhpc-24.11-devel.sif docker://nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
+#  singularity pull nvhpc-24.11-devel-sha.sif docker://nvcr.io/nvidia/nvhpc@sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30 (thea arm)
 singularity pull nvhpc-24.11-runtime.sif docker://nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
 ```
 

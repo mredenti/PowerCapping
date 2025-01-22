@@ -56,10 +56,13 @@ cluster_configs = {
         'spack_arch': 'linux-rhel8-icelake',
         'spack_branch_or_tag': 'v0.21.0',
         'spack_specs' : [
-            'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
-            'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
-            'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
-            'parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
+            'openmpi@4.1.6%gcc~atomics+cuda+pmi+lustre+romio+rsh cuda_arch=80 fabrics=cma,hcoll,knem,ucx,xpmem',
+            'ucx@1.17.0%gcc+cuda+gdrcopy+knem cuda_arch=80',
+            'hwloc@2.11.1%gcc+cuda cuda_arch=80',
+            'hdf5@1.14.3%gcc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
+            'netcdf-c@4.9.2%gcc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
+            'netcdf-fortran@4.6.1%gcc~doc+pic+shared build_system=autotools',
+            'parallel-netcdf@1.12.3%gcc~burstbuffer+cxx+fortran+pic+shared build_system=autotools',
             'zlib-ng%gcc',
         ],
 
@@ -73,8 +76,8 @@ cluster_configs = {
         # --------------------
         # Use a (unique) content-based identifier for images
         # --------------------
-        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30',
-        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a',
+        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
+        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda11.8-ubuntu22.04
 
         # --------------------
         # Cluster arch and micro arch
@@ -91,10 +94,13 @@ cluster_configs = {
         # --------------------
         # Spack version and specs to be installed in environment
         # --------------------
-        'spack_version': '0.21.0',
+        'spack_version': '0.23.0',
         'spack_arch': 'linux-rocky9-neoverse_v2',
-        'spack_branch_or_tag': 'v0.21.0',
+        'spack_branch_or_tag': 'v0.23.0',
         'spack_specs' : [
+            'openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx ^numactl%gcc',
+            'ucx@1.17.0%gcc~cma+cuda+gdrcopy cuda_arch=90',
+            'hwloc@2.11.1%gcc+cuda cuda_arch=90',
             'hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make',
             'netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8',
             'netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools',
@@ -112,8 +118,8 @@ cluster_configs = {
         # --------------------
         # Use a (unique) content-based identifier for images
         # --------------------
-        'digest_devel': 'sha256:e31ab97e8c5914f80b277bd24d9c07c1947355f605967ba65a07ebaeb4eea224',
-        'digest_runtime': 'sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914',
+        'digest_devel': 'sha256:da058394e75309cf6c9002a0d47332b0e730f107f029464819a4a9ba2a6e0454', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda12.6-ubuntu22.04
+        'digest_runtime': 'sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
         
         # --------------------
         # Cluster arch and micro arch
@@ -161,28 +167,11 @@ os_common_packages = ['autoconf',
                     'environment-modules']
 
 if cluster_name == "thea" and params["base_os"] == "ubuntu22.04":
-    os_common_packages += ['libcurl4-openssl-dev']
+    os_common_packages += ['libcurl4-openssl-dev', 'libssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
                    epel=True,
                    yum=os_common_packages + ['curl-devel', '--allowerasing'])
-
-cuda_major = params["cuda_version"].split('.')[0]  # e.g. '11.8' -> '11' # I think there is a version function
-
-if params["base_os"] == "rockylinux9":
-    Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
-                            'module use /opt/nvidia/hpc_sdk/modulefiles',
-                            f'module load hpcx-cuda{cuda_major}'])
-else:
-    Stage0 += shell(commands=['. /usr/share/modules/init/sh',
-                            'module use /opt/nvidia/hpc_sdk/modulefiles',
-                            f'module load nvhpc-hpcx-cuda{cuda_major}'])
-"""
-Stage0 += shell(commands=[
-                          '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
-                          'hpcx_load'
-                          ])
-""" 
 
 ###############################################################################
 # Setup and install Spack
@@ -222,9 +211,6 @@ EOF''',
     # Find nvhpc, gcc compilers
     'spack compiler find --scope env:/opt/spack-environment',
     
-    # Find OpenMPI as part of NVIDIA HPCX package 
-    'spack external find --not-buildable openmpi --scope env:/opt/spack-environment',
-    
     # Find all other external packages
     'spack external find --all --scope env:/opt/spack-environment'
     ] + [  
@@ -235,13 +221,6 @@ EOF''',
         'spack concretize -f', 
         'spack install --fail-fast',
         'spack clean --all',
-        
-        # Strip all the binaries in /opt/view to reduce container size
-    '''find -L /opt/view/* -type f -exec readlink -f '{}' \; | \
-xargs file -i | \
-grep 'charset=binary' | \
-grep 'x-executable\|x-archive\|x-sharedlib' | \
-awk -F: '{print $1}' | xargs strip -s''',
     ])
 
 #############################
@@ -253,9 +232,11 @@ awk -F: '{print $1}' | xargs strip -s''',
 Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     '-D DETAIL_BIN=NO', # name of the binary will be Fall3d.x
                                     '-D WITH-MPI=YES',
+                                    '-D MPIEXEC_EXECUTABLE=/opt/view/bin/mpiexec',
+                                    '-D MPI_Fortran_COMPILER=/opt/view/bin/mpif90',
                                     '-D WITH-ACC=YES',
                                     '-D CMAKE_Fortran_COMPILER=nvfortran',
-                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]} -gpu=sm_{params["cuda_arch"]}' + (f' -gpu=cuda{params["cuda_version"]}"' if cluster_name == "thea" else '"'),
+                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]}"',
                                     f'-D WITH-R4={fall3d_single_precision}',
                                     ],
                         prefix='/opt/fall3d', 
@@ -275,16 +256,6 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                         },
                         url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
-Stage0 += shell(commands=[
-        'export PATH=/opt/fall3d/bin:$PATH',
-        # remove specs which are no longer needed - perhpas do it at the end
-        'spack gc -y',
-        # Deactivate 
-        'spack env deactivate',
-        # Generate modifications to the environment that are necessary to run
-        'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh'
-])
-
 ###############################################################################
 # Finalize Container with Runtime Environment
 ###############################################################################
@@ -298,14 +269,33 @@ Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_runtime"]}',
 
 Stage1 += Stage0.runtime(_from='devel') 
 
+Stage1 += packages(apt=['python3'],
+                   epel=True)
+
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#copy
 Stage1 += copy(
     files = {
         '/opt/software'         : '/opt/software',
         '/opt/view'             : '/opt/view',
         '/opt/spack-environment': '/opt/spack-environment',
-        '/etc/profile.d/z10_spack_environment.sh' : '/etc/profile.d/z10_spack_environment.sh'
+        '/opt/spack' : '/opt/spack'
         }, _from='devel')
+    
+    
+Stage1 += shell(commands=[
+    '. /opt/spack/share/spack/setup-env.sh', 
+    'spack env activate /opt/spack-environment',
+    # Export path to Fall3D
+    'export PATH=/opt/fall3d/bin:$PATH',
+    # remove specs which are no longer needed - perhpas do it at the end
+    'spack gc -y',
+    # Deactivate 
+    'spack env deactivate',
+    # Generate modifications to the environment that are necessary to run
+    'spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh',
+    # Remove Spack repository
+    'rm -rf /opt/spack'
+])
     
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#runscript
 if hpccm.config.g_ctype == container_type.DOCKER:

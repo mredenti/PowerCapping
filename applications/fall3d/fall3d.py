@@ -175,7 +175,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     @run_before("run")
     def replace_launcher(self):
         try:
-            launcher_cls = getlauncher("mpirun-mapby")
+            launcher_cls = getlauncher("srun-pmi") if self.current_system.name == 'thea' else getlauncher("mpirun-mapby")
         except Exception:
             launcher_cls = getlauncher("mpirun")
         self.job.launcher = launcher_cls()
@@ -249,7 +249,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         f'{test_prefix}.Fall3d.log'
     ]
     
-    num_gpus = 8
+    num_gpus = 4
     time_limit = '600'
     
 @rfm.simple_test

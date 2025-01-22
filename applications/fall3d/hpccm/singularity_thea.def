@@ -22,8 +22,8 @@
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: docker
-From: nvcr.io/nvidia/nvhpc@sha256:e31ab97e8c5914f80b277bd24d9c07c1947355f605967ba65a07ebaeb4eea224
+BootStrap: localimage
+From: nvhpc-24.11-devel-cuda12.6.sif
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -36,19 +36,14 @@ Stage: devel
         curl \
         environment-modules \
         libcurl4-openssl-dev \
+        libssl-dev \
         pkg-config \
         python3
     rm -rf /var/lib/apt/lists/*
 
 %post
     cd /
-    . /usr/share/modules/init/sh
-    module use /opt/nvidia/hpc_sdk/modulefiles
-    module load nvhpc-hpcx-cuda12
-
-%post
-    cd /
-    git clone --branch v0.21.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
+    git clone --branch v0.23.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
     . /opt/spack/share/spack/setup-env.sh
 
 %environment
@@ -72,8 +67,10 @@ spack:
 EOF
     spack env activate /opt/spack-environment
     spack compiler find --scope env:/opt/spack-environment
-    spack external find --not-buildable openmpi --scope env:/opt/spack-environment
     spack external find --all --scope env:/opt/spack-environment
+    spack add openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx ^numactl%gcc
+    spack add ucx@1.17.0%gcc~cma+cuda+gdrcopy cuda_arch=90
+    spack add hwloc@2.11.1%gcc+cuda cuda_arch=90
     spack add hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make
     spack add netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8
     spack add netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools
@@ -82,7 +79,6 @@ EOF
     spack concretize -f
     spack install --fail-fast
     spack clean --all
-    find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
 %post
@@ -91,23 +87,16 @@ EOF
     mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
     cd /var/tmp/fall3d-9.0.1
     mkdir -p /opt/fall3d/bin
-    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=neoverse-v2 -gpu=sm_90 -gpu=cuda12.6" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D MPIEXEC_EXECUTABLE=/opt/view/bin/mpiexec -D MPI_Fortran_COMPILER=/opt/view/bin/mpif90 -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=neoverse-v2" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
     cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
     cd /opt/fall3d
     cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
     rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
 
-%post
-    cd /
-    export PATH=/opt/fall3d/bin:$PATH
-    spack gc -y
-    spack env deactivate
-    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
-
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: docker
-From: nvcr.io/nvidia/nvhpc@sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914
+BootStrap: localimage
+From: nvhpc-24.11-runtime-cuda12.6.sif
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -120,11 +109,27 @@ Stage: runtime
 %post
     export PATH=/opt/fall3d/bin:$PATH
 
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3
+    rm -rf /var/lib/apt/lists/*
+
 %files from devel
-    /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
     /opt/software /opt/software
+    /opt/spack /opt/spack
     /opt/spack-environment /opt/spack-environment
     /opt/view /opt/view
+
+%post
+    cd /
+    . /opt/spack/share/spack/setup-env.sh
+    spack env activate /opt/spack-environment
+    export PATH=/opt/fall3d/bin:$PATH
+    spack gc -y
+    spack env deactivate
+    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
+    rm -rf /opt/spack
 
 %post
     cd /
