@@ -23,38 +23,10 @@
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: localimage
-From: cuda-12.6.3-devel.sif
+From: nvhpc-24.11-devel-cuda12.6.sif
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
-
-# NVIDIA HPC SDK version 24.11
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates \
-        gnupg \
-        wget
-    rm -rf /var/lib/apt/lists/*
-%post
-    mkdir -p /usr/share/keyrings
-    rm -f /usr/share/keyrings/DEB-GPG-KEY-NVIDIA-HPC-SDK.gpg
-    wget -qO - https://developer.download.nvidia.com/hpc-sdk/ubuntu/DEB-GPG-KEY-NVIDIA-HPC-SDK | gpg --dearmor -o /usr/share/keyrings/DEB-GPG-KEY-NVIDIA-HPC-SDK.gpg
-    echo "deb [signed-by=/usr/share/keyrings/DEB-GPG-KEY-NVIDIA-HPC-SDK.gpg] https://developer.download.nvidia.com/hpc-sdk/ubuntu/arm64 /" >> /etc/apt/sources.list.d/hpccm.list
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        nvhpc-24-11
-    rm -rf /var/lib/apt/lists/*
-%environment
-    export CPATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/include:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/include:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/extras/qd/include/qd:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/math_libs/include:$CPATH
-    export LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/math_libs/lib64:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/lib64:$LD_LIBRARY_PATH
-    export MANPATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/man:$MANPATH
-    export PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/profilers/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/bin:$PATH
-%post
-    export CPATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/include:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/include:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/extras/qd/include/qd:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/math_libs/include:$CPATH
-    export LD_LIBRARY_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/math_libs/lib64:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/lib:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/lib64:$LD_LIBRARY_PATH
-    export MANPATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/man:$MANPATH
-    export PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nvshmem/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/nccl/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/profilers/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/compilers/bin:/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/bin:$PATH
 
 %post
     apt-get update -y
@@ -63,7 +35,6 @@ Stage: devel
         ca-certificates \
         curl \
         environment-modules \
-        git \
         libcurl4-openssl-dev \
         libssl-dev \
         pkg-config \
@@ -104,11 +75,11 @@ EOF
     spack add netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8
     spack add netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools
     spack add parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools
-    spack add cmake
     spack add zlib-ng%gcc
     spack concretize -f
     spack install --fail-fast
     spack clean --all
+    find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
 %post
@@ -117,23 +88,16 @@ EOF
     mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
     cd /var/tmp/fall3d-9.0.1
     mkdir -p /opt/fall3d/bin
-    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=neoverse-v2" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D MPIEXEC_EXECUTABLE=/opt/view/bin/mpiexec -D MPI_Fortran_COMPILER=/opt/view/bin/mpif90 -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=neoverse-v2" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
     cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
     cd /opt/fall3d
     cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
     rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
 
-%post
-    cd /
-    export PATH=/opt/fall3d/bin:$PATH
-    spack gc -y
-    spack env deactivate
-    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
-
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: localimage
-From: cuda-12.6.3-runtime.sif
+From: nvhpc-24.11-runtime-cuda12.6.sif
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -147,10 +111,20 @@ Stage: runtime
     export PATH=/opt/fall3d/bin:$PATH
 
 %files from devel
-    /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
     /opt/software /opt/software
+    /opt/spack /opt/spack
     /opt/spack-environment /opt/spack-environment
     /opt/view /opt/view
+
+%post
+    cd /
+    . /opt/spack/share/spack/setup-env.sh
+    spack env activate /opt/spack-environment
+    export PATH=/opt/fall3d/bin:$PATH
+    spack gc -y
+    spack env deactivate
+    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
+    rm -rf /opt/spack
 
 %post
     cd /
