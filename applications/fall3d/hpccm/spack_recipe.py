@@ -278,11 +278,6 @@ Stage1 += Stage0.runtime(_from='devel')
 
 Stage1 += packages(apt=['python3'], epel=True)
 
-#Stage1 += shell(commands=[
-#                          '. $HPCX_DIR/hpcx-init-ompi.sh',
-#                          'hpcx_load'
-#                          ])
-
 # https://github.com/NVIDIA/hpc-container-maker/blob/v24.10.0/docs/primitives.md#copy
 Stage1 += copy(
     files = {
