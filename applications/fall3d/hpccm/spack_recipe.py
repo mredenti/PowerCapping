@@ -279,7 +279,7 @@ Stage1 += Stage0.runtime(_from='devel')
 Stage1 += packages(apt=['python3'], epel=True)
 
 Stage1 += shell(commands=[
-                          '. $HPCX_HOME/hpcx-init-ompi.sh',
+                          '. $HPCX_DIR/hpcx-init-ompi.sh',
                           'hpcx_load'
                           ])
 
