@@ -114,7 +114,7 @@ site_configuration = {
                             'type': 'Singularity',
                             'default': True,
                             'modules': [],
-                            'env_vars': [['ENV_VAR', 'VALUE']]
+                            'env_vars': []
                         }
                     ],
                     "environs": [
