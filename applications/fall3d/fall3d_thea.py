@@ -9,6 +9,7 @@ class fall3d_stage(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['default']
     local = False  # Ensure this runs locally on the compute node
 
+    executable = "true"
     # Base directory for FALL3D on the compute node
     FALL3D_BASEDIR = '$SCRATCH_FAST/FALL3D'
 
@@ -18,21 +19,22 @@ class fall3d_stage(rfm.RunOnlyRegressionTest):
         self.container_image = f'{self.FALL3D_BASEDIR}/fall3d.sif'
 
         # Placeholder for the workdir
-        self.workdir = None
-
+        self.workdir = "blue"
         # No actual execution needed
-        self.executable = ''
 
     @run_after('setup')
     def prepare_workdir_and_symlinks(self):
         """Create a unique working directory and set up symlinks."""
         self.prerun_cmds = [
-            'os.makedirs(self.workdir, exist_ok=True)',
-
+            'mkdir raikoke-large-gpu-2',
+            'cd raikoke-large-gpu-2',
+            'ln -s $SCRATCH_FAST/FALL3D/raikoke-2019/Input/Raikoke-2019.inp Raikoke-2019.inp', # perhaps a for loop over the input files 
+            'ln -s $SCRATCH_FAST/FALL3D/raikoke-2019/Input/raikoke-2019.gfs.nc Raikoke-2019.gfs.nc',
+            'ln -s $SCRATCH_FAST/FALL3D/raikoke-2019/Input/Raikoke-2019.sat.nc Raikoke-2019.sat.nc',
+            'ln -s $SCRATCH_FAST/FALL3D/raikoke-2019/Input/Sat.tbl Sat.tbl',
+            'ln -s $SCRATCH_FAST/FALL3D/raikoke-2019/Input/GFS.tbl GFS.tbl',
             # Create symlinks in the workdir
-            'os.symlink(self.input_data_dir, os.path.join(self.workdir, "data"))',
-            'os.symlink(self.container_image, os.path.join(self.workdir, "fall3d.sif"))'
-            
+            f'{os.path.join(self.workdir, "data")}'
         ]
         # Create a unique working directory for this session
         self.workdir = os.path.join(self.FALL3D_BASEDIR, f'workdir_{self.current_partition.name}')
@@ -53,20 +55,49 @@ class fall3d_stage(rfm.RunOnlyRegressionTest):
 # The actual simulation test that depends on the staged environment.
 @rfm.simple_test
 class fall3d_base_test(rfm.RunOnlyRegressionTest):
-    valid_systems = ['*']  # Adjust for your cluster
-    valid_prog_environs = ['*']
-    container_platform = 'Singularity'
+    '''Base class of Fall3d runtime tests'''
+    
+    valid_systems = ['thea:gh']  # Adjust for your cluster
+    valid_prog_environs = ['default']
+    
+    # SIF image
+    image = variable(str) 
+    #container_platform = 'Singularity'
 
     # Fixture to stage the input data and container
+    # could also consider an explicit dependency so that i create the files and then just run...?
     stage_files = fixture(fall3d_stage, scope='session')
+    
+    exclusive_access = True
 
-    def __init__(self):
-        # Number of tasks for the simulation
-        self.num_tasks = 1
-        self.num_tasks_per_node = 1
-
-        # Container execution
-        self.executable = 'singularity'
+    @run_after('setup')
+    def prepare_run(self):
+        #The total number of processors is NPX × NPY × NPY × SIZE and should be equivalent to the argument np
+        npx=npy=npz=1
+        while npx*npy*npz != self.num_gpus:
+            # Find which dimension is smallest and increment it
+            if npx <= npy:
+                npx *= 2
+            else:
+                npy *= 2
+        
+        self.executable_opts += [str(npx), str(npy), str(npz)]
+        
+        self.container_platform.image = self.image
+        # adds --nv flag to singularity exec
+        self.container_platform.with_cuda = True 
+        # https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html#reframe.core.containers.ContainerPlatform.mount_points
+        
+        # MAYBE THERE IS A WAY TO EXTRACT DIRECTLY THE PATH SYMLINKED
+        input_dir = os.path.join(os.path.dirname(__file__), "green") # handle symlinks of read only input files
+        self.container_platform.mount_points = [
+            (input_dir, input_dir) 
+        ]
+        # Additional options to be passed to the container runtime when executed
+        # self.container_platform.options = ['--no-home'] only for leo
+        # command issued by singularity exec
+        self.container_platform.command = f"Fall3d.x {' '.join(map(str, self.executable_opts))}"
+        # workdir: The working directory of ReFrame inside the container. Default is rfm_workdir
 
     @run_after('setup')
     def set_executable_opts(self):
@@ -79,3 +110,6 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             './fall3d_simulation',                    # Simulation executable
             '-i', os.path.join(workdir, 'data', 'data.inp')  # Input file
         ]
+
+    num_gpus= 2
+    # post run , cleanup commands: rsync files to home stage directory!!
