@@ -120,11 +120,6 @@ Stage: runtime
         python3
     rm -rf /var/lib/apt/lists/*
 
-%post
-    cd /
-    . $HPCX_DIR/hpcx-init-ompi.sh
-    hpcx_load
-
 %files from devel
     /opt/software /opt/software
     /opt/spack /opt/spack
