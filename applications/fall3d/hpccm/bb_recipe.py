@@ -78,7 +78,7 @@ cluster_configs = {
         'base_os': 'ubuntu22.04',
         
         # --------------------
-        # NVHPC, CUDA setup for A100
+        # NVHPC, CUDA setup for GH200
         # --------------------
         'nvhpc_version': '24.11',
         'cuda_version': '12.6',
