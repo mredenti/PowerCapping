@@ -24,7 +24,7 @@
 # Singularity 3.2 and later.
 BootStrap: localimage
 From: nvhpc-24.11-devel.sif
-Stage: devel
+Stage: develspack 
 %post
     . /.singularity.d/env/10-docker*.sh
 
