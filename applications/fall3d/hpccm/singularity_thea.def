@@ -46,9 +46,11 @@ Stage: devel
     module use /opt/nvidia/hpc_sdk/modulefiles
     module load nvhpc-hpcx-cuda12
 
+%files 
+    ./spack /opt/spack
+
 %post
     cd /
-    git clone --branch v0.21.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
     . /opt/spack/share/spack/setup-env.sh
 
 %environment
@@ -117,11 +119,6 @@ Stage: runtime
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         python3
     rm -rf /var/lib/apt/lists/*
-
-%post
-    cd /
-    . $HPCX_HOME/hpcx-init-ompi.sh
-    hpcx_load
 
 %files from devel
     /opt/software /opt/software
