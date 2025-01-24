@@ -90,7 +90,7 @@ However, this raises an important question about reproducibility aspects. We are
   - **Reproducibility with Containers**
     - [The Scientific Filesystem](https://doi.org/10.1093/gigascience/giy023)
   - **Power Capping**  
-    - missing 
+    - [Understanding the Impact of Dynamic Power Capping on Application Progress](https://gitlab.hpc.cineca.it/cheese2p-hls/power-capping/-/blob/thea/fall3d/specfem/PowerCapping.md)
   - **GraceHopper**
     - [Understanding Data Movement in Tightly Coupled Heterogeneous Systems: A Case Study with the Grace Hopper Superchip](https://arxiv.org/pdf/2408.11556v2)
   - **Scientific Impact**
