@@ -95,6 +95,8 @@ reframe \
   -C power-capping/configuration/thea.py \
   -c power-capping/applications/fall3d/fall3d_thea.py \
   -s $HOME/REFRAME-FALL3D-TEST \
+  --performance-report \
+  --keep-stage-files \
   -n fall3d_raikoke_test \
   --dry-run
 ```
@@ -202,6 +204,8 @@ reframe \
   -C power-capping/configuration/thea.py \
   -c power-capping/applications/fall3d/fall3d_thea.py \
   -s $HOME/REFRAME-FALL3D \
+  --performance-report \
+  --keep-stage-files \
   -n fall3d_raikoke_large_test \
   --dry-run
 ```
