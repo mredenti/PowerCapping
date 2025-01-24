@@ -119,6 +119,10 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         # workdir: The working directory of ReFrame inside the container. Default is rfm_workdir
 
         # post run , cleanup commands: rsync files to home stage directory!! 
+        
+    @sanity_function
+    def validate_download(self):
+        return sn.assert_eq(self.job.exitcode, 0)
 
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
