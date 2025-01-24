@@ -63,18 +63,11 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     valid_systems = ['thea:gh']  # Adjust for your cluster
     valid_prog_environs = ['default']
     
-    #container_platform = 'Singularity'
-
-    # Fixture to stage the input data and container
-    # could also consider an explicit dependency so that i create the files and then just run...?
     #stage_files = fixture(fall3d_stage, scope='session')
-    
     exclusive_access = True
     
     @run_after('init')
     def configure_dependencies(self):
-        '''Conditionally add dependencies based on the programming environment.'''
-        #if self.execution_mode == 'baremetal': PUT A CONDITION ON WHEN YOU WANT TO RUN WITHOUT THE STAGING OR NOT
         self.depends_on('fall3d_stage', udeps.fully)
             
     @require_deps
@@ -88,6 +81,11 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         self.num_tasks_per_node = 1
         self.num_cpus_per_task = self.current_partition.processor.num_cpus
 
+    @run_before("run")
+    def replace_launcher(self):
+        launcher_cls = getlauncher("srun-pmix") 
+        self.job.launcher = launcher_cls()
+    
     @run_after('setup')
     def prepare_run(self):
         #The total number of processors is NPX × NPY × NPY × SIZE and should be equivalent to the argument np
@@ -120,10 +118,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         self.container_platform.command = f"Fall3d.x {' '.join(map(str, self.executable_opts))}"
         # workdir: The working directory of ReFrame inside the container. Default is rfm_workdir
 
-    @run_before("run")
-    def replace_launcher(self):
-        launcher_cls = getlauncher("srun-pmix") 
-        self.job.launcher = launcher_cls()
+        # post run , cleanup commands: rsync files to home stage directory!! 
 
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
@@ -156,4 +151,6 @@ class fall3d_raikoke_test(fall3d_base_test):
     image = variable(str, value="fall3d.sif") 
     num_gpus = 2
     time_limit = '600'
-    # post run , cleanup commands: rsync files to home stage directory!!
+    
+    
+# Add raikoke-2019-large test 
