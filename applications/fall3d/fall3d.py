@@ -272,5 +272,5 @@ class fall3d_raikoke_large_test(fall3d_base_test):
         f'{test_prefix}.Fall3d.log'
     ]
     
-    num_gpus = parameter([16])
-    time_limit = '36000'
+    num_gpus = parameter([4])
+    time_limit = '3600' # '36000'
