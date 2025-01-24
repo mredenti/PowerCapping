@@ -5,13 +5,13 @@ import reframe.utility.udeps as udeps
 import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
 
-    #@run_after('setup')
-     #def check_files_exist(self):
-     #   """Ensure input data and container exist."""
-     #   if not os.path.exists(self.input_data_dir):
-     #       raise FileNotFoundError(f"Input data directory {self.input_data_dir} not found")
-     #   if not os.path.isfile(self.container_image):
-     #       raise FileNotFoundError(f"Container image {self.container_image} not found")
+#@run_after('setup')
+    #def check_files_exist(self):
+    #   """Ensure input data and container exist."""
+    #   if not os.path.exists(self.input_data_dir):
+    #       raise FileNotFoundError(f"Input data directory {self.input_data_dir} not found")
+    #   if not os.path.isfile(self.container_image):
+    #       raise FileNotFoundError(f"Container image {self.container_image} not found")
 
 
 # =================================================================
@@ -41,7 +41,9 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         Staging the FALL3D input data, creating a unique workdir and setting up symlinks.
         """
         
-        self.workdir = os.path.join(self.base_dir, f"{self.test_prefix}-gpus{self.num_gpus}-{self.launcher}")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+        self.workdir = os.path.join(self.base_dir, f"{timestamp}-{self.test_prefix}-gpus{self.num_gpus}-{self.launcher}")
         
         self.prerun_cmds = [
             f'mkdir -p {self.workdir} && cd {self.workdir}', # eventually we could use a timestamp
