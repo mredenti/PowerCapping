@@ -1,15 +1,17 @@
 import os
+import datetime
 import reframe as rfm
 import reframe.utility.udeps as udeps
+import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
 
-    #@run_after('setup')
-     #def check_files_exist(self):
-     #   """Ensure input data and container exist."""
-     #   if not os.path.exists(self.input_data_dir):
-     #       raise FileNotFoundError(f"Input data directory {self.input_data_dir} not found")
-     #   if not os.path.isfile(self.container_image):
-     #       raise FileNotFoundError(f"Container image {self.container_image} not found")
+#@run_after('setup')
+    #def check_files_exist(self):
+    #   """Ensure input data and container exist."""
+    #   if not os.path.exists(self.input_data_dir):
+    #       raise FileNotFoundError(f"Input data directory {self.input_data_dir} not found")
+    #   if not os.path.isfile(self.container_image):
+    #       raise FileNotFoundError(f"Container image {self.container_image} not found")
 
 
 # =================================================================
@@ -39,7 +41,9 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         Staging the FALL3D input data, creating a unique workdir and setting up symlinks.
         """
         
-        self.workdir = os.path.join(self.base_dir, f"{self.test_prefix}-gpus{self.num_gpus}-{self.launcher}")
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+        self.workdir = os.path.join(self.base_dir, f"{timestamp}-{self.test_prefix}-gpus{self.num_gpus}-{self.launcher}")
         
         self.prerun_cmds = [
             f'mkdir -p {self.workdir} && cd {self.workdir}', # eventually we could use a timestamp
@@ -54,11 +58,9 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         Staging the FALL3D input data, creating a unique workdir and setting up symlinks.
         """
         
-        self.workdir = os.path.join(self.base_dir, f"{self.test_prefix}-gpus{self.num_gpus}-{self.launcher}")
-        
         self.postrun_cmds = [
             # Append symlink commands with error checking (-f) - see -r for relative
-            f'\nrsync -auvx --progress {os.path.join(self.workdir, file)} {self.stagedir}' for file in self.log_files
+            f'\nrsync -auvx --progress {os.path.join(self.workdir, file)} {self.stagedir}' for file in self.keep_files
         ] 
         
     @run_after('setup')
@@ -122,6 +124,27 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             sn.assert_eq(self.job.exitcode, 0)
         ]
         return sn.all(conditions)
+    
+    @performance_function('s')
+    def elapsed_time(self):
+        # Extract the start and end times from the output (self.stdout)
+        # Example lines:
+        #   Run start time     : 27 oct 2024 at 12:42:53 
+        #   End time           : 27 oct 2024 at 12:47:54 
+        start_time_str = sn.extractsingle(
+            r"Run start time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
+            f'{self.test_prefix}.Fall3d.log', 1
+        )
+        end_time_str = sn.extractsingle(
+            r"End time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
+            f'{self.test_prefix}.Fall3d.log', 1
+        )
+        
+        dt_format = "%d %b %Y at %H:%M:%S"
+        start_time = datetime.datetime.strptime(start_time_str.evaluate(), dt_format) 
+        end_time = datetime.datetime.strptime(end_time_str.evaluate(), dt_format)
+        
+        return (end_time - start_time).total_seconds()
 
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
@@ -140,7 +163,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         # There is a typo in the name of the file. We use test_prefix to rename the file.
         f'[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
     ]  
-    log_files = [
+    keep_files = [
         f'{test_prefix}.SetSrc.log', 
         f'{test_prefix}.SetTgsd.log',
         f'{test_prefix}.SetDbs.log',
@@ -165,7 +188,7 @@ class fall3d_raikoke_large_test(fall3d_base_test):
         'Raikoke-2019.gfs.nc',
     ]
     executable_opts = ['All', 'Raikoke-2019.inp']
-    log_files = [
+    keep_files = [
         f'{test_prefix}.SetSrc.log', 
         f'{test_prefix}.SetTgsd.log',
         f'{test_prefix}.SetDbs.log',
