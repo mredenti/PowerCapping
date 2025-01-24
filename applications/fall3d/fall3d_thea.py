@@ -1,4 +1,5 @@
 import os
+import datetime
 import reframe as rfm
 import reframe.utility.udeps as udeps
 import reframe.utility.sanity as sn
@@ -123,6 +124,27 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             sn.assert_eq(self.job.exitcode, 0)
         ]
         return sn.all(conditions)
+    
+    @performance_function('s')
+    def elapsed_time(self):
+        # Extract the start and end times from the output (self.stdout)
+        # Example lines:
+        #   Run start time     : 27 oct 2024 at 12:42:53 
+        #   End time           : 27 oct 2024 at 12:47:54 
+        start_time_str = sn.extractsingle(
+            r"Run start time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
+            f'{self.test_prefix}.Fall3d.log', 1
+        )
+        end_time_str = sn.extractsingle(
+            r"End time\s+:\s+(\d{1,2}\s+\w+\s+\d{4}\s+at\s+\d{2}:\d{2}:\d{2})",
+            f'{self.test_prefix}.Fall3d.log', 1
+        )
+        
+        dt_format = "%d %b %Y at %H:%M:%S"
+        start_time = datetime.datetime.strptime(start_time_str.evaluate(), dt_format) 
+        end_time = datetime.datetime.strptime(end_time_str.evaluate(), dt_format)
+        
+        return (end_time - start_time).total_seconds()
 
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
