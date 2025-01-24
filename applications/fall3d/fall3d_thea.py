@@ -1,6 +1,7 @@
 import os
 import reframe as rfm
 import reframe.utility.udeps as udeps
+import reframe.utility.sanity as sn
 from reframe.core.backends import getlauncher
 
     #@run_after('setup')
