@@ -58,8 +58,6 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         Staging the FALL3D input data, creating a unique workdir and setting up symlinks.
         """
         
-        self.workdir = os.path.join(self.base_dir, f"{self.test_prefix}-gpus{self.num_gpus}-{self.launcher}")
-        
         self.postrun_cmds = [
             # Append symlink commands with error checking (-f) - see -r for relative
             f'\nrsync -auvx --progress {os.path.join(self.workdir, file)} {self.stagedir}' for file in self.log_files
