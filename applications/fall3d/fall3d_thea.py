@@ -60,7 +60,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         
         self.postrun_cmds = [
             # Append symlink commands with error checking (-f) - see -r for relative
-            f'\nrsync -auvx --progress {os.path.join(self.workdir, file)} {self.stagedir}' for file in self.log_files
+            f'\nrsync -auvx --progress {os.path.join(self.workdir, file)} {self.stagedir}' for file in self.keep_files
         ] 
         
     @run_after('setup')
@@ -163,7 +163,7 @@ class fall3d_raikoke_test(fall3d_base_test):
         # There is a typo in the name of the file. We use test_prefix to rename the file.
         f'[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
     ]  
-    log_files = [
+    keep_files = [
         f'{test_prefix}.SetSrc.log', 
         f'{test_prefix}.SetTgsd.log',
         f'{test_prefix}.SetDbs.log',
@@ -188,7 +188,7 @@ class fall3d_raikoke_large_test(fall3d_base_test):
         'Raikoke-2019.gfs.nc',
     ]
     executable_opts = ['All', 'Raikoke-2019.inp']
-    log_files = [
+    keep_files = [
         f'{test_prefix}.SetSrc.log', 
         f'{test_prefix}.SetTgsd.log',
         f'{test_prefix}.SetDbs.log',
