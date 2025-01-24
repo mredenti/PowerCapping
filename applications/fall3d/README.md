@@ -91,18 +91,11 @@ reframe \
 **Container**
 
 ```shell
-reframe \
-    -C power-capping/configuration/thea.py \
-    -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-FALL3D \
-    --keep-stage-files \
-    --performance-report \
-    -M openmpi:nvhpc/24.11-gcc-12.3.0-ixv \
-    -p default \
-    -n fall3d_raikoke_test \
-    -S fall3d_raikoke_test.execution_mode=container \
-    -S fall3d_raikoke_test.image=$SCRATCH/SIF_IMAGES/fall3d.sif \
-    --dry-run
+reframe -C power-capping/configuration/thea.py \
+  -c power-capping/applications/fall3d/fall3d_thea.py \
+  -s $SCRATCH/TEST \
+  -n fall3d_raikoke_test \
+  --dry-run
 ```
 
 </details>
@@ -204,20 +197,11 @@ reframe \
 **Container**
 
 ```shell
-reframe \
-    -C power-capping/configuration/thea.py \
-    -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-FALL3D \
-    --keep-stage-files \
-    --performance-report \
-    -M openmpi:nvhpc/24.11-gcc-12.3.0-ixv \
-    -p default \
-    -n fall3d_raikoke_test \
-    -S fall3d_raikoke_test.execution_mode=container \
-    -S fall3d_raikoke_test.image=$SCRATCH/SIF_IMAGES/fall3d.sif \
-    --dry-run
+reframe -C power-capping/configuration/thea.py \
+  -c power-capping/applications/fall3d/fall3d_thea.py \
+  -s $SCRATCH/TEST \
+  -n fall3d_raikoke_large_test \
+  --dry-run
 ```
-
-reframe -C power-capping/configuration/thea.py -c power-capping/applications/fall3d/fall3d_thea.py -s $SCRATCH/TEST -n fall3d_raikoke_large_test --dry-run
 
   </details>

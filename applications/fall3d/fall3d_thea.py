@@ -85,14 +85,9 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
             (self.workdir, '/workdir') 
         ]
         self.container_platform.workdir = os.path.join("/workdir")
-        
-        # Additional options to be passed to the container runtime when executed
-        # self.container_platform.options = ['--no-home'] only for leo
-        # command issued by singularity exec
         self.container_platform.command = f"Fall3d.x {' '.join(map(str, self.executable_opts))}"
-        # workdir: The working directory of ReFrame inside the container. Default is rfm_workdir
 
-        # post run , cleanup commands: rsync files to home stage directory!! 
+        # post run , cleanup commands: rsync files log files back to home stage directory!! 
         
     @sanity_function
     def validate_download(self):
@@ -101,8 +96,6 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
     descr = 'Fall3d Raikoke-2019 test'
-    # This should also match Fall3d's tasks log prefix
-    # sourcesdir=""
     data_dir = 'raikoke-2019/Input'
     test_prefix = 'Raikoke-2019'
     read_only_files = [
@@ -117,8 +110,6 @@ class fall3d_raikoke_test(fall3d_base_test):
         # There is a typo in the name of the file. We use test_prefix to rename the file.
         f'[ -f raikoke-2019.gfs.nc ] && mv raikoke-2019.gfs.nc Raikoke-2019.gfs.nc'
     ]  
-    # maybe we can run a prerun hook which fetches the lfs
-    # show define an test case name variable and make keep files the default in the base
     log_files = [
         f'{test_prefix}.SetSrc.log', 
         f'{test_prefix}.SetTgsd.log',
@@ -144,8 +135,6 @@ class fall3d_raikoke_large_test(fall3d_base_test):
         'Raikoke-2019.gfs.nc',
     ]
     executable_opts = ['All', 'Raikoke-2019.inp']
-    # maybe we can run a prerun hook which fetches the lfs
-    # show define an test case name variable and make keep files the default in the base
     log_files = [
         f'{test_prefix}.SetSrc.log', 
         f'{test_prefix}.SetTgsd.log',
