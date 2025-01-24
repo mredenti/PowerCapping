@@ -12,7 +12,7 @@ class MpirunLauncher(JobLauncher):
                 f'--map-by ppr:{job.num_tasks_per_node}:node:PE={job.num_cpus_per_task}',
                 '--report-bindings']
         
-@register_launcher('srun-pmi')
+@register_launcher('srun-pmix')
 class MpirunLauncher(JobLauncher):
     def command(self, job):
         return ['srun', 
