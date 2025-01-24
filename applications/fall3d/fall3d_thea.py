@@ -46,7 +46,20 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         ] + [
             # Append symlink commands with error checking (-f) - see -r for relative
             f'ln -s {os.path.join(self.base_dir, self.data_dir, file)} {file}' for file in self.read_only_files
-        ] + self.prerun_cmds
+        ] + self.prerun_cmds + ['']
+        
+    @run_after('setup')
+    def copy_log_files(self):
+        """
+        Staging the FALL3D input data, creating a unique workdir and setting up symlinks.
+        """
+        
+        self.workdir = os.path.join(self.base_dir, f"{self.test_prefix}-gpus{self.num_gpus}-{self.launcher}")
+        
+        self.postrun_cmds = [
+            # Append symlink commands with error checking (-f) - see -r for relative
+            f'\nrsync -auvx --progress {os.path.join(self.workdir, file)} {self.stagedir}' for file in self.log_files
+        ] 
         
     @run_after('setup')
     def set_resources(self): # find a better name
@@ -87,11 +100,28 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
         self.container_platform.workdir = os.path.join("/workdir")
         self.container_platform.command = f"Fall3d.x {' '.join(map(str, self.executable_opts))}"
 
-        # post run , cleanup commands: rsync files log files back to home stage directory!! 
-        
+    # before sanity step, rsync log files back to home stage directory
+    
     @sanity_function
-    def validate_download(self):
-        return sn.assert_eq(self.job.exitcode, 0)
+    def assert_simulation_success(self):
+        log_prefix = self.test_prefix  # Using the class attribute
+        # Generate log file names dynamically.
+        log_setsrc  = f'{log_prefix}.SetSrc.log'
+        log_settgsd = f'{log_prefix}.SetTgsd.log'
+        log_setdbs  = f'{log_prefix}.SetDbs.log'
+        log_fall3d  = f'{log_prefix}.Fall3d.log'
+
+        conditions = [
+            sn.assert_found(r'^.*Task\s+SetTgsd\s*:\s*ends NORMALLY\s*$', log_settgsd),
+            sn.assert_found(r'^.*Task\s+SetDbs\s*:\s*ends NORMALLY\s*$', log_setdbs),
+            sn.assert_found(r'^.*Task\s+SetSrc\s*:\s*ends NORMALLY\s*$', log_setsrc),
+            sn.assert_found(r'^  Number of warnings\s*:\s*0\s*$', log_fall3d),
+            sn.assert_found(r'^  Number of errors\s*:\s*0\s*$', log_fall3d),
+            sn.assert_found(r'^.*Task\s+FALL3D\s*:\s*ends NORMALLY\s*$', log_fall3d),
+            sn.assert_found(r'^<LOG>\s+The program has been run successfully\s*$', self.stdout),
+            sn.assert_eq(self.job.exitcode, 0)
+        ]
+        return sn.all(conditions)
 
 @rfm.simple_test
 class fall3d_raikoke_test(fall3d_base_test):
