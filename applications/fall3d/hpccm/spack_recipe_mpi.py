@@ -196,7 +196,7 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
 
 # Setup and install Spack
 Stage0 += shell(commands=[
-    f'git clone --branch {params["spack_branch_or_tag"]} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
+    f'git clone --branch {params["spack_branch_or_tag"]} -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git /opt/spack',
     '. /opt/spack/share/spack/setup-env.sh' 
     ])
 
