@@ -162,7 +162,7 @@ nvhpc_major = params["nvhpc_version"].split('.')[0]
 nvhpc_minor = params["nvhpc_version"].split('.')[1]
 
 # Define the common path
-remove_path = f"/opt/nvidia/hpc_sdk/Linux_{params['arch']}/{nvhpc_major}\\.{nvhpc_minor}/comm_libs"
+remove_path = f"/opt/nvidia/hpc_sdk/Linux_{params['arch']}/{params['nvhpc_version']}/comm_libs"
 
 # Remove paths under /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/12.6/ as we are installing mpi through spack
 Stage0 += shell(commands=[

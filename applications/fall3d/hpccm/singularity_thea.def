@@ -30,8 +30,8 @@ Stage: devel
 
 %post
     cd /
-    export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24\.11/comm_libs' | paste -sd ':' -)
-    export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24\.11/comm_libs' | paste -sd ':' -)
+    export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs' | paste -sd ':' -)
+    export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs' | paste -sd ':' -)
 
 %post
     apt-get update -y
@@ -46,9 +46,11 @@ Stage: devel
         python3
     rm -rf /var/lib/apt/lists/*
 
+%files
+    ./spack /opt/spack
+
 %post
     cd /
-    git clone --branch v0.23.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
     . /opt/spack/share/spack/setup-env.sh
 
 %environment
@@ -128,8 +130,8 @@ Stage: runtime
 
 %post
     cd /
-    export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24\.11/comm_libs' | paste -sd ':' -)
-    export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24\.11/comm_libs' | paste -sd ':' -)
+    export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs' | paste -sd ':' -)
+    export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs' | paste -sd ':' -)
 
 %post
     cd /
