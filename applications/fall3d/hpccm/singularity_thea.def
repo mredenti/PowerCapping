@@ -29,6 +29,11 @@ Stage: devel
     . /.singularity.d/env/10-docker*.sh
 
 %post
+    cd /
+    export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24\.11/comm_libs' | paste -sd ':' -)
+    export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24\.11/comm_libs' | paste -sd ':' -)
+
+%post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         autoconf \
@@ -36,21 +41,14 @@ Stage: devel
         curl \
         environment-modules \
         libcurl4-openssl-dev \
+        libssl-dev \
         pkg-config \
         python3
     rm -rf /var/lib/apt/lists/*
 
 %post
     cd /
-    . /usr/share/modules/init/sh
-    module use /opt/nvidia/hpc_sdk/modulefiles
-    module load nvhpc-hpcx-cuda12
-
-%files 
-    ./spack /opt/spack
-
-%post
-    cd /
+    git clone --branch v0.23.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
     . /opt/spack/share/spack/setup-env.sh
 
 %environment
@@ -74,8 +72,10 @@ spack:
 EOF
     spack env activate /opt/spack-environment
     spack compiler find --scope env:/opt/spack-environment
-    spack external find --not-buildable openmpi --scope env:/opt/spack-environment
     spack external find --all --scope env:/opt/spack-environment
+    spack add openmpi@5.0.3%nvhpc~atomics+cuda cuda_arch=90 fabrics=ucx ^numactl%gcc
+    spack add ucx@1.17.0%gcc~cma+cuda+gdrcopy cuda_arch=90
+    spack add hwloc@2.11.1%gcc+cuda cuda_arch=90
     spack add hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make
     spack add netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8
     spack add netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools
@@ -125,6 +125,11 @@ Stage: runtime
     /opt/spack /opt/spack
     /opt/spack-environment /opt/spack-environment
     /opt/view /opt/view
+
+%post
+    cd /
+    export LD_LIBRARY_PATH=$(echo "$LD_LIBRARY_PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24\.11/comm_libs' | paste -sd ':' -)
+    export PATH=$(echo "$PATH" | tr ':' '\n' | grep -v '^/opt/nvidia/hpc_sdk/Linux_aarch64/24\.11/comm_libs' | paste -sd ':' -)
 
 %post
     cd /
