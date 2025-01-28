@@ -138,6 +138,8 @@ os_common_packages = ['autoconf',
                     'bzip2',
                     'file',
                     'zlib1g-dev',
+                    'zip',
+                    'libzip-dev',
                     'libcurl4-openssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
@@ -161,23 +163,38 @@ else:
 # HDF5
 #############################
 
+libaec = generic_cmake(
+    url='https://gitlab.dkrz.de/k202009/libaec/-/archive/v1.1.3/libaec-v1.1.3.tar.gz',
+    prefix='/opt/libaec',
+    install=True,
+    cmake_opts=[
+        '-DCMAKE_BUILD_TYPE=Release'
+    ]
+)
+Stage0 += libaec
+
 hdf5 = generic_cmake(
     url='https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2',
     prefix='/opt/hdf5',
     install=True,
     cmake_opts=[
+        '-DCMAKE_PREFIX_PATH=/opt/libaec',
         '-DCMAKE_BUILD_TYPE=Release',
         '-DHDF5_BUILD_EXAMPLES:BOOL=OFF',
         '-DBUILD_TESTING:BOOL=OFF',
         '-DHDF5_ENABLE_MAP_API:BOOL=OFF',
-        '-DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF',
-        '-DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF',
+        # szip
+        '-DHDF5_ENABLE_SZIP_SUPPORT:BOOL=ON',
+        '-DHDF5_ENABLE_SZIP_ENCODING:BOOL=ON',
+        '-DSZIP_USE_EXTERNAL=OFF',
+        # zlib
+        '-DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON',
+        '-DZLIB_USE_EXTERNAL=OFF',
         '-DONLY_SHARED_LIBS:BOOL=OFF',
         '-DHDF5_ENABLE_THREADSAFE:BOOL=OFF',
         '-DHDF5_BUILD_JAVA:BOOL=OFF',
         '-DHDF5_BUILD_CPP_LIB:BOOL=OFF',
         '-DALLOW_UNSUPPORTED:BOOL=ON',
-        '-DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON',
         '-DHDF5_BUILD_HL_LIB:BOOL=ON',
         '-DBUILD_SHARED_LIBS:BOOL=ON',
         '-DHDF5_BUILD_FORTRAN:BOOL=ON',
@@ -188,14 +205,22 @@ hdf5 = generic_cmake(
         '-DMPI_Fortran_COMPILER=mpif90',
     ],
     runtime_environment = {
-                            "PATH" : "/opt/hdf5:$PATH"
+                            "PATH" : "/opt/hdf5/bin:$PATH",
+                            "LIBRARY_PATH" : "/opt/hdf5/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/hdf5/lib:$LD_LIBRARY_PATH",
+                            "HDF5_DIR" : "/opt/hdf5",
+                            "CPATH" : "/opt/hdf5/include:$CPATH"
                         },
     devel_environment = {
-                            "PATH" : "/opt/hdf5:$PATH"
+                            "PATH" : "/opt/hdf5/bin:$PATH",
+                            "LIBRARY_PATH" : "/opt/hdf5/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/hdf5/lib:$LD_LIBRARY_PATH",
+                            "HDF5_DIR" : "/opt/hdf5",
+                            "CPATH" : "/opt/hdf5/include:$CPATH"
                         },
 )
-
 Stage0 += hdf5
+
 
 #############################
 # PnetCDF (Parallel netCDF) ≠ NetCDF4 
@@ -251,10 +276,16 @@ netcdf_c = generic_cmake(
         '-DMPI_Fortran_COMPILER=mpif90',
     ],
     runtime_environment = {
-                            "PATH" : "/opt/netcdf:$PATH"
+                            "PATH" : "/opt/netcdf/bin:$PATH",
+                            "LIBRARY_PATH" : "/opt/netcdf/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/netcdf/lib:$LD_LIBRARY_PATH",
+                            "CPATH" : "/opt/netcdf/include:$CPATH"
                         },
     devel_environment = {
-                            "PATH" : "/opt/netcdf:$PATH"
+                            "PATH" : "/opt/netcdf/bin:$PATH",
+                            "LIBRARY_PATH" : "/opt/netcdf/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/netcdf/lib:$LD_LIBRARY_PATH",
+                            "CPATH" : "/opt/netcdf/include:$CPATH"
                         },
 )
 
@@ -326,3 +357,4 @@ Stage1 += Stage0.runtime(_from='devel')
 if hpccm.config.g_ctype == container_type.DOCKER:
   # Docker automatically passes through command line arguments
   Stage1+= runscript(commands = ['/bin/sh', '--rcfile', '/etc/profile', '-l'], _args=True, _exec=True)
+  
