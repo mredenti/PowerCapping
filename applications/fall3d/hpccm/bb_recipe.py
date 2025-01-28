@@ -156,10 +156,6 @@ else:
     Stage0 += shell(commands=['. /usr/share/modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load nvhpc-hpcx-cuda{cuda_major}'])
-#Stage0 += shell(commands=[
-#                          '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
-#                          'hpcx_load'
-#                          ])
 
 #############################
 # HDF5
@@ -171,22 +167,22 @@ hdf5 = generic_cmake(
     install=True,
     cmake_opts=[
         '-DCMAKE_BUILD_TYPE=Release',
-        '-DALLOW_UNSUPPORTED:BOOL=ON',
         '-DHDF5_BUILD_EXAMPLES:BOOL=OFF',
         '-DBUILD_TESTING:BOOL=OFF',
         '-DHDF5_ENABLE_MAP_API:BOOL=OFF',
-        '-DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON',
         '-DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF',
         '-DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF',
-        '-DBUILD_SHARED_LIBS:BOOL=ON',
         '-DONLY_SHARED_LIBS:BOOL=OFF',
-        '-DHDF5_ENABLE_PARALLEL:BOOL=ON',
         '-DHDF5_ENABLE_THREADSAFE:BOOL=OFF',
-        '-DHDF5_BUILD_HL_LIB:BOOL=ON',
-        '-DHDF5_BUILD_CPP_LIB:BOOL=OFF',
-        '-DHDF5_BUILD_FORTRAN:BOOL=ON',
         '-DHDF5_BUILD_JAVA:BOOL=OFF',
+        '-DHDF5_BUILD_CPP_LIB:BOOL=OFF',
+        '-DALLOW_UNSUPPORTED:BOOL=ON',
+        '-DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON',
+        '-DHDF5_BUILD_HL_LIB:BOOL=ON',
+        '-DBUILD_SHARED_LIBS:BOOL=ON',
+        '-DHDF5_BUILD_FORTRAN:BOOL=ON',
         '-DHDF5_BUILD_TOOLS:BOOL=ON',
+        '-DHDF5_ENABLE_PARALLEL:BOOL=ON',
         '-DMPI_CXX_COMPILER=mpic++',
         '-DMPI_C_COMPILER=mpicc',
         '-DMPI_Fortran_COMPILER=mpif90',
