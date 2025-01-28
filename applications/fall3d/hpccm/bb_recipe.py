@@ -251,15 +251,14 @@ netcdf_c = generic_cmake(
         '-DMPI_Fortran_COMPILER=mpif90',
     ],
     runtime_environment = {
-                                    "PATH" : "/opt/netcdf:$PATH"
+                            "PATH" : "/opt/netcdf:$PATH"
                         },
     devel_environment = {
-                                    "PATH" : "/opt/netcdf:$PATH"
+                            "PATH" : "/opt/netcdf:$PATH"
                         },
 )
 
 Stage0 += netcdf_c
-
 
 netcdf_fortran = generic_cmake(
     url='https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz',
