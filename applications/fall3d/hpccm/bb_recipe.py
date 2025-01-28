@@ -188,15 +188,14 @@ hdf5 = generic_cmake(
         '-DMPI_Fortran_COMPILER=mpif90',
     ],
     runtime_environment = {
-                                    "PATH" : "/opt/hdf5:$PATH"
+                            "PATH" : "/opt/hdf5:$PATH"
                         },
     devel_environment = {
-                                    "PATH" : "/opt/hdf5:$PATH"
+                            "PATH" : "/opt/hdf5:$PATH"
                         },
 )
 
-
-Stage0 += hdf5 # Configure options: -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF -DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF
+Stage0 += hdf5
 
 #############################
 # PnetCDF (Parallel netCDF) ≠ NetCDF4 
