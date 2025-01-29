@@ -17,7 +17,7 @@ class MpirunLauncher(JobLauncher):
     def command(self, job):
         return ['nsys profile', 
                 '-o ${PWD}/output_%q{SLURM_NODEID}_%q{SLURM_PROCID}',
-                '-t cuda,nvtx,osrt,mpi ', 
+                '-t cuda,nvtx,osrt,mpi', 
                 '--stats=true',
                 '--cuda-memory-usage=true',
                 '--cudabacktrace=true',
@@ -52,9 +52,9 @@ class MpirunLauncher(JobLauncher):
 class MpirunLauncher(JobLauncher):
     def command(self, job):
         return ['nsys profile', 
-                '-t cuda,nvtx', 
+                '-t cuda,nvtx,osrt,mpi', 
                 '--stats=true',
-                '--cuda-memory-usage=true'
+                '--cuda-memory-usage=true',
                 'mpirun', 
                 '-np', str(job.num_tasks),
                 f'--map-by ppr:{job.num_tasks_per_node}:node:PE={job.num_cpus_per_task}',
