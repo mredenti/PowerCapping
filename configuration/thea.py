@@ -39,7 +39,11 @@ class MpirunLauncher(JobLauncher):
                 '-np', str(job.num_tasks),
                 f'--map-by ppr:{job.num_tasks_per_node}:node:PE={job.num_cpus_per_task}',
                 '--report-bindings',
-                'nsys', '-t cuda,nvtx', '--stats=true']
+                'nsys profile', 
+                '-o ${PWD}/output_%q{OMPI_COMM_WORLD_RANK}',
+                '-t cuda,nvtx', 
+                '--stats=true',
+                '--cuda-memory-usage=true']
 
 site_configuration = {
     "systems": [
