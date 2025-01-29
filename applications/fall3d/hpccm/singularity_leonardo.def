@@ -9,11 +9,11 @@
 # 
 # For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
 # 
-#     $ hpccm --recipe spack_recipe.py --userarg cluster="leonardo"             --format singularity --singularity-version=3.2
+#     $ hpccm --recipe bb_recipe.py --userarg cluster="leonardo"             --format singularity --singularity-version=3.2
 # 
 # Similarly, for the 'thea' cluster:
 # 
-#     $ hpccm --recipe spack_recipe.py --userarg cluster="thea"             --format singularity --singularity-version=3.2
+#     $ hpccm --recipe bb_recipe.py --userarg cluster="thea"             --format singularity --singularity-version=3.2
 # 
 # Note:
 #     - This recipe uses SHA-256 content digests as unique identifiers for both the devel and 
@@ -22,8 +22,8 @@
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: docker
-From: nvcr.io/nvidia/nvhpc@sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30
+BootStrap: localimage
+From: nvhpc-24.11-devel.sif
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -32,11 +32,18 @@ Stage: devel
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         autoconf \
+        bzip2 \
         ca-certificates \
         curl \
         environment-modules \
+        file \
+        libcurl4-openssl-dev \
+        libxml2-dev \
+        libzip-dev \
         pkg-config \
-        python3
+        python3 \
+        zip \
+        zlib1g-dev
     rm -rf /var/lib/apt/lists/*
 
 %post
@@ -45,43 +52,114 @@ Stage: devel
     module use /opt/nvidia/hpc_sdk/modulefiles
     module load nvhpc-hpcx-cuda11
 
+# https://gitlab.dkrz.de/k202009/libaec/-/archive/v1.1.3/libaec-v1.1.3.tar.gz
 %post
     cd /
-    git clone --branch v0.21.0 -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack
-    . /opt/spack/share/spack/setup-env.sh
-
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://gitlab.dkrz.de/k202009/libaec/-/archive/v1.1.3/libaec-v1.1.3.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/libaec-v1.1.3.tar.gz -C /var/tmp -z
+    mkdir -p /var/tmp/libaec-v1.1.3/build && cd /var/tmp/libaec-v1.1.3/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/libaec -DCMAKE_BUILD_TYPE=Release /var/tmp/libaec-v1.1.3
+    cmake --build /var/tmp/libaec-v1.1.3/build --target all -- -j$(nproc)
+    cmake --build /var/tmp/libaec-v1.1.3/build --target install -- -j$(nproc)
+    rm -rf /var/tmp/libaec-v1.1.3 /var/tmp/libaec-v1.1.3.tar.gz
 %environment
-    export FORCE_UNSAFE_CONFIGURE=1
-    export LD_LIBRARY_PATH=/opt/spack/lib:$LD_LIBRARY_PATH
+    export CPATH=/opt/libaec/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/libaec/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/libaec/lib:$LIBRARY_PATH
 %post
-    export FORCE_UNSAFE_CONFIGURE=1
-    export LD_LIBRARY_PATH=/opt/spack/lib:$LD_LIBRARY_PATH
+    export CPATH=/opt/libaec/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/libaec/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/libaec/lib:$LIBRARY_PATH
 
+# https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2
 %post
     cd /
-    mkdir -p /opt/spack-environment
-    cat <<EOF > /opt/spack-environment/spack.yaml
-spack:
-  specs: []
-  concretizer:
-    unify: true
-  config:
-    install_tree: /opt/software
-  view: /opt/view
-EOF
-    spack env activate /opt/spack-environment
-    spack compiler find --scope env:/opt/spack-environment
-    spack external find --not-buildable openmpi --scope env:/opt/spack-environment
-    spack external find --all --scope env:/opt/spack-environment
-    spack add hdf5@1.14.3%nvhpc~cxx+fortran+hl~ipo~java~map+mpi+shared~szip~threadsafe+tools api=default build_system=cmake build_type=Release generator=make
-    spack add netcdf-c@4.9.2%nvhpc+blosc~byterange~dap~fsync~hdf4~jna+mpi~nczarr_zip+optimize+parallel-netcdf+pic+shared+szip+zstd build_system=autotools patches=0161eb8
-    spack add netcdf-fortran@4.6.1%nvhpc~doc+pic+shared build_system=autotools
-    spack add parallel-netcdf@1.12.3%nvhpc~burstbuffer+cxx+fortran+pic+shared build_system=autotools
-    spack add zlib-ng%gcc
-    spack concretize -f
-    spack install --fail-fast
-    spack clean --all
-    find -L /opt/view/* -type f -exec readlink -f '{}' \; | xargs file -i | grep 'charset=binary' | grep 'x-executable\|x-archive\|x-sharedlib' | awk -F: '{print $1}' | xargs strip -s
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2
+    mkdir -p /var/tmp && tar -x -f /var/tmp/hdf5-1.14.3.tar.bz2 -C /var/tmp -j
+    mkdir -p /var/tmp/hdf5-1.14.3/build && cd /var/tmp/hdf5-1.14.3/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/hdf5 -DCMAKE_PREFIX_PATH=/opt/libaec -DCMAKE_BUILD_TYPE=Release -DHDF5_BUILD_EXAMPLES:BOOL=OFF -DBUILD_TESTING:BOOL=OFF -DHDF5_ENABLE_MAP_API:BOOL=OFF -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=ON -DHDF5_ENABLE_SZIP_ENCODING:BOOL=ON -DSZIP_USE_EXTERNAL=OFF -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON -DZLIB_USE_EXTERNAL=OFF -DONLY_SHARED_LIBS:BOOL=OFF -DHDF5_ENABLE_THREADSAFE:BOOL=OFF -DHDF5_BUILD_JAVA:BOOL=OFF -DHDF5_BUILD_CPP_LIB:BOOL=OFF -DALLOW_UNSUPPORTED:BOOL=ON -DHDF5_BUILD_HL_LIB:BOOL=ON -DBUILD_SHARED_LIBS:BOOL=ON -DHDF5_BUILD_FORTRAN:BOOL=ON -DHDF5_BUILD_TOOLS:BOOL=ON -DHDF5_ENABLE_PARALLEL:BOOL=ON -DMPI_CXX_COMPILER=mpic++ -DMPI_C_COMPILER=mpicc -DMPI_Fortran_COMPILER=mpif90 /var/tmp/hdf5-1.14.3
+    cmake --build /var/tmp/hdf5-1.14.3/build --target all -- -j$(nproc)
+    cmake --build /var/tmp/hdf5-1.14.3/build --target install -- -j$(nproc)
+    rm -rf /var/tmp/hdf5-1.14.3 /var/tmp/hdf5-1.14.3.tar.bz2
+%environment
+    export CPATH=/opt/hdf5/include:$CPATH
+    export HDF5_DIR=/opt/hdf5
+    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
+    export PATH=/opt/hdf5/bin:$PATH
+%post
+    export CPATH=/opt/hdf5/include:$CPATH
+    export HDF5_DIR=/opt/hdf5
+    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
+    export PATH=/opt/hdf5/bin:$PATH
+
+# PnetCDF version 1.12.3
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        file \
+        m4 \
+        make \
+        perl \
+        tar \
+        wget
+    rm -rf /var/lib/apt/lists/*
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://parallel-netcdf.github.io/Release/pnetcdf-1.12.3.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/pnetcdf-1.12.3.tar.gz -C /var/tmp -z
+    cd /var/tmp/pnetcdf-1.12.3 &&  CC=mpicc CXX=mpicxx F77=mpif77 F90=mpif90 FC=mpifort ./configure --prefix=/opt/pnetcdf/ --disable-cxx --disable-shared --disable-silent-rules --enable-fortran --enable-relax-coord-bound --enable-static --with-hdf5=/opt/hdf5 --with-mpi=$HPCX_MPI_DIR CFLAGS="-fPIC" FCFLAGS="-fPIC" FFLAGS="-fPIC" SEQ_CC=nvc
+    make -j$(nproc)
+    make -j$(nproc) install
+    rm -rf /var/tmp/pnetcdf-1.12.3 /var/tmp/pnetcdf-1.12.3.tar.gz
+%environment
+    export CPATH=/opt/pnetcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/pnetcdf/bin:$PATH
+%post
+    export CPATH=/opt/pnetcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/pnetcdf/bin:$PATH
+
+# https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/v4.9.2.tar.gz -C /var/tmp -z
+    mkdir -p /var/tmp/netcdf-c-4.9.2/build && cd /var/tmp/netcdf-c-4.9.2/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/netcdf -DCMAKE_BUILD_TYPE=Release -DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/pnetcdf;/opt/libaec" -DENABLE_PNETCDF=ON -DENABLE_PARALLEL4=ON -DENABLE_HDF5=ON -DENABLE_DAP=OFF -DENABLE_BYTERANGE=OFF -DENABLE_EXAMPLES=OFF -DMPI_CXX_COMPILER=mpic++ -DMPI_C_COMPILER=mpicc -DMPI_Fortran_COMPILER=mpif90 /var/tmp/netcdf-c-4.9.2
+    cmake --build /var/tmp/netcdf-c-4.9.2/build --target all -- -j$(nproc)
+    cmake --build /var/tmp/netcdf-c-4.9.2/build --target install -- -j$(nproc)
+    rm -rf /var/tmp/netcdf-c-4.9.2 /var/tmp/v4.9.2.tar.gz
+%environment
+    export CPATH=/opt/netcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
+    export NETCDF_DIR=/opt/netcdf
+    export PATH=/opt/netcdf/bin:$PATH
+%post
+    export CPATH=/opt/netcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
+    export NETCDF_DIR=/opt/netcdf
+    export PATH=/opt/netcdf/bin:$PATH
+
+# https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/v4.6.1.tar.gz -C /var/tmp -z
+    cd /var/tmp/netcdf-fortran-4.6.1
+    export CFLAGS="-fPIC"
+    export FCFLAGS="-fPIC"
+    export FFLAGS="-fPIC"
+    export FC=mpif90
+    export CC=mpicc
+    export F77=mpif77
+    cd /var/tmp/netcdf-fortran-4.6.1 &&   ./configure --prefix=/opt/netcdf --disable-doxygen --disable-parallel-tests --enable-shared --with-hdf5=/opt/hdf5 --with-libaec=/opt/libaec --with-netcdf=/opt/netcdf --with-pnetcdf=/opt/pnetcdf
+    make -j$(nproc)
+    make -j$(nproc) install
+    rm -rf /var/tmp/netcdf-fortran-4.6.1 /var/tmp/v4.6.1.tar.gz
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
 %post
@@ -90,41 +168,104 @@ EOF
     mkdir -p /var/tmp && tar -x -f /var/tmp/fall3d-9.0.1.tar.gz -C /var/tmp -z
     cd /var/tmp/fall3d-9.0.1
     mkdir -p /opt/fall3d/bin
-    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=icelake -gpu=sm_80" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
+    mkdir -p /var/tmp/fall3d-9.0.1/build && cd /var/tmp/fall3d-9.0.1/build && cmake -DCMAKE_INSTALL_PREFIX=/opt/fall3d -D CMAKE_BUILD_TYPE=Release -D DETAIL_BIN=NO -D WITH-MPI=YES -D WITH-ACC=YES -D CMAKE_Fortran_COMPILER=nvfortran -D CUSTOM_COMPILER_FLAGS="-fast -tp=icelake" -D WITH-R4=NO /var/tmp/fall3d-9.0.1
     cmake --build /var/tmp/fall3d-9.0.1/build --target all -- -j$(nproc)
     cd /opt/fall3d
     cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/
     rm -rf /var/tmp/fall3d-9.0.1 /var/tmp/fall3d-9.0.1.tar.gz
 
-%post
-    cd /
-    export PATH=/opt/fall3d/bin:$PATH
-    spack gc -y
-    spack env deactivate
-    spack env activate --sh -d /opt/spack-environment >> /etc/profile.d/z10_spack_environment.sh
-
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: docker
-From: nvcr.io/nvidia/nvhpc@sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a
+BootStrap: localimage
+From: nvhpc-24.11-runtime-cuda11.8.sif
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        bzip2 \
+        curl \
+        file \
+        libcurl4-openssl-dev \
+        libxml2-dev \
+        libzip-dev \
+        zip \
+        zlib1g-dev
+    rm -rf /var/lib/apt/lists/*
+
+# https://gitlab.dkrz.de/k202009/libaec/-/archive/v1.1.3/libaec-v1.1.3.tar.gz
+%files from devel
+    /opt/libaec /opt/libaec
+%environment
+    export CPATH=/opt/libaec/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/libaec/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/libaec/lib:$LIBRARY_PATH
+%post
+    export CPATH=/opt/libaec/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/libaec/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/libaec/lib:$LIBRARY_PATH
+
+# https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2
+%files from devel
+    /opt/hdf5 /opt/hdf5
+%environment
+    export CPATH=/opt/hdf5/include:$CPATH
+    export HDF5_DIR=/opt/hdf5
+    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
+    export PATH=/opt/hdf5/bin:$PATH
+%post
+    export CPATH=/opt/hdf5/include:$CPATH
+    export HDF5_DIR=/opt/hdf5
+    export LD_LIBRARY_PATH=/opt/hdf5/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/hdf5/lib:$LIBRARY_PATH
+    export PATH=/opt/hdf5/bin:$PATH
+
+# PnetCDF
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libatomic1
+    rm -rf /var/lib/apt/lists/*
+%files from devel
+    /opt/pnetcdf/ /opt/pnetcdf/
+%environment
+    export CPATH=/opt/pnetcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/pnetcdf/bin:$PATH
+%post
+    export CPATH=/opt/pnetcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/pnetcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/pnetcdf/lib:$LIBRARY_PATH
+    export PATH=/opt/pnetcdf/bin:$PATH
+
+# https://github.com/Unidata/netcdf-c/archive/refs/tags/v4.9.2.tar.gz
+%files from devel
+    /opt/netcdf /opt/netcdf
+%environment
+    export CPATH=/opt/netcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
+    export NETCDF_DIR=/opt/netcdf
+    export PATH=/opt/netcdf/bin:$PATH
+%post
+    export CPATH=/opt/netcdf/include:$CPATH
+    export LD_LIBRARY_PATH=/opt/netcdf/lib:$LD_LIBRARY_PATH
+    export LIBRARY_PATH=/opt/netcdf/lib:$LIBRARY_PATH
+    export NETCDF_DIR=/opt/netcdf
+    export PATH=/opt/netcdf/bin:$PATH
+
+# https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz
+%files from devel
+    /opt/netcdf /opt/netcdf
 
 # https://gitlab.com/fall3d-suite/fall3d/-/archive/9.0.1/fall3d-9.0.1.tar.gz
 %files from devel
     /opt/fall3d /opt/fall3d
 %environment
-    export PATH=/opt/fall3d/bin:$PATH
+    export PATH=/opt/fall3d/bin
 %post
-    export PATH=/opt/fall3d/bin:$PATH
-
-%files from devel
-    /etc/profile.d/z10_spack_environment.sh /etc/profile.d/z10_spack_environment.sh
-    /opt/software /opt/software
-    /opt/spack-environment /opt/spack-environment
-    /opt/view /opt/view
-
-%post
-    cd /
-    cat /etc/profile.d/z10_spack_environment.sh >> $SINGULARITY_ENVIRONMENT
+    export PATH=/opt/fall3d/bin
