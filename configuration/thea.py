@@ -20,6 +20,22 @@ class MpirunLauncher(JobLauncher):
                 f'-N {job.num_tasks}',
                 f'-n {job.num_tasks}',
                 f'--cpus-per-task={job.num_cpus_per_task}',
+                'nsys profile', 
+                '-o ${PWD}/output_%q{SLURM_NODEID}_%q{SLURM_PROCID}',
+                '-t cuda,nvtx,osrt,mpi ', 
+                '--stats=true',
+                '--cuda-memory-usage=true',
+                '--cudabacktrace=true'
+               ]
+        
+@register_launcher('srun-pmix-nsys')
+class MpirunLauncher(JobLauncher):
+    def command(self, job):
+        return ['srun', 
+                '--mpi=pmix',
+                f'-N {job.num_tasks}',
+                f'-n {job.num_tasks}',
+                f'--cpus-per-task={job.num_cpus_per_task}',
                ]
         
 @register_launcher('srun-pmi2')

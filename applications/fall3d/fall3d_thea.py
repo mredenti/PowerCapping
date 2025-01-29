@@ -74,7 +74,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     def replace_launcher(self):
         launcher_cls = getlauncher(self.launcher) 
         self.job.launcher = launcher_cls()
-        if self.launcher in ['mpirun-mapby', 'mpirun-mapby-nsys']:
+        if self.launcher in ['mpirun-mapby', 'mpirun-mapby-nsys', 'srun-pmix-nsys']:
             self.modules = ['openmpi']
     
     @run_after('setup')
