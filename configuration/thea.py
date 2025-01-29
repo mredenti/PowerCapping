@@ -15,17 +15,17 @@ class MpirunLauncher(JobLauncher):
 @register_launcher('srun-pmix-nsys')
 class MpirunLauncher(JobLauncher):
     def command(self, job):
-        return ['srun', 
-                '--mpi=pmix',
-                f'-N {job.num_tasks}',
-                f'-n {job.num_tasks}',
-                f'--cpus-per-task={job.num_cpus_per_task}',
-                'nsys profile', 
+        return ['nsys profile', 
                 '-o ${PWD}/output_%q{SLURM_NODEID}_%q{SLURM_PROCID}',
                 '-t cuda,nvtx,osrt,mpi ', 
                 '--stats=true',
                 '--cuda-memory-usage=true',
-                '--cudabacktrace=true'
+                '--cudabacktrace=true',
+                'srun', 
+                '--mpi=pmix',
+                f'-N {job.num_tasks}',
+                f'-n {job.num_tasks}',
+                f'--cpus-per-task={job.num_cpus_per_task}',
                ]
         
 @register_launcher('srun-pmix')
@@ -51,15 +51,15 @@ class MpirunLauncher(JobLauncher):
 @register_launcher('mpirun-mapby-nsys')
 class MpirunLauncher(JobLauncher):
     def command(self, job):
-        return ['mpirun', 
+        return ['nsys profile', 
+                '-t cuda,nvtx', 
+                '--stats=true',
+                '--cuda-memory-usage=true'
+                'mpirun', 
                 '-np', str(job.num_tasks),
                 f'--map-by ppr:{job.num_tasks_per_node}:node:PE={job.num_cpus_per_task}',
                 '--report-bindings',
-                'nsys profile', 
-                '-o ${PWD}/output_%q{OMPI_COMM_WORLD_RANK}',
-                '-t cuda,nvtx', 
-                '--stats=true',
-                '--cuda-memory-usage=true']
+                ]
 
 site_configuration = {
     "systems": [
