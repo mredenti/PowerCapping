@@ -29,7 +29,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['default']
     
     # add some description
-    base_dir = os.path.join("$SCRATCH_FAST", "FALL3D")
+    base_dir = os.path.join("${SCRATCH_DDN}", "FALL3D")
     
     exclusive_access = True
     
