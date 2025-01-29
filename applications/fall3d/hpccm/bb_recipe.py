@@ -138,6 +138,8 @@ os_common_packages = ['autoconf',
                     'bzip2',
                     'file',
                     'zlib1g-dev',
+                    'zip',
+                    'libzip-dev',
                     'libcurl4-openssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
@@ -156,51 +158,79 @@ else:
     Stage0 += shell(commands=['. /usr/share/modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load nvhpc-hpcx-cuda{cuda_major}'])
-#Stage0 += shell(commands=[
-#                          '. $HPCX_HOME/hpcx-init.sh', # hpcx-mt-init.sh, hpcx-mt-init-ompi.sh, hpcx-init-ompi.sh
-#                          'hpcx_load'
-#                          ])
 
 #############################
 # HDF5
 #############################
+
+libaec = generic_cmake(
+    url='https://gitlab.dkrz.de/k202009/libaec/-/archive/v1.1.3/libaec-v1.1.3.tar.gz',
+    prefix='/opt/libaec',
+    install=True,
+    cmake_opts=[
+        '-DCMAKE_BUILD_TYPE=Release'
+    ],
+    runtime_environment = {
+                            "LIBRARY_PATH" : "/opt/libaec/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/libaec/lib:$LD_LIBRARY_PATH",
+                            "CPATH" : "/opt/libaec/include:$CPATH"
+                        },
+    devel_environment = {
+                            "LIBRARY_PATH" : "/opt/libaec/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/libaec/lib:$LD_LIBRARY_PATH",
+                            "CPATH" : "/opt/libaec/include:$CPATH"
+                        },
+)
+Stage0 += libaec
 
 hdf5 = generic_cmake(
     url='https://support.hdfgroup.org/ftp/HDF5/releases/hdf5-1.14/hdf5-1.14.3/src/hdf5-1.14.3.tar.bz2',
     prefix='/opt/hdf5',
     install=True,
     cmake_opts=[
+        '-DCMAKE_PREFIX_PATH=/opt/libaec',
         '-DCMAKE_BUILD_TYPE=Release',
-        '-DALLOW_UNSUPPORTED:BOOL=ON',
         '-DHDF5_BUILD_EXAMPLES:BOOL=OFF',
         '-DBUILD_TESTING:BOOL=OFF',
         '-DHDF5_ENABLE_MAP_API:BOOL=OFF',
+        # szip
+        '-DHDF5_ENABLE_SZIP_SUPPORT:BOOL=ON',
+        '-DHDF5_ENABLE_SZIP_ENCODING:BOOL=ON',
+        '-DSZIP_USE_EXTERNAL=OFF',
+        # zlib
         '-DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON',
-        '-DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF',
-        '-DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF',
-        '-DBUILD_SHARED_LIBS:BOOL=ON',
+        '-DZLIB_USE_EXTERNAL=OFF',
         '-DONLY_SHARED_LIBS:BOOL=OFF',
-        '-DHDF5_ENABLE_PARALLEL:BOOL=ON',
         '-DHDF5_ENABLE_THREADSAFE:BOOL=OFF',
-        '-DHDF5_BUILD_HL_LIB:BOOL=ON',
-        '-DHDF5_BUILD_CPP_LIB:BOOL=OFF',
-        '-DHDF5_BUILD_FORTRAN:BOOL=ON',
         '-DHDF5_BUILD_JAVA:BOOL=OFF',
+        '-DHDF5_BUILD_CPP_LIB:BOOL=OFF',
+        '-DALLOW_UNSUPPORTED:BOOL=ON',
+        '-DHDF5_BUILD_HL_LIB:BOOL=ON',
+        '-DBUILD_SHARED_LIBS:BOOL=ON',
+        '-DHDF5_BUILD_FORTRAN:BOOL=ON',
         '-DHDF5_BUILD_TOOLS:BOOL=ON',
+        '-DHDF5_ENABLE_PARALLEL:BOOL=ON',
         '-DMPI_CXX_COMPILER=mpic++',
         '-DMPI_C_COMPILER=mpicc',
         '-DMPI_Fortran_COMPILER=mpif90',
     ],
     runtime_environment = {
-                                    "PATH" : "/opt/hdf5:$PATH"
+                            "PATH" : "/opt/hdf5/bin:$PATH",
+                            "LIBRARY_PATH" : "/opt/hdf5/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/hdf5/lib:$LD_LIBRARY_PATH",
+                            "HDF5_DIR" : "/opt/hdf5",
+                            "CPATH" : "/opt/hdf5/include:$CPATH"
                         },
     devel_environment = {
-                                    "PATH" : "/opt/hdf5:$PATH"
+                            "PATH" : "/opt/hdf5/bin:$PATH",
+                            "LIBRARY_PATH" : "/opt/hdf5/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/hdf5/lib:$LD_LIBRARY_PATH",
+                            "HDF5_DIR" : "/opt/hdf5",
+                            "CPATH" : "/opt/hdf5/include:$CPATH"
                         },
 )
+Stage0 += hdf5
 
-
-Stage0 += hdf5 # Configure options: -DHDF5_ENABLE_Z_LIB_SUPPORT:BOOL=ON -DHDF5_ENABLE_SZIP_SUPPORT:BOOL=OFF -DHDF5_ENABLE_SZIP_ENCODING:BOOL=OFF
 
 #############################
 # PnetCDF (Parallel netCDF) ≠ NetCDF4 
@@ -244,7 +274,7 @@ netcdf_c = generic_cmake(
     install=True,
     cmake_opts=[
         '-DCMAKE_BUILD_TYPE=Release',
-        '-DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/pnetcdf"',
+        '-DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/pnetcdf;/opt/libaec"',
         '-DENABLE_PNETCDF=ON', 
         '-DENABLE_PARALLEL4=ON', 
         '-DENABLE_HDF5=ON', 
@@ -256,33 +286,53 @@ netcdf_c = generic_cmake(
         '-DMPI_Fortran_COMPILER=mpif90',
     ],
     runtime_environment = {
-                                    "PATH" : "/opt/netcdf:$PATH"
+                            "PATH" : "/opt/netcdf/bin:$PATH",
+                            "LIBRARY_PATH" : "/opt/netcdf/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/netcdf/lib:$LD_LIBRARY_PATH",
+                            "CPATH" : "/opt/netcdf/include:$CPATH",
+                            "NETCDF_DIR" : "/opt/netcdf"
                         },
     devel_environment = {
-                                    "PATH" : "/opt/netcdf:$PATH"
+                            "PATH" : "/opt/netcdf/bin:$PATH",
+                            "LIBRARY_PATH" : "/opt/netcdf/lib:$LIBRARY_PATH",
+                            "LD_LIBRARY_PATH" : "/opt/netcdf/lib:$LD_LIBRARY_PATH",
+                            "CPATH" : "/opt/netcdf/include:$CPATH",
+                            "NETCDF_DIR" : "/opt/netcdf"
                         },
 )
 
 Stage0 += netcdf_c
 
+# https://github.com/Unidata/netcdf-fortran/issues/278
+#Stage0 += shell(commands=['export LDFLAGS="$(nc-config --libs)"'])
 
-netcdf_fortran = generic_cmake(
+
+netcdf_fortran = generic_autotools(
     url='https://github.com/Unidata/netcdf-fortran/archive/refs/tags/v4.6.1.tar.gz',
     directory='netcdf-fortran-4.6.1',
     prefix='/opt/netcdf',
     install=True,
-    cmake_opts=[
-        '-DCMAKE_BUILD_TYPE=Release',
-        '-DCMAKE_PREFIX_PATH="/opt/hdf5;/opt/netcdf;/opt/pnetcdf;${NetCDF_C_PATH}"',
-        '-DNETCDF_C_LIBRARY=/opt/netcdf/lib/libnetcdf.so',
-        '-DMPI_C_COMPILER=mpicc',
-        '-DMPI_Fortran_COMPILER=mpif90',
-        '-DnetCDF_DIR=/opt/netcdf',
-        '-DCMAKE_Fortran_FLAGS="-fPIC"'
+    configure_opts=[
+        '--enable-shared',
+        '--disable-doxygen',
+        '--disable-parallel-tests',
     ],
+    preconfigure=[
+        'export CFLAGS="-fPIC"',
+        'export FCFLAGS="-fPIC"',
+        'export FFLAGS="-fPIC"',
+        'export FC=mpif90',
+        'export CC=mpicc',
+        'export F77=mpif77'
+    ],
+    with_hdf5='/opt/hdf5',
+    with_netcdf='/opt/netcdf',
+    with_pnetcdf='/opt/pnetcdf',
+    with_libaec='/opt/libaec'
 )
 
 Stage0 += netcdf_fortran
+
 
 #############################
 # FALL3D
@@ -306,7 +356,7 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     # e.g., If 'Fall3d.x' ended up somewhere else, copy it manually
                                     ## Unfortunately the upstream CMakeLists.txt has no install(TARGETS) logic
                                     ## and can’t rely on -D CMAKE_RUNTIME_OUTPUT_DIRECTORY=... because the upstream CMakeLists.txt unconditionally overrides it
-                                    'cp /var/tmp/fall3d-9.0.1/build/Fall3d.x /opt/fall3d/bin/'
+                                    'cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/'
                                   ],
                         # Dictionary of environment variables and values, e.g., LD_LIBRARY_PATH and PATH, to set in the runtime stage. 
                         runtime_environment = {
@@ -326,9 +376,24 @@ Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_runtime"]}',
                     _arch=f'{params["arch"]}',
                     _as='runtime')
 
-Stage1 += Stage0.runtime(_from='devel') 
+os_packages = [
+    'libxml2-dev',
+    'bzip2',
+    'file',
+    'zlib1g-dev',
+    'zip',
+    'libzip-dev',
+    'libcurl4-openssl-dev'
+]
 
+Stage1 += packages(apt=os_packages + ['curl'],
+                   epel=True,
+                   yum=os_packages + ['curl-devel', '--allowerasing'])
+
+
+Stage1 += Stage0.runtime(_from='devel') 
 
 if hpccm.config.g_ctype == container_type.DOCKER:
   # Docker automatically passes through command line arguments
   Stage1+= runscript(commands = ['/bin/sh', '--rcfile', '/etc/profile', '-l'], _args=True, _exec=True)
+  

@@ -157,6 +157,23 @@ Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_devel"]}',
                 _arch=f'{params["arch"]}',
                 _as='devel') 
 
+# Extract NVHPC version components
+nvhpc_major = params["nvhpc_version"].split('.')[0]
+nvhpc_minor = params["nvhpc_version"].split('.')[1]
+
+# Define the common path
+remove_path = f"/opt/nvidia/hpc_sdk/Linux_{params['arch']}/{params['nvhpc_version']}/comm_libs"
+
+# Remove paths under /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/12.6/ as we are installing mpi through spack
+Stage0 += shell(commands=[
+    f"export LD_LIBRARY_PATH=$(echo \"$LD_LIBRARY_PATH\" | tr ':' '\\n' | grep -v '^{remove_path}' | paste -sd ':' -)",
+    f"export PATH=$(echo \"$PATH\" | tr ':' '\\n' | grep -v '^{remove_path}' | paste -sd ':' -)"
+])
+
+# tr ':' '\n': replaces all colon : separators with newline characters \n
+# grep -v '^/: filter out any lines that start with /opt/...
+# paste -sd ':' -: combines the filtered lines back into a single line, using a colon : as the delimiter
+
 ###############################################################################
 # Install Base Dependencies
 ###############################################################################
@@ -179,7 +196,7 @@ Stage0 += packages(apt=os_common_packages + ['curl'],
 
 # Setup and install Spack
 Stage0 += shell(commands=[
-    f'git clone --branch {params["spack_branch_or_tag"]} -c feature.manyFiles=true https://github.com/spack/spack.git /opt/spack',
+    f'git clone --branch {params["spack_branch_or_tag"]} -c feature.manyFiles=true --depth=2 https://github.com/spack/spack.git /opt/spack',
     '. /opt/spack/share/spack/setup-env.sh' 
     ])
 
@@ -232,8 +249,6 @@ EOF''',
 Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                                     '-D DETAIL_BIN=NO', # name of the binary will be Fall3d.x
                                     '-D WITH-MPI=YES',
-                                    '-D MPIEXEC_EXECUTABLE=/opt/view/bin/mpiexec',
-                                    '-D MPI_Fortran_COMPILER=/opt/view/bin/mpif90',
                                     '-D WITH-ACC=YES',
                                     '-D CMAKE_Fortran_COMPILER=nvfortran',
                                     f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]}"',
@@ -280,7 +295,12 @@ Stage1 += copy(
         '/opt/spack-environment': '/opt/spack-environment',
         '/opt/spack' : '/opt/spack'
         }, _from='devel')
-    
+
+# Remove paths under /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/comm_libs/12.6/ as we are installing mpi through spack
+Stage1 += shell(commands=[
+    f"export LD_LIBRARY_PATH=$(echo \"$LD_LIBRARY_PATH\" | tr ':' '\\n' | grep -v '^{remove_path}' | paste -sd ':' -)",
+    f"export PATH=$(echo \"$PATH\" | tr ':' '\\n' | grep -v '^{remove_path}' | paste -sd ':' -)"
+])    
     
 Stage1 += shell(commands=[
     '. /opt/spack/share/spack/setup-env.sh', 
