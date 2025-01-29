@@ -74,6 +74,8 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     def replace_launcher(self):
         launcher_cls = getlauncher(self.launcher) 
         self.job.launcher = launcher_cls()
+        if self.launcher in ['mpirun-mapby', 'mpirun-mapby-nsys']:
+            self.modules = ['openmpi']
     
     @run_after('setup')
     def prepare_run(self):
@@ -199,4 +201,4 @@ class fall3d_raikoke_large_test(fall3d_base_test):
     image = variable(str, value="fall3d.sif") 
     launcher = variable(str, values="srun-pmix")
     num_gpus = parameter([1, 2, 4, 8])
-    time_limit = '7200'
+    time_limit = '1800'
