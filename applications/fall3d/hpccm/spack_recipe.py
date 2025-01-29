@@ -228,7 +228,7 @@ EOF''',
         # Spack install
         'spack concretize -f', 
         'spack install --fail-fast',
-        'spack clean --all',
+        'spack clean --all'
     ])
 
 #############################
