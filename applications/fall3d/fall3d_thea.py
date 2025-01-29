@@ -172,7 +172,7 @@ class fall3d_raikoke_test(fall3d_base_test):
     
     # SIF image
     image = variable(str, value="fall3d.sif") 
-    launcher = "srun-pmix"
+    launcher = variable(str, values="srun-pmix")
     num_gpus = 2
     time_limit = '600'
     
@@ -197,6 +197,6 @@ class fall3d_raikoke_large_test(fall3d_base_test):
     
     # SIF image
     image = variable(str, value="fall3d.sif") 
-    launcher = "srun-pmix"
+    launcher = variable(str, values="srun-pmix")
     num_gpus = parameter([1, 2, 4, 8])
     time_limit = '7200'
