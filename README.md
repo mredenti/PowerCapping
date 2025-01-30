@@ -17,7 +17,7 @@ You can follow these steps to create a virtual environment and install the neces
 
 ```shell
 python3 -m venv venv/power_capping
-source venv/power-capping
+source venv/power-capping/bin/activate
 ```
 
 2. **Install the requirements**
