@@ -10,8 +10,9 @@ from reframe.core.backends import getlauncher
 class fetch_specfemd3d_cartesian(rfm.RunOnlyRegressionTest):
     descr = "Fetch SPECFEM3D_CARTESIAN repository"
 
-    repo_url = "https://github.com/SPECFEM/specfem3d.git"
-    version = variable(str, value="v4.1.1") 
+    repo_url = variable(str, value="https://gitlab.com/specfem_cheese_2p/full_app/specfem3d.git")
+    branch = variable(str, value="devel") 
+    commit = variable(str, value="c7829e0695521e104342611c212021926e87f5c2")
 
     executable = "git clone"
     executable_opts = [
@@ -21,6 +22,8 @@ class fetch_specfemd3d_cartesian(rfm.RunOnlyRegressionTest):
     ]
     local = True
 
+    # git checkout specific commit
+        
     @sanity_function
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
@@ -31,10 +34,7 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
 
     build_system = "Autotools"
     # build_locally = False # check first whether you can pass it from the command line
-    modules = [
-        'cuda',
-        'scotch' # this automatically loads ...
-    ]
+    modules = ['cuda']
     num_gpus = parameter([1])
 
     specfem3d_cartesian = fixture(fetch_specfemd3d_cartesian, scope="test")
@@ -73,15 +73,15 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
                 "Please update arch_map accordingly."
             )
         
-        # -with-scotch-dir=/opt/scotch
-        # We recommend that you add ulimit -S -s unlimited to your .bash_profile file and/or limit 
-        # stacksize unlimited to your .cshrc file to suppress any potential limit to the size of the Unix stack.
         self.build_system.config_opts= [
             'MPIFC=mpif90',
             '--with-mpi',
             f'--with-cuda={target_gpu_arch}',
-            '--with-scotch-dir=$SCOTCH_HOME'
+            'USE_BUNDLED_SCOTCH=1'
         ]
+        
+        # I think you can remote all of the things below
+        
         #self.build_system.srcdir = fullpath
         self.build_system.options = [
             "VERBOSE=1",
@@ -92,11 +92,6 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
         gpus = int(self.num_gpus)
         npx = int(gpus / int(gpus**0.5))
         npy = int(gpus**0.5)
-
-        #f"cd {fullpath}",
-        #self.prebuild_cmds = [
-        #    f"sed -i 's/NPX_config *= *[0-9]\+/NPX_config = {npx}/g; s/NPY_config *= *[0-9]\+/NPY_config = {npy}/g' {os.path.join(fullpath, 'config_mod.f90')}",
-        #]
         
     @sanity_function
     def validate_download(self):
