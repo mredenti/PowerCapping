@@ -141,8 +141,8 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
     @run_before("run")
     def set_executable_path(self):
         self.prerun_cmds = [
-            ' '.join(self.job.launcher.command(self)) + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xmeshfem3D")}',
-            ' '.join(self.job.launcher.command(self)) + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xgenerate_databases")}'
+            ' '.join(self.job.launcher.command(self)) + ' ' + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xmeshfem3D")}',
+            ' '.join(self.job.launcher.command(self)) + ' ' + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xgenerate_databases")}'
         ]
         # Set the executable path using the stagedir and build prefix
         self.executable = os.path.join(
