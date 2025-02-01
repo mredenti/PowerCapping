@@ -149,8 +149,9 @@ site_configuration = {
                     ],
                     "environs": [
                         "default", 
-                        "gcc-12.3.0", 
-                        "nvhpc-24.9",
+                        "gcc", 
+                        "openmpi-gcc",
+                        "cuda"
                     ],
                     "processor": {
                         "arch": "neoverse-v2",
@@ -182,17 +183,30 @@ site_configuration = {
             "extras": {"omp_flag": "-fopenmp"},
         },
         {
-            "name": "gcc-12.3.0",
-            "modules": [
-                "gcc/12.3.0-gcc-11.4.1-f7guf3f",
-                "openmpi/4.1.6-gcc-12.3.0-wftkmyd",
-                "cuda/12.3.0-gcc-12.3.0-b2avf4v",
-                "fftw/3.3.10-gcc-12.3.0-6gumeie"
-            ],
+            "name": "gcc",
+            "modules": ["gcc/13.3.0-gcc-11.4.1"],
             "cc": "gcc",
             "cxx": "g++",
-            "ftn": "f90",
+            "ftn": "gfortran",
             "features": ["openmp"],
+            "extras": {"omp_flag": "-fopenmp"},
+        },
+        {
+            "name": "openmpi-gcc",
+            "modules": ["openmpi/5.0.6-gcc-13.3.0"],
+            "cc": "gcc",
+            "cxx": "g++",
+            "ftn": "gfortran",
+            "features": ["openmp", "mpi"],
+            "extras": {"omp_flag": "-fopenmp"},
+        },
+        {
+            "name": "cuda",
+            "modules": ["cuda/12.5.1-gcc-13.3.0"],
+            "cc": "gcc",
+            "cxx": "g++",
+            "ftn": "gfortran",
+            "features": ["openmp", "cuda"],
             "extras": {"omp_flag": "-fopenmp"},
         },
         {
