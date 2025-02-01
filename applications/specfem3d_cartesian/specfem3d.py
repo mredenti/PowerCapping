@@ -99,7 +99,7 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
 class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
     """Base class of Specfem3d mini-aps runtime tests"""
 
-    valid_systems = ["leonardo:booster"]
+    valid_systems = ["leonardo:booster", "thea:gh"]
     valid_prog_environs = ["+mpi"]
     modules = ['cuda']
     
