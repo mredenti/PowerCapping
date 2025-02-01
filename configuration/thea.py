@@ -104,9 +104,9 @@ site_configuration = {
                         "module purge"
                     ],
                     "environs": [
-                        "default",
-                        "gcc-12.3.0",
-                        "nvhpc-24.9",
+                        "default", 
+                        "gcc", 
+                        "openmpi-gcc",
                     ],
                     "processor": {
                         "arch": "neoverse-v2",
