@@ -111,10 +111,10 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
         build_specfem3d_cartesian, scope="environment"
     )
     
-    @run_after("setup")
+    @run_after("init")
     def get_nproc(self):
         # get the number of processors, ignoring comments in the Par_file
-        result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {self.stagedir}/DATA/Par_file")
+        result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.sourcesdir)}/DATA/Par_file")
         # Remove any whitespace and convert the output to an integer.
         self.num_gpus = int(result.stdout.strip())
    
@@ -130,12 +130,19 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
             "gpu": {"num_gpus_per_node": f"{self.num_gpus_per_node}"},
         }
         
+    @run_before("run")
+    def replace_launcher(self):
+        try:
+            launcher_cls = getlauncher(self.launcher) 
+        except Exception:
+            launcher_cls = getlauncher("mpirun")
+        self.job.launcher = launcher_cls()
 
     @run_before("run")
     def set_executable_path(self):
         self.prerun_cmds = [
-            f'mpirun -np {self.num_gpus} {os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xmeshfem3D")}',
-            f'mpirun -np {self.num_gpus} {os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xgenerate_databases")}'
+            ' '.join(self.job.launcher.command(self)) + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xmeshfem3D")}',
+            ' '.join(self.job.launcher.command(self)) + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xgenerate_databases")}'
         ]
         # Set the executable path using the stagedir and build prefix
         self.executable = os.path.join(
@@ -143,10 +150,6 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
             "bin",
             "xspecfem3D",
         )
-
-    @run_before("run")
-    def replace_launcher(self):
-        self.job.launcher = getlauncher("mpirun")()
 
     @sanity_function
     def validate_test(self):
@@ -179,3 +182,4 @@ class specfemd3d_iso_benchmark(specfemd3d_base_benchmark):
     keep_files = [
        'OUTPUT_FILES'
     ]
+    launcher = variable(str, value="mpirun-mapby")
