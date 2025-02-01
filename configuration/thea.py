@@ -100,7 +100,7 @@ site_configuration = {
                     ],
                     "max_jobs": 1,
                     "prepare_cmds": [
-                        ". /global/scratch/groups/gh/bootstrap-gh-env.sh",
+                        ". /global/exafs/groups/gh/bootstrap-env.sh",
                         "module purge"
                     ],
                     "environs": [
@@ -136,7 +136,7 @@ site_configuration = {
                         {"name": "nodes", "options": ["--nodes={nodes}"]},
                     ],
                     "prepare_cmds": [
-                        ". /global/scratch/groups/gh/bootstrap-gh-env.sh",
+                        ". /global/exafs/groups/gh/bootstrap-env.sh",
                         "module purge"
                     ],
                     "container_platforms": [
