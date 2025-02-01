@@ -66,7 +66,7 @@ site_configuration = {
         {
             "name": "thea",
             "descr": "NVIDIA MULTI-NODE GRACE-HOPPER EVALUATION SYSTEM",
-            "hostnames": [r'login\d+'],
+            "hostnames": [r'login\d+', r'ggcompile\d+'],
             "modules_system": "tmod4",
             "partitions": [
                 {
