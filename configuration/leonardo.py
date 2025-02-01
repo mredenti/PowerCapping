@@ -196,27 +196,27 @@ site_configuration = {
                     "prefix": "%(check_system)s/%(check_partition)s",
                     "level": "info",
                     "format": (
-                        "%(asctime)s,"
-                        "reframe %(version)s,"
-                        "%(check_job_completion_time)s,"
-                        "%(check_info)s,"
-                        "%(check_modules)s,"
-                        "%(check_result)s,"
-                        "%(check_executable)s,"
-                        "%(check_executable_opts)s,"
-                        "%(check_system)s,"
-                        "%(check_partition)s,"
-                        "%(check_environ)s,"
-                        "%(check_descr)s,"
-                        "%(check_job_nodelist)s,"
-                        "%(check_num_tasks_per_node)s,"
-                        "%(check_num_cpus_per_task)s,"
-                        "%(check_num_gpus_per_node)s,"
-                        "%(check_num_tasks)s,"
-                        "%(check_exclusive_access)s,"
+                        "%(asctime)s|"
+                        "reframe %(version)s|"
+                        "%(check_job_completion_time)s|"
+                        "%(check_info)s|"
+                        "%(check_modules)s|"
+                        "%(check_result)s|"
+                        "%(check_executable)s|"
+                        "%(check_executable_opts)s|"
+                        "%(check_system)s|"
+                        "%(check_partition)s|"
+                        "%(check_environ)s|"
+                        "%(check_descr)s|"
+                        "%(check_job_nodelist)s|"
+                        "%(check_num_tasks_per_node)s|"
+                        "%(check_num_cpus_per_task)s|"
+                        "%(check_num_gpus_per_node)s|"
+                        "%(check_num_tasks)s|"
+                        "%(check_exclusive_access)s|"
                         "%(check_perfvalues)s"
                     ),
-                    "format_perfvars": ("%(check_perf_value)s," "%(check_perf_unit)s,"),
+                    "format_perfvars": ("%(check_perf_value)s|" "%(check_perf_unit)s|"),
                     "append": True,
                 }
             ],

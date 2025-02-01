@@ -1,0 +1,17 @@
+Simple example inspired from LOH1 spice benchmark (http://www.sismowine.org/model/WP2_LOH1.pdf)
+
+Configuration for 4 GPUs
+
+edit (set path to specfem directory) and run
+
+run_preproc.sh (on CPU) : for mesh and input file creation
+run_specfem.sh (on GPU): simulation 
+
+Check_result.py : python script to check the solution with respect to reference solution computed by specfem on 4 GPUs  NVIDIA RTX 6000 Ada
+
+
+Runtime on 4 GPUs  NVIDIA RTX 6000 Ada : 
+run_preproc.sh : ~4 mins
+run_specfem.sh : ~5 mins 
+ 
+

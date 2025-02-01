@@ -22,6 +22,22 @@ class MpirunLauncher(JobLauncher):
                 f'--cpus-per-task={job.num_cpus_per_task}',
                ]
         
+@register_launcher('srun-pmix-nsys')
+class MpirunLauncher(JobLauncher):
+    def command(self, job):
+        return ['srun', 
+                '--mpi=pmix',
+                f'-N {job.num_tasks}',
+                f'-n {job.num_tasks}',
+                f'--cpus-per-task={job.num_cpus_per_task}',
+                'nsys profile', 
+                '-o ${PWD}/output_%q{SLURM_NODEID}_%q{SLURM_PROCID}',
+                '-t cuda,nvtx,osrt,mpi', 
+                '--stats=true',
+                '--cuda-memory-usage=true',
+                '--cudabacktrace=true'
+               ]
+        
 @register_launcher('srun-pmi2')
 class MpirunLauncher(JobLauncher):
     def command(self, job):
@@ -35,18 +51,22 @@ class MpirunLauncher(JobLauncher):
 @register_launcher('mpirun-mapby-nsys')
 class MpirunLauncher(JobLauncher):
     def command(self, job):
-        return ['mpirun', 
+        return ['nsys profile', 
+                '-t cuda,nvtx,osrt,mpi', 
+                '--stats=true',
+                '--cuda-memory-usage=true',
+                'mpirun', 
                 '-np', str(job.num_tasks),
                 f'--map-by ppr:{job.num_tasks_per_node}:node:PE={job.num_cpus_per_task}',
                 '--report-bindings',
-                'nsys', '-t cuda,nvtx', '--stats=true']
+                ]
 
 site_configuration = {
     "systems": [
         {
             "name": "thea",
             "descr": "NVIDIA MULTI-NODE GRACE-HOPPER EVALUATION SYSTEM",
-            "hostnames": [r'login\d+'],
+            "hostnames": [r'login\d+', r'ggcompile\d+'],
             "modules_system": "tmod4",
             "partitions": [
                 {
@@ -80,13 +100,13 @@ site_configuration = {
                     ],
                     "max_jobs": 1,
                     "prepare_cmds": [
-                        ". /global/scratch/groups/gh/bootstrap-gh-env.sh",
+                        ". /global/exafs/groups/gh/bootstrap-env.sh",
                         "module purge"
                     ],
                     "environs": [
-                        "default",
-                        "gcc-12.3.0",
-                        "nvhpc-24.9",
+                        "default", 
+                        "gcc", 
+                        "openmpi-gcc",
                     ],
                     "processor": {
                         "arch": "neoverse-v2",
@@ -116,7 +136,7 @@ site_configuration = {
                         {"name": "nodes", "options": ["--nodes={nodes}"]},
                     ],
                     "prepare_cmds": [
-                        ". /global/scratch/groups/gh/bootstrap-gh-env.sh",
+                        ". /global/exafs/groups/gh/bootstrap-env.sh",
                         "module purge"
                     ],
                     "container_platforms": [
@@ -129,8 +149,9 @@ site_configuration = {
                     ],
                     "environs": [
                         "default", 
-                        "gcc-12.3.0", 
-                        "nvhpc-24.9",
+                        "gcc", 
+                        "openmpi-gcc",
+                        "cuda"
                     ],
                     "processor": {
                         "arch": "neoverse-v2",
@@ -162,17 +183,30 @@ site_configuration = {
             "extras": {"omp_flag": "-fopenmp"},
         },
         {
-            "name": "gcc-12.3.0",
-            "modules": [
-                "gcc/12.3.0-gcc-11.4.1-f7guf3f",
-                "openmpi/4.1.6-gcc-12.3.0-wftkmyd",
-                "cuda/12.3.0-gcc-12.3.0-b2avf4v",
-                "fftw/3.3.10-gcc-12.3.0-6gumeie"
-            ],
+            "name": "gcc",
+            "modules": ["gcc/13.3.0-gcc-11.4.1"],
             "cc": "gcc",
             "cxx": "g++",
-            "ftn": "f90",
+            "ftn": "gfortran",
             "features": ["openmp"],
+            "extras": {"omp_flag": "-fopenmp"},
+        },
+        {
+            "name": "openmpi-gcc",
+            "modules": ["openmpi/5.0.6-gcc-13.3.0"],
+            "cc": "gcc",
+            "cxx": "g++",
+            "ftn": "gfortran",
+            "features": ["openmp", "mpi"],
+            "extras": {"omp_flag": "-fopenmp"},
+        },
+        {
+            "name": "cuda",
+            "modules": ["cuda/12.5.1-gcc-13.3.0"],
+            "cc": "gcc",
+            "cxx": "g++",
+            "ftn": "gfortran",
+            "features": ["openmp", "cuda"],
             "extras": {"omp_flag": "-fopenmp"},
         },
         {

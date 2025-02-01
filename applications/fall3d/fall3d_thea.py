@@ -29,7 +29,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     valid_prog_environs = ['default']
     
     # add some description
-    base_dir = os.path.join("$SCRATCH_FAST", "FALL3D")
+    base_dir = os.path.join("${SCRATCH_DDN}", "FALL3D")
     
     exclusive_access = True
     
@@ -74,6 +74,8 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     def replace_launcher(self):
         launcher_cls = getlauncher(self.launcher) 
         self.job.launcher = launcher_cls()
+        if self.launcher in ['mpirun-mapby', 'mpirun-mapby-nsys', 'srun-pmix-nsys']:
+            self.modules = ['openmpi']
     
     @run_after('setup')
     def prepare_run(self):
@@ -172,7 +174,7 @@ class fall3d_raikoke_test(fall3d_base_test):
     
     # SIF image
     image = variable(str, value="fall3d.sif") 
-    launcher = "srun-pmix"
+    launcher = variable(str, value="srun-pmix")
     num_gpus = 2
     time_limit = '600'
     
@@ -197,6 +199,6 @@ class fall3d_raikoke_large_test(fall3d_base_test):
     
     # SIF image
     image = variable(str, value="fall3d.sif") 
-    launcher = "srun-pmix"
+    launcher = variable(str, value="srun-pmix")
     num_gpus = parameter([1, 2, 4, 8])
-    time_limit = '7200'
+    time_limit = '1800'
