@@ -92,7 +92,7 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
-    --prefix $SCRATCH/REFRAME-SPECFEM \
+    --prefix $HOME/REFRAME-SPECFEM \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
