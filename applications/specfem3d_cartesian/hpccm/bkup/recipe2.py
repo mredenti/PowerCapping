@@ -263,12 +263,6 @@ Stage1 += Stage0.runtime(_from='devel')
 
 Stage1 += copy(src='/opt/specfem3d', dest='/opt/specfem3d', _from='devel')
 
-# Optimise final image size
-Stage1 +=  shell(commands=[
-    'rm -rf /opt/specfem3d/.git',
-    'rm -rf /opt/specfem3d/EXAMPLES',
-])
-
 Stage1 += environment(
     variables={
         'PATH': '/opt/specfem3d/bin:$PATH'

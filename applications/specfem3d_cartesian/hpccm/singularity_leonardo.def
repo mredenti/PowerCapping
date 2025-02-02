@@ -2,11 +2,20 @@
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: docker
-From: docker.io/nvidia/cuda@sha256:1608a19a5d6f013d36abfb9ad50a42b4c0ef86f4ab48e351c6899f0280b946c1
+BootStrap: localimage
+From: cuda@sha256_1608a19a5d6f013d36abfb9ad50a42b4c0ef86f4ab48e351c6899f0280b946c1.sif
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        g++ \
+        gcc \
+        gfortran \
+        libz-dev
+    rm -rf /var/lib/apt/lists/*
 
 # Python
 %post
@@ -191,7 +200,7 @@ Stage: devel
 
 %post
     cd /
-    mkdir -p /opt && cd /opt && git clone --recursive https://gitlab.com/mir1995/specfem3d.git specfem3d && cd - && cd /opt/specfem3d && git checkout ea3d9648b4989454eeb1b2a3f370e009f5d4c81a && cd -
+    mkdir -p /opt && cd /opt && git clone --branch devel-fix-explicit-types --recursive --depth 1 https://gitlab.com/mir1995/specfem3d.git specfem3d && cd - && cd /opt/specfem3d && cd -
 
 %post
     cd /
@@ -206,11 +215,20 @@ Stage: devel
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: docker
-From: docker.io/nvidia/cuda@sha256:4cf7f8137bdeeb099b1f2de126e505aa1f01b6e4471d13faf93727a9bf83d539
+BootStrap: localimage
+From: cuda@sha256_4cf7f8137bdeeb099b1f2de126e505aa1f01b6e4471d13faf93727a9bf83d539.sif
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        g++ \
+        gcc \
+        gfortran \
+        libz-dev
+    rm -rf /var/lib/apt/lists/*
 
 # Python
 %post
@@ -319,6 +337,11 @@ Stage: runtime
 
 %files from devel
     /opt/specfem3d /opt/specfem3d
+
+%post
+    cd /
+    rm -rf /opt/specfem3d/.git
+    rm -rf /opt/specfem3d/EXAMPLES
 
 %environment
     export PATH=/opt/specfem3d/bin:$PATH
