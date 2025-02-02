@@ -200,7 +200,7 @@ Stage: devel
 
 %post
     cd /
-    mkdir -p /opt && cd /opt && git clone --recursive https://gitlab.com/mir1995/specfem3d.git specfem3d && cd - && cd /opt/specfem3d && git checkout ea3d9648b4989454eeb1b2a3f370e009f5d4c81a && cd -
+    mkdir -p /opt && cd /opt && git clone --branch devel-fix-explicit-types --recursive --depth 1 https://gitlab.com/mir1995/specfem3d.git specfem3d && cd - && cd /opt/specfem3d && cd -
 
 %post
     cd /
