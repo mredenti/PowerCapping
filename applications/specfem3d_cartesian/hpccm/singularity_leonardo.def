@@ -338,6 +338,11 @@ Stage: runtime
 %files from devel
     /opt/specfem3d /opt/specfem3d
 
+%post
+    cd /
+    rm -rf /opt/specfem3d/.git
+    rm -rf /opt/specfem3d/EXAMPLES
+
 %environment
     export PATH=/opt/specfem3d/bin:$PATH
 %post
