@@ -1,0 +1,71 @@
+# 
+# This recipe generates a container definition file for SPECFEM3D_CARTESIAN.
+# The generation is parameterized solely using the provided user arguments, which include:
+# 
+# - `cluster`: Specifies the target cluster ('leonardo' or 'thea').
+# 
+# For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
+# 
+#     $ hpccm --recipe hpcx_recipe.py --userarg cluster="leonardo"             --format singularity --singularity-version=3.2
+# 
+# Similarly, for the 'thea' cluster:
+# 
+#     $ hpccm --recipe hpcx_recipe.py --userarg cluster="thea"             --format singularity --singularity-version=3.2
+# 
+# Note:
+#     - This recipe uses SHA-256 content digests as unique identifiers for both the devel and 
+#       runtime base images. These digests ensure safety and reproducibility.
+# 
+
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30
+Stage: devel
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        environment-modules
+    rm -rf /var/lib/apt/lists/*
+
+%post
+    cd /
+    . /usr/share/modules/init/sh
+    module use /opt/nvidia/hpc_sdk/modulefiles
+    module load nvhpc-hpcx-cuda11
+
+%post
+    cd /
+    mkdir -p /opt && cd /opt && git clone --recursive https://gitlab.com/mir1995/specfem3d.git specfem3d && cd - && cd /opt/specfem3d && git checkout ea3d9648b4989454eeb1b2a3f370e009f5d4c81a && cd -
+
+%post
+    cd /
+    cd /opt/specfem3d
+    ./configure CC="gcc" CXX="g++" FC="gfortran" CFLAGS="-O3" FCFLAGS="-O3" MPIFC=mpif90 --with-mpi --with-cuda=cuda11 USE_BUNDLED_SCOTCH=1
+    make -j$(nproc)
+
+%environment
+    export PATH=/opt/specfem3d/bin:$PATH
+%post
+    export PATH=/opt/specfem3d/bin:$PATH
+
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a
+Stage: runtime
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+%files
+    /opt/specfem3d /opt/specfem3d
+
+%environment
+    export PATH=/opt/specfem3d/bin:$PATH
+%post
+    export PATH=/opt/specfem3d/bin:$PATH
+
+
