@@ -117,7 +117,15 @@ Stage0 += baseimage(
     _as="devel",
 )
 
-# sudo apt install gfortran need for openmpi, as otherwise it does not enable the fortran libraries by default
+Stage0 += packages(
+    apt=[
+        'gcc',
+        'g++',
+        'gfortran',
+        'libz-dev'
+    ], 
+    epel=True
+)
 
 ###############################################################################
 # OpenMPI
@@ -239,6 +247,13 @@ Stage0 += baseimage(
     _distro=params["base_os"],
     _arch=params["arch"],
     _as="runtime",
+)
+
+Stage1 += packages(
+    apt=[
+        'libz-dev'
+    ], 
+    epel=True
 )
 
 Stage1 += Stage0.runtime(_from='devel') 

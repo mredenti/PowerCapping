@@ -8,6 +8,15 @@ Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
 
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        g++ \
+        gcc \
+        gfortran \
+        libz-dev
+    rm -rf /var/lib/apt/lists/*
+
 # Python
 %post
     apt-get update -y
@@ -211,6 +220,12 @@ From: docker.io/nvidia/cuda@sha256:4cf7f8137bdeeb099b1f2de126e505aa1f01b6e4471d1
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libz-dev
+    rm -rf /var/lib/apt/lists/*
 
 # Python
 %post
