@@ -47,7 +47,7 @@ cluster_configs = {
         # --------------------
         # Base operating system
         # --------------------
-        'base_os': 'ubuntu22.04',
+        'base_os': 'ubuntu22',
 
         # --------------------
         # Spack version and specs to be installed in environment
@@ -89,7 +89,7 @@ cluster_configs = {
         # --------------------
         # Base operating system
         # --------------------
-        'base_os': 'ubuntu22.04',
+        'base_os': 'ubuntu22',
         
         # --------------------
         # Spack version and specs to be installed in environment
@@ -183,7 +183,7 @@ os_common_packages = ['autoconf',
                     'python3',
                     'environment-modules']
 
-if cluster_name == "thea" and params["base_os"] == "ubuntu22.04":
+if cluster_name == "thea" and params["base_os"] == "ubuntu22":
     os_common_packages += ['libcurl4-openssl-dev', 'libssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
@@ -269,7 +269,7 @@ Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
                         runtime_environment = {
                                     "PATH" : "/opt/fall3d/bin:$PATH"
                         },
-                        url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
+                         url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
 ###############################################################################
 # Finalize Container with Runtime Environment

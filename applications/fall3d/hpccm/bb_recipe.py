@@ -50,7 +50,7 @@ cluster_configs = {
         # --------------------
         # Base operating system
         # --------------------
-        'base_os': 'ubuntu22.04',
+        'base_os': 'ubuntu22',
 
         # --------------------
         # NVHPC, CUDA setup for A100
@@ -75,7 +75,7 @@ cluster_configs = {
         # --------------------
         # Base operating system
         # --------------------
-        'base_os': 'ubuntu22.04',
+        'base_os': 'ubuntu22',
         
         # --------------------
         # NVHPC, CUDA setup for GH200

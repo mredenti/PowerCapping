@@ -47,7 +47,7 @@ cluster_configs = {
         # --------------------
         # Base operating system
         # --------------------
-        'base_os': 'ubuntu22.04',
+        'base_os': 'ubuntu22',
 
         # --------------------
         # Spack version and specs to be installed in environment
@@ -86,7 +86,7 @@ cluster_configs = {
         # --------------------
         # Base operating system
         # --------------------
-        'base_os': 'ubuntu22.04',
+        'base_os': 'ubuntu22',
         
         # --------------------
         # Spack version and specs to be installed in environment
@@ -160,7 +160,7 @@ os_common_packages = ['autoconf',
                     'python3',
                     'environment-modules']
 
-if cluster_name == "thea" and params["base_os"] == "ubuntu22.04":
+if cluster_name == "thea" and params["base_os"] == "ubuntu22":
     os_common_packages += ['libcurl4-openssl-dev']
 
 Stage0 += packages(apt=os_common_packages + ['curl'],
