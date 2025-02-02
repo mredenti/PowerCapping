@@ -47,10 +47,9 @@ cluster_configs = {
         'base_os': 'ubuntu22.04',
 
         # --------------------
-        # NVHPC, CUDA setup for A100
+        # CUDA setup for A100
         # --------------------
-        'nvhpc_version': '24.11',
-        'cuda_version': '11.8',
+        'cuda_version': '12.6',
         'cuda_arch': '80',
 
         # --------------------
@@ -72,9 +71,8 @@ cluster_configs = {
         'base_os': 'ubuntu22.04',
         
         # --------------------
-        # NVHPC, CUDA setup for GH200
+        # CUDA setup for GH200
         # --------------------
-        'nvhpc_version': '24.11',
         'cuda_version': '12.6',
         'cuda_arch': '90',
         
@@ -140,6 +138,14 @@ os_common_packages = ['autoconf',
                     'curl']
 """
 os_common_packages = ['environment-modules']
+
+Stage0 += environment(
+    variables={
+        'CUDA_INC': f'/opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}/include',
+        'CUDA_LIB': f'/opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}/lib64'
+    },
+    _export=True
+)
 
 Stage0 += packages(apt=os_common_packages, epel=True)
 # Stage0 += bb.python(python2=False)
