@@ -159,9 +159,11 @@ Stage: devel
 %environment
     export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
     export PATH=/usr/local/openmpi/bin:$PATH
+    export MPI_INC=/usr/local/openmpi/include
 %post
     export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
     export PATH=/usr/local/openmpi/bin:$PATH
+    export MPI_INC=/usr/local/openmpi/include
 
 %environment
     export CUDA_INC=/usr/local/cuda-12.6/include
@@ -285,9 +287,11 @@ Stage: runtime
 %environment
     export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
     export PATH=/usr/local/openmpi/bin:$PATH
+    export MPI_INC=/usr/local/openmpi/include
 %post
     export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
     export PATH=/usr/local/openmpi/bin:$PATH
+    export MPI_INC=/usr/local/openmpi/include
 
 %files from devel
     /opt/specfem3d /opt/specfem3d
