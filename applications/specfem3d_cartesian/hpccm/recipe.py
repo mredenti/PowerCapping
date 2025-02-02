@@ -251,6 +251,9 @@ Stage0 += baseimage(
 
 Stage1 += packages(
     apt=[
+        'gcc',
+        'g++',
+        'gfortran',
         'libz-dev'
     ], 
     epel=True
