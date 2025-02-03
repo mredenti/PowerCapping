@@ -261,7 +261,8 @@ Stage1 += packages(
         'gcc',
         'g++',
         'gfortran',
-        'libz-dev'
+        'libz-dev',
+        'libnuma-dev'
     ], 
     epel=True
 )

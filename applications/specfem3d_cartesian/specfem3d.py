@@ -173,20 +173,29 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
 
         elif self.execution_mode == 'container':
             
-            self.prerun_cmds = [
-                self.job.launcher.run_command(self) + ' ' + "xmeshfem3D",
-                self.job.launcher.run_command(self) + ' ' + "xgenerate_databases"
-            ]
-            
             self.container_platform.image = self.image
             self.container_platform.with_cuda = True
+            self.container_platform.options = ['--no-home']
+            
             # https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html#reframe.core.containers.ContainerPlatform.mount_points
             input_dir = os.path.join(os.path.dirname(__file__), self.sourcesdir) # handle symlinks of read only input files
             self.container_platform.mount_points = [
                 (input_dir, input_dir) 
             ]
-            self.container_platform.options = ['--no-home']
-            self.container_platform.command = f"xspecfem3d {' '.join(map(str, self.executable_opts))}"
+            
+            self.container_platform.command = "xmeshfem3D"
+            
+            self.prerun_cmds = [
+                self.job.launcher.run_command(self) + ' ' + self.container_platform.launch_command(self.stagedir)
+            ]
+            
+            self.container_platform.command = "xgenerate_databases"
+            
+            self.prerun_cmds += [
+                self.job.launcher.run_command(self) + ' ' + self.container_platform.launch_command(self.stagedir),
+            ]
+        
+            self.container_platform.command = "xspecfem3D"
         
     @sanity_function
     def validate_test(self):

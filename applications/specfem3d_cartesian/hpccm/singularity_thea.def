@@ -201,7 +201,8 @@ Stage: runtime
         g++ \
         gcc \
         gfortran \
-        libz-dev
+        libz-dev \
+        libnuma-dev
     rm -rf /var/lib/apt/lists/*
 
 # Python
