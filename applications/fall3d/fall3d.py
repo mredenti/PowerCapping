@@ -91,14 +91,14 @@ class build_fall3d(rfm.CompileOnlyRegressionTest):
 # Fall3d Base Test Class with Conditional Dependencies
 # ========================================================
 class fall3d_base_test(rfm.RunOnlyRegressionTest):
-    '''Base class of Fall3d runtime tests'''
+    """Base class of Fall3d runtime tests"""
     
     fall3d_binaries = None # fixture(build_fall3d, scope='environment')
     
     valid_systems = ['leonardo:booster', 'thea:gh']
     valid_prog_environs = ['*'] # ['+mpi']
 
-    execution_mode = variable(typ.Str[r'baremetal|container']) # platform
+    execution_mode = variable(typ.Str[r'baremetal|container']) 
     image = variable(str) 
     
     num_tasks = None
