@@ -196,6 +196,13 @@ ompi = bb.openmpi(
 )
 Stage0 += ompi
 
+Stage0 += environment(
+    variables={
+        'MPI_INC' : '/usr/local/openmpi/include'
+    },
+    _export=True
+)
+
 #############################
 # SPECFEM3D_CARTESIAN
 #############################       
@@ -254,7 +261,8 @@ Stage1 += packages(
         'gcc',
         'g++',
         'gfortran',
-        'libz-dev'
+        'libz-dev',
+        'libnuma-dev'
     ], 
     epel=True
 )
