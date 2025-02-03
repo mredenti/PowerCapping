@@ -4,12 +4,16 @@ import reframe as rfm
 import reframe.utility.typecheck as typ
 import reframe.utility.sanity as sn
 import reframe.utility.osext as osext
+import reframe.utility.udeps as udeps
 from reframe.core.backends import getlauncher
 
 
 class fetch_specfemd3d_cartesian(rfm.RunOnlyRegressionTest):
-    descr = "Fetch SPECFEM3D_CARTESIAN repository"
+    descr = "Fetch SPECFEM3D_CARTESIAN"
 
+    maintainers = ['mredenti']
+    
+    # Specfem3d repository
     repo_url = variable(str, value="https://gitlab.com/mir1995/specfem3d.git") # https://gitlab.com/specfem_cheese_2p/full_app/specfem3d.git
     branch = variable(str, value="devel-fix-explicit-types") 
     commit = variable(str, value="c7829e0695521e104342611c212021926e87f5c2")
@@ -30,15 +34,23 @@ class fetch_specfemd3d_cartesian(rfm.RunOnlyRegressionTest):
     def validate_download(self):
         return sn.assert_eq(self.job.exitcode, 0)
 
-
+# ========================================================
+# Specfem3d Autotools build logic
+# ========================================================
+@rfm.simple_test
 class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
     descr = "Build Specfem3D"
 
     build_system = "Autotools"
-    # build_locally = False # check first whether you can pass it from the command line
-    modules = ['cuda']
 
-    specfem3d_cartesian = fixture(fetch_specfemd3d_cartesian, scope="test")
+    specfem3d_cartesian_source = fixture(fetch_specfemd3d_cartesian, scope="test")
+    
+    valid_systems = ["leonardo:booster", "thea:gh"]
+    valid_prog_environs = ["+mpi"]
+    modules = ['cuda']
+    
+    build_locally = True
+    build_time_limit='600'
 
     @run_before("compile")
     def prepare_build(self):        
@@ -46,7 +58,7 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
         #self.build_system.builddir = 'build'
         #self.build_system.configuredir = os.path.join(self.specfem3d_cartesian.stagedir, 'specfem3d')
         # Change into fetched source dir 
-        self.build_system.sourcesdir = os.path.join(self.specfem3d_cartesian.stagedir, 'specfem3d')
+        self.build_system.sourcesdir = os.path.join(self.specfem3d_cartesian_source.stagedir, 'specfem3d')
         self.prebuild_cmds = [
             f'cd {self.build_system.sourcesdir}'
         ]
@@ -80,16 +92,7 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
             f'--with-cuda={target_gpu_arch}',
             'USE_BUNDLED_SCOTCH=1'
         ]
-        
-        # I think you can remote all of the things below
-        
-        #self.build_system.srcdir = fullpath
-        #self.build_system.options = [
-        #    "VERBOSE=1",
-        #    'LIBS="-lstdc++ -lcudart -L$NVHPC_HOME/Linux_aarch64/24.9/cuda/lib64"',
-        #]
         self.build_system.make_opts = ['xmeshfem3D', 'xgenerate_databases', 'xspecfem3D']
-        
         self.build_system.max_concurrency = 8
     
 # ========================================================
@@ -101,17 +104,27 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
 
     valid_systems = ["leonardo:booster", "thea:gh"]
     valid_prog_environs = ["+mpi"]
-    modules = ['cuda']
+    
+    execution_mode = variable(typ.Str[r'baremetal|container'])
+    image = variable(str) 
     
     exclusive_access = True
-    
     num_gpus = None
 
-    specfemd3d_cartesian_binaries = fixture(
-        build_specfem3d_cartesian, scope="environment"
-    )
+    specfemd3d_cartesian_binaries = None
     
-    @run_after("init")
+    @run_after('init')
+    def configure_dependencies(self):
+        """Conditionally add dependencies based on the programming environment."""
+        if self.execution_mode == 'baremetal':
+            self.depends_on('build_specfem3d_cartesian', udeps.by_env)
+    
+    @require_deps
+    def get_dependencies(self, build_specfem3d_cartesian):
+        if self.execution_mode == 'baremetal':
+            self.specfemd3d_cartesian_binaries = build_specfem3d_cartesian(part='*', environ='*')
+    
+    @run_after("setup")
     def get_nproc(self):
         # get the number of processors, ignoring comments in the Par_file
         result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.sourcesdir)}/DATA/Par_file")
@@ -130,6 +143,11 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
             "gpu": {"num_gpus_per_node": f"{self.num_gpus_per_node}"},
         }
         
+    @run_before('run')
+    def load_modules(self):
+        if self.execution_mode == 'baremetal':
+            self.modules = self.specfemd3d_cartesian_binaries.modules    
+        
     @run_before("run")
     def replace_launcher(self):
         try:
@@ -137,20 +155,39 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
         except Exception:
             launcher_cls = getlauncher("mpirun")
         self.job.launcher = launcher_cls()
-
+    
     @run_before("run")
-    def set_executable_path(self):
-        self.prerun_cmds = [
-            ' '.join(self.job.launcher.command(self)) + ' ' + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xmeshfem3D")}',
-            ' '.join(self.job.launcher.command(self)) + ' ' + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xgenerate_databases")}'
-        ]
-        # Set the executable path using the stagedir and build prefix
-        self.executable = os.path.join(
-            self.specfemd3d_cartesian_binaries.build_system.sourcesdir,
-            "bin",
-            "xspecfem3D",
-        )
+    def prepare_run(self):
+        
+        if self.execution_mode == 'baremetal':
+            self.prerun_cmds = [
+                self.job.launcher.run_command(self) + ' ' + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xmeshfem3D")}',
+                self.job.launcher.run_command(self) + ' ' + f'{os.path.join(self.specfemd3d_cartesian_binaries.build_system.sourcesdir, "bin", "xgenerate_databases")}'
+            ]
+            # Set the executable path using the stagedir and build prefix
+            self.executable = os.path.join(
+                self.specfemd3d_cartesian_binaries.build_system.sourcesdir,
+                "bin",
+                "xspecfem3D",
+            )
 
+        elif self.execution_mode == 'container':
+            
+            self.prerun_cmds = [
+                self.job.launcher.run_command(self) + ' ' + "xmeshfem3D",
+                self.job.launcher.run_command(self) + ' ' + "xgenerate_databases"
+            ]
+            
+            self.container_platform.image = self.image
+            self.container_platform.with_cuda = True
+            # https://reframe-hpc.readthedocs.io/en/stable/regression_test_api.html#reframe.core.containers.ContainerPlatform.mount_points
+            input_dir = os.path.join(os.path.dirname(__file__), self.sourcesdir) # handle symlinks of read only input files
+            self.container_platform.mount_points = [
+                (input_dir, input_dir) 
+            ]
+            self.container_platform.options = ['--no-home']
+            self.container_platform.command = f"xspecfem3d {' '.join(map(str, self.executable_opts))}"
+        
     @sanity_function
     def validate_test(self):
         return sn.assert_eq(self.job.exitcode, 0)
@@ -167,7 +204,7 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
 
 
 @rfm.simple_test
-class specfemd3d_iso_benchmark(specfemd3d_base_benchmark):
+class specfem3d_small(specfemd3d_base_benchmark):
     descr = "specfem3d_small"
     time_limit = "1800"
     sourcesdir = 'loh1_256x256'

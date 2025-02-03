@@ -47,35 +47,34 @@ for 3d crust and mantle models, can account for the rotation of the earth, topog
 reframe \
     -C power-capping/configuration/leonardo.py \
     -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
-    --prefix $SCRATCH_FAST/REFRAME-SPECFEM \
+    --prefix $SCRATCH/REFRAME-SPECFEM-BAREMETAL \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
     -J qos=normal \
     -J account=cin_staff \
     -p openmpi-gcc \
+    -n specfem3d_small \
+    -S specfem3d_small.execution_mode=baremetal \
     -lC
 ```
 
 **Container**
 
-At the moment we assume that the SIF image has already been pulled/build to the local file system. Thus, please see [HPCCM_SPECFEM3D](./hpccm/README.md) for more information on the build process. Eventually we might consider opening the remote registry to the public and have Singularity automatically pull the image at runtime.  
-
 ```shell
 reframe \
     -C power-capping/configuration/leonardo.py \
     -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
-    --prefix $SCRATCH/REFRAME-SPECFEM \
+    --prefix $SCRATCH/REFRAME-SPECFEM-CONTAINER \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
-    -M openmpi:openmpi/4.1.6--nvhpc--24.3 \
-    -p default \
+    -p openmpi-gcc \
     -J qos=normal \
     -J account=cin_staff \
-    -n fall3d_raikoke_test \
-    -S fall3d_raikoke_test.execution_mode=container \
-    -S fall3d_raikoke_test.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/fall3d_openacc.sif \
+    -n specfem3d_small \
+    -S specfem3d_small.execution_mode=container \
+    -S  specfem3d_small.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/specfem3d_cartesian.sif \
     --dry-run
 ```
 
@@ -92,7 +91,7 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
-    --prefix $HOME/REFRAME-SPECFEM \
+    --prefix $SCRATCH_FAST/REFRAME-SPECFEM \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
