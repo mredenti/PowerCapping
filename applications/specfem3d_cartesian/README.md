@@ -154,7 +154,7 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
-    --prefix $SCRATCH_FAST/REFRAME-SPECFEM-BAREMETAL \
+    --prefix $SCRATCH_FAST/REFRAME-SPECFEM-MEDIUM-BAREMETAL \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
@@ -170,7 +170,7 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
-    --prefix $SCRATCH_FAST/REFRAME-SPECFEM-CONTAINER \
+    --prefix $SCRATCH_FAST/REFRAME-SPECFEM-MEDIUM-CONTAINER \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
