@@ -77,7 +77,7 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-FALL3D \
+    --prefix $SCRATCH_FAST/REFRAME-FALL3D \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
@@ -94,7 +94,7 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-FALL3D \
+    --prefix $SCRATCH_FAST/REFRAME-FALL3D \
     --keep-stage-files \
     --performance-report \
     -p default \
