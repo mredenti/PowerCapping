@@ -200,7 +200,7 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-BAREMETAL-FALL3D \
+    --prefix $SCRATCH/REFRAME-FALL3D-BAREMETAL \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
@@ -217,7 +217,7 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-CONTAINER-FALL3D \
+    --prefix $SCRATCH_FAST/REFRAME-FALL3D-CONTAINER \
     --keep-stage-files \
     --performance-report \
     -p default \
@@ -231,7 +231,7 @@ reframe \
 reframe \
   -C power-capping/configuration/thea.py \
   -c power-capping/applications/fall3d/fall3d_thea.py \
-  --prefix $HOME/REFRAME-CONTAINER-FALL3D \
+  --prefix $HOME/REFRAME-FALL3D-CONTAINER \
   --performance-report \
   --keep-stage-files \
   -n fall3d_raikoke_large_test \
