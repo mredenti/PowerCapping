@@ -100,7 +100,7 @@ reframe \
     -p default \
     -n fall3d_raikoke_test \
     -S fall3d_raikoke_test.execution_mode=container \
-    -S fall3d_raikoke_test.image=$SCRATCH_DNN/SIF_IMAGES/fall3d.sif \
+    -S fall3d_raikoke_test.image=$SCRATCH_DDN/SIF_IMAGES/fall3d.sif \
     --dry-run
 ```
 
@@ -223,7 +223,7 @@ reframe \
     -p default \
     -n fall3d_raikoke_large_test \
     -S fall3d_raikoke_large_test.execution_mode=container \
-    -S fall3d_raikoke_large_test.image=$SCRATCH_DNN/SIF_IMAGES/fall3d.sif \
+    -S fall3d_raikoke_large_test.image=$SCRATCH_DDN/SIF_IMAGES/fall3d.sif \
     --dry-run
 ```
 
