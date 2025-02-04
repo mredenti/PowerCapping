@@ -92,7 +92,7 @@ reframe \
 
 ```shell
 reframe \
-    -C power-capping/configuration/leonardo.py \
+    -C power-capping/configuration/thea.py \
     -c power-capping/applications/fall3d/fall3d.py \
     --prefix $SCRATCH/REFRAME-FALL3D \
     --keep-stage-files \
@@ -214,7 +214,7 @@ reframe \
 
 ```shell
 reframe \
-    -C power-capping/configuration/leonardo.py \
+    -C power-capping/configuration/thea.py \
     -c power-capping/applications/fall3d/fall3d.py \
     --prefix $SCRATCH/REFRAME-FALL3D \
     --keep-stage-files \
