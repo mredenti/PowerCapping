@@ -96,7 +96,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     fall3d_binaries = None # fixture(build_fall3d, scope='environment')
     
     valid_systems = ['leonardo:booster', 'thea:gh']
-    valid_prog_environs = ['*'] # ['+mpi']
+    valid_prog_environs = ['*'] 
 
     execution_mode = variable(typ.Str[r'baremetal|container']) 
     image = variable(str) 
