@@ -97,6 +97,7 @@ reframe \
     --prefix $SCRATCH/REFRAME-FALL3D \
     --keep-stage-files \
     --performance-report \
+    -p default \
     -n fall3d_raikoke_test \
     -S fall3d_raikoke_test.execution_mode=container \
     -S fall3d_raikoke_test.image=$SCRATCH_DNN/SIF_IMAGES/fall3d.sif \
@@ -219,6 +220,7 @@ reframe \
     --prefix $SCRATCH/REFRAME-FALL3D \
     --keep-stage-files \
     --performance-report \
+    -p default \
     -n fall3d_raikoke_large_test \
     -S fall3d_raikoke_large_test.execution_mode=container \
     -S fall3d_raikoke_large_test.image=$SCRATCH_DNN/SIF_IMAGES/fall3d.sif \
