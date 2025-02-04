@@ -238,7 +238,6 @@ class specfem3d_medium(specfemd3d_base_benchmark):
     readonly_files = [
         'DATA',
         'readme',
-        'Check_result.py',
         'run_preproc.sh',  
         'run_specfem.sh'
     ]
