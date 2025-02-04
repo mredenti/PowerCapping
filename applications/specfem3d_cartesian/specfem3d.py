@@ -14,9 +14,9 @@ class fetch_specfemd3d_cartesian(rfm.RunOnlyRegressionTest):
     maintainers = ['mredenti']
     
     # Specfem3d repository
-    repo_url = variable(str, value="https://gitlab.com/mir1995/specfem3d.git") # https://gitlab.com/specfem_cheese_2p/full_app/specfem3d.git
-    branch = variable(str, value="devel-fix-explicit-types") 
-    commit = variable(str, value="c7829e0695521e104342611c212021926e87f5c2")
+    repo_url = variable(str, value="https://gitlab.com/specfem_cheese_2p/full_app/specfem3d.git")
+    branch = variable(str, value="devel") 
+    commit = variable(str, value="8a2aba4d021562fde7cdbd19dc0b7869ce887eb8")
 
     executable = 'git clone'
     executable_opts = [
@@ -26,7 +26,7 @@ class fetch_specfemd3d_cartesian(rfm.RunOnlyRegressionTest):
         'specfem3d'
     ]
     # checkout specific commit
-    #postrun_cmds = [f'cd specfem3d && git checkout {commit}']
+    postrun_cmds = [f'cd specfem3d && git checkout {commit}']
     
     local = True
         
