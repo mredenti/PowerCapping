@@ -20,8 +20,8 @@ class fetch_xshells(rfm.RunOnlyRegressionTest):
 
     executable = 'git clone'
     executable_opts = [
-        '--recursive',
         f'--branch {branch}',
+        '--recurse-submodules',
         f'{repo_url}',
         'xshells'
     ]
@@ -94,10 +94,10 @@ class build_xshells_cartesian(rfm.CompileOnlyRegressionTest):
         self.build_system.max_concurrency = 8
     
 # ========================================================
-# xshells Base Test Class with Conditional Dependencies
+# XSHELLS Base Test Class with Conditional Dependencies
 # ========================================================
 
-class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
+class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
     """Base class of xshells mini-aps runtime tests"""
 
     valid_systems = ["leonardo:booster", "thea:gh"]
@@ -115,12 +115,12 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
     def configure_dependencies(self):
         """Conditionally add dependencies based on the programming environment."""
         if self.execution_mode == 'baremetal':
-            self.depends_on('build_xshells_cartesian', udeps.by_env)
+            self.depends_on('build_xshells', udeps.by_env)
     
     @require_deps
-    def get_dependencies(self, build_xshells_cartesian):
+    def get_dependencies(self, build_xshells):
         if self.execution_mode == 'baremetal':
-            self.xshells_binaries = build_xshells_cartesian(part='*', environ='*')
+            self.xshells_binaries = build_xshells(part='*', environ='*')
     
     @run_after("setup")
     def get_nproc(self):
@@ -166,7 +166,7 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
             self.executable = os.path.join(
                 self.xshells_binaries.build_system.sourcesdir,
                 "bin",
-                "xxshells",
+                "xshells",
             )
 
         elif self.execution_mode == 'container':
@@ -181,49 +181,26 @@ class specfemd3d_base_benchmark(rfm.RunOnlyRegressionTest):
                 (input_dir, input_dir) 
             ]
             
-            self.container_platform.command = "xmeshfem3D"
+            self.container_platform.command = "xsgpu_mpi"
             
-            self.prerun_cmds = [
-                self.job.launcher.run_command(self) + ' ' + self.container_platform.launch_command(self.stagedir)
-            ]
-            
-            self.container_platform.command = "xgenerate_databases"
-            
-            self.prerun_cmds += [
-                self.job.launcher.run_command(self) + ' ' + self.container_platform.launch_command(self.stagedir),
-            ]
-        
-            self.container_platform.command = "xxshells"
         
     @sanity_function
     def validate_test(self):
         return sn.assert_eq(self.job.exitcode, 0)
 
-    #@performance_function("s")
-    #def end_time_iteration_loop(self):
-    #    return sn.extractsingle(
-    #        r"End of time iteration loop\.\.\.\s+(\S+)", self.stdout, 1, float
-    #    )
-
-    #@performance_function("count")
-    #def time_step_count(self):
-    #    return sn.extractsingle(r"time step\s*:\s*\d+\s*/\s*(\d+)", self.stdout, 1, int)
-
-
 @rfm.simple_test
 class xshells_small(specfemd3d_base_benchmark):
     descr = "xshells_small"
+    num_gpus = parameter([1])
+    executable = "xsgpu_mpi"
+    #executable_opts = ["xshells.par"]  # perhaps we can move this to the build stage
     time_limit = "1800"
-    sourcesdir = 'loh1_256x256'
+    sourcesdir = 'turbulent-geodynamo' # perhaps we can move this to the build stage as a parameter?
     readonly_files = [
-        'REF_SOLUTION',
-        'DATA',
-        'readme',
-        'Check_result.py',
-        'run_preproc.sh',  
-        'run_specfem.sh'
+        'xshells.hpp', # needed at compilation time
+        'xshells.par'
     ]
-    keep_files = [
-       'OUTPUT_FILES'
-    ]
+    #keep_files = [
+    #   'OUTPUT_FILES'
+    #]
     launcher = variable(str, value="mpirun-mapby")
