@@ -1,46 +1,66 @@
-#!/usr/bin/env python
+"""
+This recipe builds a container definition for XSHELLS.
+The generation is parameterized solely using the provided user arguments, which include:
 
-import hpccm
-import hpccm.building_blocks as bb
+- `cluster`: Specifies the target cluster ('leonardo' or 'thea').
+
+For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
+
+    $ hpccm --recipe recipe.py --userarg cluster="leonardo" \
+            --format singularity --singularity-version=3.2
+
+Similarly, for the 'thea' cluster:
+
+    $ hpccm --recipe recipe.py --userarg cluster="thea" \
+            --format singularity --singularity-version=3.2
+
+Note:
+    - This recipe uses SHA-256 content digests as unique identifiers for both the devel and 
+      runtime base images. These digests ensure safety and reproducibility.
+"""
+
+from packaging.version import Version
 from hpccm.templates.git import git
 from hpccm.common import container_type
-from packaging.version import Version
-from hpccm.primitives import baseimage
+import re
 
-CLUSTER_CONFIGS = {
+
+###############################################################################
+# Get User Arguments
+###############################################################################
+
+# Fall3d Optional arguments
+xshells_version = USERARG.get('xshells_version', '9.0.1')
+# Required arguments
+cluster_name = USERARG.get('cluster', None)
+if cluster_name is None:
+    raise RuntimeError("You must specify the 'cluster' argument (e.g., 'leonardo' or 'thea').")
+
+###############################################################################
+# Define Cluster Configurations
+###############################################################################
+
+# Configuration mappings for different clusters
+cluster_configs = {
     'leonardo': {
         # --------------------
         # Base operating system
         # --------------------
         'base_os': 'ubuntu22',
-        'base_image': 'nvidia/cuda',
-        
+
         # --------------------
-        # CUDA setup for A100
+        # NVHPC, CUDA setup for A100
         # --------------------
-        'cuda_version': '12.6',
+        'nvhpc_version': '24.11',
+        'cuda_version': '11.8',
         'cuda_arch': '80',
-        
+
         # --------------------
         # Use a (unique) content-based identifier for images
         # --------------------
-        'tag_devel': '12.6.3-devel-ubuntu22.04',
-        'digest_devel': 'sha256:1608a19a5d6f013d36abfb9ad50a42b4c0ef86f4ab48e351c6899f0280b946c1',
-        'tag_runtime': '12.6.3-runtime-ubuntu22.04',
-        'digest_runtime': 'sha256:4cf7f8137bdeeb099b1f2de126e505aa1f01b6e4471d13faf93727a9bf83d539', 
-        
-        # --------------------
-        # Network versioning
-        # --------------------
-        'network_stack': {
-            'mlnx_ofed' : '5.8-2.0.3.0',
-            'knem'      : True,  
-            'xpmem'     : True,  
-            'ucx'       : '1.13.1',
-            'pmix'      : '3.1.5',
-            'ompi'      : '4.1.6',
-        },
-        
+        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
+        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda11.8-ubuntu22.04
+
         # --------------------
         # Cluster arch and micro arch
         # --------------------
@@ -52,56 +72,38 @@ CLUSTER_CONFIGS = {
         # Base operating system
         # --------------------
         'base_os': 'ubuntu22',
-        'base_image': 'nvidia/cuda',
         
         # --------------------
-        # CUDA setup for GH200
+        # NVHPC, CUDA setup for GH200
         # --------------------
+        'nvhpc_version': '24.11',
         'cuda_version': '12.6',
         'cuda_arch': '90',
         
         # --------------------
-        # Use a (unique) content-based identifier for images
+        # Use a (unique) content-based identifier for images 
         # --------------------
-        'tag_devel': '12.6.3-devel-ubuntu22.04',
-        'digest_devel': 'sha256:12cf7fda869f87f821113f010ee64b3a230a3fed2a56fb6d3c93fb8a82472816',
-        'tag_runtime': '12.6.3-runtime-ubuntu22.04',
-        'digest_runtime': 'sha256:77e5fa9d1849bdba5a340be90d8ca30fb13d8f62fb433b1fa9d2903bb7a68498', 
+        'digest_devel': 'sha256:4ac58ba75151c2c6dc4ea3410612a897353dbd520ec67572d923ea9e749bb865', # nvcr.io/nvidia/nvhpc:25.1-devel-cuda12.6-ubuntu22.04
+        'digest_runtime': 'sha256:8b07932ed5c3c45afa2a4d527ffcf67117b9caa294417bd8c7727726c0d61d14', # nvcr.io/nvidia/nvhpc:25.1-runtime-cuda12.6-ubuntu22.04
         
         # --------------------
-        # Network versioning
-        # --------------------
-        'network_stack': {
-            'mlnx_ofed': '24.04-0.7.0.0',
-            'knem': True,  
-            'xpmem': True,  
-            'ucx': '1.18.0',
-            'pmix': 'internal',
-            'ompi': '5.0.3',
-        },
-        
-        # --------------------
-        # Cluster arch and micro arch
+        # Cluster arch and micro arch 
         # --------------------
         'arch': 'aarch64',
-        'march': 'neoverse_v2'
-    },
+        'march': 'neoverse-v2'
+    }
 }
 
 
-# Get correct config
-cluster_name = USERARG.get('cluster', None)
-
-if cluster_name not in CLUSTER_CONFIGS:
+# Validate cluster name
+if cluster_name not in cluster_configs:
     raise RuntimeError(
         f"Invalid cluster name: '{cluster_name}'. "
-        f"Valid options are: {', '.join(CLUSTER_CONFIGS.keys())}."
+        f"Valid options are: {', '.join(cluster_configs.keys())}."
     )
 
-params = CLUSTER_CONFIGS[cluster_name]
-# Global HPCCM config for package installations
-hpccm.config.set_cpu_target(params["march"])
-hpccm.config.set_linux_distro(params["base_os"])
+# Retrieve cluster-specific settings
+params = cluster_configs[cluster_name]
 
 ###############################################################################
 # Add descriptive comments to the container definition file
@@ -109,116 +111,73 @@ hpccm.config.set_linux_distro(params["base_os"])
 
 Stage0 += comment(__doc__, reformat=False)
 
-# Set base image
-Stage0 += baseimage(
-    image="docker.io/{}@{}".format(params["base_image"], params["digest_devel"]),
-    _distro=params["base_os"],
-    _arch=params["arch"],
-    _as="devel",
-)
-
-Stage0 += packages(
-    apt=[
-        'gcc',
-        'g++',
-        'gfortran',
-        'libz-dev'
-    ], 
-    epel=True
-)
+###############################################################################
+# Devel stage Base Image
+###############################################################################
+# see # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
+# It seems Singularity does not allow specifying both a tag and a digest in the same reference
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{params["nvhpc_version"]}-devel-cuda_multi-{params["base_os"]}'
+Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_devel"]}',
+                _distro=f'{params["base_os"]}',
+                _arch=f'{params["arch"]}',
+                _as='devel') 
 
 ###############################################################################
-# OpenMPI
+# Install Base Dependencies
 ###############################################################################
+os_common_packages = ['autoconf',
+                    'ca-certificates',
+                    'pkg-config',
+                    'python3',
+                    'environment-modules',
+                    'bzip2',
+                    'file',
+                    'zlib1g-dev',
+                    'zip',
+                ]
 
-# Install Python
-python = bb.python(python2=False)
-Stage0 += python
+cuda_major = params["cuda_version"].split('.')[0]  
 
-# Install network stack components and utilities
-netconfig = params["network_stack"]
-
-## Install Mellanox OFED userspace libraries
-mlnx_ofed = bb.mlnx_ofed(version=netconfig["mlnx_ofed"])
-Stage0 += mlnx_ofed
-
-## Install KNEM headers
-if netconfig["knem"]:
-    knem_prefix = "/usr/local/knem"
-    knem = bb.knem(prefix=knem_prefix)
-    Stage0 += knem
+# Load NVIDIA HPC-X module
+if params["base_os"] == "rockylinux9":
+    Stage0 += shell(commands=['. /usr/share/Modules/init/sh',
+                            'module use /opt/nvidia/hpc_sdk/modulefiles',
+                            f'module load hpcx-cuda{cuda_major}'])
 else:
-    knem_prefix = False
-
-## Install XPMEM userspace library
-if netconfig["xpmem"]:
-    xpmem_prefix = "/usr/local/xpmem"
-    xpmem = bb.xpmem(prefix=xpmem_prefix)
-    Stage0 += xpmem
-else:
-    xpmem_prefix = False
-
-## Install UCX
-ucx_prefix = "/usr/local/ucx"
-ucx = bb.ucx(
-    prefix=ucx_prefix,
-    repository="https://github.com/openucx/ucx.git",
-    branch="v{}".format(netconfig["ucx"]),
-    cuda=True,
-    ofed=True,
-    knem=knem_prefix,
-    xpmem=xpmem_prefix,
-)
-Stage0 += ucx
-
-## Install PMIx
-match netconfig["pmix"]:
-    case "internal":
-        pmix_prefix = "internal"
-    case version:
-        pmix_prefix = "/usr/local/pmix"
-        pmix = bb.pmix(prefix=pmix_prefix, version=netconfig["pmix"])
-        Stage0 += pmix
-
-## Install OpenMPI
-ompi = bb.openmpi(
-    prefix="/usr/local/openmpi",
-    version=netconfig["ompi"],
-    ucx=ucx_prefix,
-    pmix=pmix_prefix,
-    cuda=True,
-    infiniband=True,
-    configure_opts=[
-        '--disable-getpwuid',
-        '--enable-orterun-prefix-by-default',
-        '--enable-mpi-fortran=yes'
-    ]
-)
-Stage0 += ompi
-
-Stage0 += environment(
-    variables={
-        'MPI_INC' : '/usr/local/openmpi/include'
-    },
-    _export=True
-)
+    Stage0 += shell(commands=['. /usr/share/modules/init/sh',
+                            'module use /opt/nvidia/hpc_sdk/modulefiles',
+                            f'module load nvhpc-hpcx-cuda{cuda_major}'])
 
 #############################
-# SPECFEM3D_CARTESIAN
-#############################       
+# XSHELLS
+#############################           
 
-Stage0 += environment(
-    variables={
-        'CUDA_INC': f'/usr/local/cuda-{params["cuda_version"]}/include',
-        'CUDA_LIB': f'/usr/local/cuda-{params["cuda_version"]}/lib64'
-    },
-    _export=True
-)
+## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#generic_cmake
+Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
+                                    '-D DETAIL_BIN=NO', # name of the binary will be Fall3d.x
+                                    '-D WITH-MPI=YES',
+                                    '-D WITH-ACC=YES',
+                                    '-D CMAKE_Fortran_COMPILER=nvfortran',
+                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]}"',
+                                    f'-D WITH-R4={fall3d_single_precision}'
+                        ],
+                        prefix='/opt/fall3d', 
+                        install=False,
+                        preconfigure=[
+                            'mkdir -p /opt/fall3d/bin'
+                        ],
+                        postinstall=[
+                                    # e.g., If 'Fall3d.x' ended up somewhere else, copy it manually
+                                    ## Unfortunately the upstream CMakeLists.txt has no install(TARGETS) logic
+                                    ## and can’t rely on -D CMAKE_RUNTIME_OUTPUT_DIRECTORY=... because the upstream CMakeLists.txt unconditionally overrides it
+                                    'cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/'
+                                  ],
+                        # Dictionary of environment variables and values, e.g., LD_LIBRARY_PATH and PATH, to set in the runtime stage. 
+                        runtime_environment = {
+                                    "PATH" : "/opt/fall3d/bin"
+                        },
+                        url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
 
-arch_specfem3d_map = {
-            '80': 'cuda11',  # Ampere: A100
-            '90': 'cuda12',  # Hopper: H100
-        }    
 
 Stage0 += shell(commands=[
     git().clone_step(
@@ -229,6 +188,9 @@ Stage0 += shell(commands=[
         directory='specfem3d',
         recursive=True)
     ])
+
+# Need to copy the XSHELLS parameter file, as it is needed at compilation time
+Stage0 += copy(src='/opt/specfem3d', dest='/opt/specfem3d', _from='devel') # copy xshells.par from host
 
 Stage0 += shell(commands=[
     'cd /opt/specfem3d',
@@ -245,16 +207,16 @@ Stage0 += environment(
     _export=True
 )
 
-
 ###############################################################################
 # Runtime image stage
 ###############################################################################
-Stage0 += baseimage(
-    image="docker.io/{}@{}".format(params["base_image"], params["digest_runtime"]),
-    _distro=params["base_os"],
-    _arch=params["arch"],
-    _as="runtime",
-)
+    
+# It seems Singularity does not allow specifying both a tag and a digest in the same reference
+# alternative: image=f'nvcr.io/nvidia/nvhpc:{params["nvhpc_version"]}-runtime-cuda{params["cuda_version"]}-{params["base_os"]}'
+Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_runtime"]}',
+                    _distro=f'{params["base_os"]}',
+                    _arch=f'{params["arch"]}',
+                    _as='runtime')
 
 Stage1 += packages(
     apt=[
@@ -271,12 +233,6 @@ Stage1 += Stage0.runtime(_from='devel')
 
 Stage1 += copy(src='/opt/specfem3d', dest='/opt/specfem3d', _from='devel')
 
-# Optimise final image size
-Stage1 +=  shell(commands=[
-    'rm -rf /opt/specfem3d/.git',
-    'rm -rf /opt/specfem3d/EXAMPLES',
-])
-
 Stage1 += environment(
     variables={
         'PATH': '/opt/specfem3d/bin:$PATH'
@@ -287,3 +243,5 @@ Stage1 += environment(
 if hpccm.config.g_ctype == container_type.DOCKER:
   # Docker automatically passes through command line arguments
   Stage1+= runscript(commands = ['/bin/sh', '--rcfile', '/etc/profile', '-l'], _args=True, _exec=True)
+Stage1 += Stage0.runtime(_from='devel') 
+  
