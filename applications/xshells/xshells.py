@@ -38,12 +38,12 @@ class fetch_xshells(rfm.RunOnlyRegressionTest):
 # XSHELLS Autotools build logic
 # ========================================================
 @rfm.simple_test
-class build_xshells_cartesian(rfm.CompileOnlyRegressionTest):
+class build_xshells(rfm.CompileOnlyRegressionTest):
     descr = "Build xshells"
 
     build_system = "Autotools"
 
-    xshells_cartesian_source = fixture(fetch_xshells, scope="test")
+    xshells_source = fixture(fetch_xshells, scope="test")
     
     valid_systems = ["leonardo:booster", "thea:gh"]
     valid_prog_environs = ["+mpi"]
@@ -51,47 +51,31 @@ class build_xshells_cartesian(rfm.CompileOnlyRegressionTest):
     
     build_locally = True
     build_time_limit='600'
-
+    
+    @run_after("setup")
+    def get_parameter_file(self):
+        # get the number of processors, ignoring comments in the Par_file
+        result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.sourcesdir)}/DATA/Par_file")
+        # Remove any whitespace and convert the output to an integer.
+        self.num_gpus = int(result.stdout.strip())
+    
     @run_before("compile")
     def prepare_build(self):        
-        # Out of source builds do not seem to be supported
-        #self.build_system.builddir = 'build'
-        #self.build_system.configuredir = os.path.join(self.xshells_cartesian.stagedir, 'xshells')
-        # Change into fetched source dir 
-        self.build_system.sourcesdir = os.path.join(self.xshells_cartesian_source.stagedir, 'xshells')
+    
+        self.build_system.sourcesdir = os.path.join(self.xshells_source.stagedir, 'xshells')
         self.prebuild_cmds = [
             f'cd {self.build_system.sourcesdir}'
         ]
         self.build_system.flags_from_environ= True
-        #omp_flag = self.current_environ.extras.get('omp_flag')
-        self.build_system.cflags = ['-O3']
-        self.build_system.fflags = ['-O3']
-        
-        # Map Nvidia GPU arch to the xshells "cudaN" flag
-        arch_map = {
-            'sm_80': 'cuda11',  # Ampere: A100
-            'sm_90': 'cuda12',  # Hopper: H100
-        }
-
-        # Extract the actual GPU arch from the system
-        device_arch = self.current_partition.devices[0].arch
-
-        # Look up the correct "cudaN" option
-        try:
-            target_gpu_arch = arch_map[device_arch]
-        except KeyError:
-            # For unknown arch, either raise or default to something safe
-            raise ValueError(
-                f"Unsupported or unknown GPU architecture '{device_arch}'. "
-                "Please update arch_map accordingly."
-            )
+        #self.build_system.cflags = ['-O3']
+        #self.build_system.fflags = ['-O3']
         
         self.build_system.config_opts= [
             'MPICXX=mpicxx',
             '--enable-cuda=ampere'
         ]
         self.build_system.make_opts = ['xsgpu_mpi']
-        self.build_system.max_concurrency = 8
+        self.build_system.max_concurrency = 1
     
 # ========================================================
 # XSHELLS Base Test Class with Conditional Dependencies
@@ -121,13 +105,6 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
     def get_dependencies(self, build_xshells):
         if self.execution_mode == 'baremetal':
             self.xshells_binaries = build_xshells(part='*', environ='*')
-    
-    @run_after("setup")
-    def get_nproc(self):
-        # get the number of processors, ignoring comments in the Par_file
-        result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.sourcesdir)}/DATA/Par_file")
-        # Remove any whitespace and convert the output to an integer.
-        self.num_gpus = int(result.stdout.strip())
    
     @run_before("run")
     def setup_job_opts(self):
@@ -158,15 +135,10 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
     def prepare_run(self):
         
         if self.execution_mode == 'baremetal':
-            self.prerun_cmds = [
-                self.job.launcher.run_command(self) + ' ' + f'{os.path.join(self.xshells_binaries.build_system.sourcesdir, "bin", "xmeshfem3D")}',
-                self.job.launcher.run_command(self) + ' ' + f'{os.path.join(self.xshells_binaries.build_system.sourcesdir, "bin", "xgenerate_databases")}'
-            ]
             # Set the executable path using the stagedir and build prefix
             self.executable = os.path.join(
                 self.xshells_binaries.build_system.sourcesdir,
-                "bin",
-                "xshells",
+                self.executable
             )
 
         elif self.execution_mode == 'container':
@@ -181,7 +153,7 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
                 (input_dir, input_dir) 
             ]
             
-            self.container_platform.command = "xsgpu_mpi"
+            self.container_platform.command = self.executable 
             
         
     @sanity_function
@@ -189,8 +161,8 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
         return sn.assert_eq(self.job.exitcode, 0)
 
 @rfm.simple_test
-class xshells_small(specfemd3d_base_benchmark):
-    descr = "xshells_small"
+class xshells_turbulent_geodynamo(xshells_base_benchmark):
+    descr = "xshells_turbulent_geodynamo"
     num_gpus = parameter([1])
     executable = "xsgpu_mpi"
     #executable_opts = ["xshells.par"]  # perhaps we can move this to the build stage
