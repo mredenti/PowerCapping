@@ -77,7 +77,7 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-FALL3D \
+    --prefix $SCRATCH_FAST/REFRAME-FALL3D \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
@@ -89,6 +89,20 @@ reframe \
 ```
 
 **Container**
+
+```shell
+reframe \
+    -C power-capping/configuration/thea.py \
+    -c power-capping/applications/fall3d/fall3d.py \
+    --prefix $SCRATCH_FAST/REFRAME-FALL3D \
+    --keep-stage-files \
+    --performance-report \
+    -p default \
+    -n fall3d_raikoke_test \
+    -S fall3d_raikoke_test.execution_mode=container \
+    -S fall3d_raikoke_test.image=$SCRATCH_DDN/SIF_IMAGES/fall3d.sif \
+    --dry-run
+```
 
 ```shell
 reframe \
@@ -186,14 +200,14 @@ reframe \
 reframe \
     -C power-capping/configuration/thea.py \
     -c power-capping/applications/fall3d/fall3d.py \
-    --prefix $SCRATCH/REFRAME-FALL3D \
+    --prefix $SCRATCH/REFRAME-FALL3D-BAREMETAL \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
     --module-mappings power-capping/applications/fall3d/thea_modmap.txt \
     -p default \
-    -n fall3d_raikoke_test \
-    -S fall3d_raikoke_test.execution_mode=baremetal \
+    -n fall3d_raikoke_large_test \
+    -S fall3d_raikoke_large_test.execution_mode=baremetal \
     --dry-run
 ```
 
@@ -201,9 +215,23 @@ reframe \
 
 ```shell
 reframe \
+    -C power-capping/configuration/thea.py \
+    -c power-capping/applications/fall3d/fall3d.py \
+    --prefix $SCRATCH_FAST/REFRAME-FALL3D-CONTAINER \
+    --keep-stage-files \
+    --performance-report \
+    -p default \
+    -n fall3d_raikoke_large_test \
+    -S fall3d_raikoke_large_test.execution_mode=container \
+    -S fall3d_raikoke_large_test.image=$SCRATCH_DDN/SIF_IMAGES/fall3d.sif \
+    --dry-run
+```
+
+```shell
+reframe \
   -C power-capping/configuration/thea.py \
   -c power-capping/applications/fall3d/fall3d_thea.py \
-  --prefix $HOME/REFRAME-FALL3D \
+  --prefix $HOME/REFRAME-FALL3D-CONTAINER \
   --performance-report \
   --keep-stage-files \
   -n fall3d_raikoke_large_test \

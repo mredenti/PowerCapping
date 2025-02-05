@@ -96,7 +96,7 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
     fall3d_binaries = None # fixture(build_fall3d, scope='environment')
     
     valid_systems = ['leonardo:booster', 'thea:gh']
-    valid_prog_environs = ['*'] # ['+mpi']
+    valid_prog_environs = ['*'] 
 
     execution_mode = variable(typ.Str[r'baremetal|container']) 
     image = variable(str) 
@@ -174,10 +174,10 @@ class fall3d_base_test(rfm.RunOnlyRegressionTest):
 
     @run_before("run")
     def replace_launcher(self):
-        try:
-            launcher_cls = getlauncher("srun-pmi") if self.current_system.name == 'thea' else getlauncher("mpirun-mapby")
-        except Exception:
-            launcher_cls = getlauncher("mpirun")
+        launcher_cls = getlauncher(self.launcher) 
+        self.job.launcher = launcher_cls()
+        if self.launcher in ['mpirun-mapby', 'mpirun-mapby-nsys', 'srun-pmix-nsys']:
+            self.modules = ['openmpi']
         self.job.launcher = launcher_cls()
         
     @sanity_function
@@ -251,6 +251,7 @@ class fall3d_raikoke_test(fall3d_base_test):
     
     num_gpus = 8
     time_limit = '600'
+    launcher = variable(str, value="srun-pmix")
     
 @rfm.simple_test
 class fall3d_raikoke_large_test(fall3d_base_test):
@@ -274,3 +275,4 @@ class fall3d_raikoke_large_test(fall3d_base_test):
     
     num_gpus = parameter([4])
     time_limit = '3600' # '36000'
+    launcher = variable(str, value="srun-pmix")

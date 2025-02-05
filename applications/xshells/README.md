@@ -1,52 +1,93 @@
-# xSHELLS 
-
-## Mini app ID
-
-XSHELLS is a high-performance code for simulating incompressible fluids in a
-spherical cavity. Due to having very few dependences, and a dedicated set of input
-test cases, the main code is also used as mini-app.
-
-| **Mini-app**        | Mini-xSHELLS |
-|---------------------|--------------|
-| **Repository**       | [https://gricad-gitlab.univ-grenoble-alpes.fr/schaeffn/xshells/-/tree/cheese-miniapp-fp32](https://gricad-gitlab.univ-grenoble-alpes.fr/schaeffn/xshells/-/tree/cheese-miniapp-fp32) |
-| **Versions**         | CPU, GPU (backends: CUDA, HIP) |
-| **Examples**         | Multiple benchmark models, each with multiple sizes |
-| **Validation**       | Python script (test.py) |
-| **Built-in Metric**  | Average time per simulation step |
-| **Dependencies**     | MPI, FFTW, Python (to run test script) |
-| **Notes**            | It is suggested to run the geodynamo benchmark for testing. |
+# XSHELLS
 
 
-## Thea 
+## Test Case
 
-For some reason it does not seem to like privately hosted repositories
+<details>
+  <summary>Click me</summary>
+
+### Leonardo 
+
+<details>
+  <summary>Click me</summary>
+
+**Baremetal**
 
 ```shell
-wget https://gricad-gitlab.univ-grenoble-alpes.fr/schaeffn/xshells/-/archive/cheese-miniapp-fp32/xshells-cheese-miniapp-fp32.tar.gz
-tar xzf xshells-cheese-miniapp-fp32.tar.gz
+reframe \
+    -C power-capping/configuration/leonardo.py \
+    -c power-capping/applications/xshells/xshells.py \
+    --prefix $SCRATCH/REFRAME-XSHELLS-BAREMETAL \
+    --keep-stage-files \
+    --dont-restage \
+    --performance-report \
+    -J qos=normal \
+    -J account=cin_staff \
+    -p openmpi-gcc \
+    -n xshells_turbulent_geodynamo \
+    -S xshells_turbulent_geodynamo.execution_mode=baremetal \
+    -lC
 ```
 
-or
+**Container**
 
 ```shell
-git clone --branch cheese-miniapp-fp32 https://bitbucket.org/nschaeff/xshells.git 
-cd xshells 
-git clone https://bitbucket.org/nschaeff/shtns.git
-cd shtns 
-git checkout a0144e6b879a481755997caf836e3295d71811f9
+reframe \
+    -C power-capping/configuration/leonardo.py \
+    -c power-capping/applications/xshells/xshells.py \
+    --prefix $SCRATCH/REFRAME-XSHELLS-CONTAINER \
+    --keep-stage-files \
+    --dont-restage \
+    --performance-report \
+    -p openmpi-gcc \
+    -J qos=normal \
+    -J account=cin_staff \
+    -n xshells_small \
+    -S xshells_small.execution_mode=container \
+    -S xshells_small.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/xshells.sif \
+    --dry-run
 ```
 
-autoreconf -i
+</details>
+
+### Thea
+
+<details>
+  <summary>Click me</summary>
+
+**Baremetal**
 
 ```shell
-ml load openmpi/4.1.6-gcc-12.3.0-wftkmyd
-ml load gcc/12.3.0-gcc-11.4.1-f7guf3f
-ml load cuda/12.3.0-gcc-12.3.0-b2avf4v
-ml load fftw/3.3.10-gcc-12.3.0-6gumeie # only needed to pass configuration setup
-ml load hdf5/1.12.3-gcc-12.3.0-vfd3tkl
+reframe \
+    -C power-capping/configuration/thea.py \
+    -c power-capping/applications/xshells/xshells.py \
+    --prefix $SCRATCH_FAST/REFRAME-XSHELLS-BAREMETAL \
+    --keep-stage-files \
+    --dont-restage \
+    --performance-report \
+    -p openmpi-gcc \
+    -n xshells_small \
+    -S xshells_small.execution_mode=baremetal \
+    -lC
 ```
 
+**Container**
+
 ```shell
-export CUDA_PATH=$CUDA_HOME
-./configure --enable-cuda=hopper
+reframe \
+    -C power-capping/configuration/thea.py \
+    -c power-capping/applications/xshells/xshells.py \
+    --prefix $SCRATCH_FAST/REFRAME-XSHELLS-CONTAINER \
+    --keep-stage-files \
+    --dont-restage \
+    --performance-report \
+    -p openmpi-gcc \
+    -n xshells_small \
+    -S xshells_small.execution_mode=container \
+    -S xshells_small.image=$SCRATCH_FAST/SIF_IMAGES/xshells.sif \
+    -lC
 ```
+
+</details>
+
+</details>

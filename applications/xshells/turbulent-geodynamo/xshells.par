@@ -1,0 +1,115 @@
+##########################################################################
+# XSHELLS : eXtendable Spherical Harmonic Earth-Like Liquid Simulator    #
+#  > this is the input parameter file                                    #
+# syntax : name = value                                                  #
+##########################################################################
+
+## simulation S1 from Schaeffer+ 2017 GJI https://doi.org/10.1093/gji/ggx265 ##
+
+job = S1
+
+Ek=1e-5
+Ra=6e5
+Pm=0.4
+
+### PHYSICAL PARAMS ###
+Omega0 = 10/Ek 	# Global rotation rate
+nu = 1	    	# viscosity
+kappa = 1		# thermal diffusivity
+eta = 2/Pm		# magnetic diffusivity
+
+### INITIAL FIELDS ###
+## a file name containing a poltor field may be given, or 
+## "initu", "initb", "random", "rands", "randa" and "0" for respectively :
+## xshells.hpp defined velocity and magnetic fields, random field, random symmetric, random anti-symmetric fields and zero field.
+## fields may be scaled by adding *1e-3 after the name.
+## comment out the lines if the field does not exist.
+#r = rayon.dat		# file containing the radial grid to use (either a poltor file, or an ascii file).
+#u0 = jupiter*1e-2  	# load an imposed (base) velocity field (same as -u0 command line option).
+#b0 = potential(B_dts.txt)*1e-12	# load an imposed (base) magnetic field (same as -b0 command line option).
+#f = blob(tor)*1e-8	# impose bulk force
+#no_j0xb0 = 1		# 1: j0xb0 is removed from navier-stokes equation. 0: j0xb0 is kept (default).
+#current_free = 1	# 1: j0 is forced to 0 (even if curl(b0) != 0). 0: j0 = curl(b0) (default).
+
+#r = fieldT_0.46725.parody
+#b = fieldB_0.46725.parody*500 * 3       # initial magnetic field (scaled by sqrt(1/(Pm*E)))
+#u = fieldU_0.46725.parody * 2       # initial velocity field
+#tp = fieldT_0.46725.parody      # initial temperature field
+tp0 = thermochem(0.75)			# imposed (base) temperature field
+phi0 = radial* Ra/Ek * 20		# radial gravity field (you should multiply it by Ra/E with geodynamo benchmark definition)
+
+u = 0
+b = bench2001      # initial magnetic field (scaled by sqrt(1/(Pm*E)))
+tp = bench2001*1e-4
+
+### BOUNDARY CONDITIONS AND RADIAL DOMAINS ###
+BC_U = 1,1		# inner,outer boundary conditions (1=no-slip (default), 2=free-slip)
+BC_T = 2,2		# 1=fixed temperature, 2=fixed flux.
+R_U = 7/13 : 20/13	# Velocity field boundaries
+R_T = 7/13 : 20/13 	# Temperature field boundaries
+R_B = 7/13 : 20/13	# Magnetic field boundaries
+
+#DeltaOmega = 0.0	# Differential rotation of the inner core (forcing)
+#a_forcing = 1.12838e-8	# Amplitude of forcing.
+#w_forcing = 1.		# forcing pulsation (w=2.pi/t) (0 = permanent forcing)
+#t_forcing = 0.		# forcing time scale. (0 = permanent forcing) [this is an alternate to w_forcing]
+
+### NUMERICAL SCHEME ###
+NR = 1024		# total number of radial shells
+N_BL = 30,30		# number of radial shells reserved for inner and outer boundaries.
+dt_adjust = 1
+#dt = 6.25e-9		# time step (original = 5e-9)
+#sub_iter = 80	  # alias for "modulo" : sub-iterations (time between outputs = 2*dt*sub_iter)
+dt = 2.5e-8
+sub_iter = 20
+iter_max = 10000	  # iteration number (ouput #)
+iter_save = 250    # number of iterations between full field writes.
+#stepper = PC2
+
+### SHT ###
+Lmax = 1023	# max degree of spherical harmonics
+Mmax = 1023	# max fourier mode (phi)
+Mres = 1	# phi-periodicity.
+#Nlat = 32	# number of latitudinal points (theta). Optimal chosen if not specified.
+#Nphi = 16	# number of longitudinal points (phi). Optimal chosen if not specified.
+
+### OPTIONS ###
+#interp = 1             # 1: allow interpolation of fields in case of grid mismatch. 0: fail if grids mismatch (default).
+restart = 1         # 1: try to restart from a previous run with same name. 0: no auto-restart (default).
+movie = 0               # 0=field output at the end only (default), 1=output every modulo, 2=also writes time-averaged fields
+#backup_time = 395
+#nbackup = 3
+#zavg = 2
+#lmax_out_sv = 84
+lmax_out = 399         # lmax for movie output (-1 = same as Lmax, which is also the default)
+mmax_out = 399           # mmax for movie output (-1 = same as Lmax, which is also the default)
+prec_out = 1
+
+### ALGORITHM FINE TUNING ###
+C_vort = 1000.0
+#C_u = 0.7  # 0.8  # 0.7
+#C_alfv = 4  # 5 # 4  # 3
+#C_cori = 1.0
+#dt_tol_lo = 0.9                # default: 0.8
+#dt_tol_hi = 1.05                # default: 1.1
+
+
+
+#C_vort = 1000.0
+#C_u = 0.6  # 0.7
+#C_alfv = 3
+#C_cori = 1.0
+#dt_tol_lo = 0.9                # default: 0.8
+#dt_tol_hi = 1.05                # default: 1.1
+
+
+
+## sht_type : 0 = gauss-legendre, 1 = fastest (default) with DCT enabled
+##            2 = fastest on regular grid, 3 = full DCT, 4 = debug (quick_init), 6 = on-the-fly (good for parallel)
+##   4 has the smallest init-time, usedful for test/debug.
+sht_type = 6
+
+## sht_polar_opt_max = SHT polar optimization threshold : polar coefficients below that threshold are neglected (for high ms).
+##    value under wich the polar values of the Legendre Polynomials Plm are neglected, leading to increased performance (a few percent).
+##    0 = no polar optimization;  1.e-14 = VERY safe;  1.e-10 = safe;  1.e-6 = aggresive.
+#sht_polar_opt_max = 1.0e-10
