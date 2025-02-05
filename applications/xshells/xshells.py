@@ -37,7 +37,9 @@ class fetch_xshells(rfm.RunOnlyRegressionTest):
         # get the number of processors, ignoring comments in the Par_file
         src = os.path.join(os.path.dirname(__file__), self.src, "xshells.hpp")
         dest = os.path.join(self.stagedir, "xshells/xshells.hpp")
-        self.postrun_cmds += [f"cp {src} {dest}"]
+        self.postrun_cmds += [
+            f"cp {src} {dest}"    
+        ]
         
     @sanity_function
     def validate_download(self):
