@@ -55,7 +55,7 @@ class build_xshells(rfm.CompileOnlyRegressionTest):
     @run_after("setup")
     def get_parameter_file(self):
         # get the number of processors, ignoring comments in the Par_file
-        result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.sourcesdir)}/DATA/Par_file")
+        result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.sourcesdir)}/DATA/Par_file") # TO BE CHANGED
         # Remove any whitespace and convert the output to an integer.
         self.num_gpus = int(result.stdout.strip())
     

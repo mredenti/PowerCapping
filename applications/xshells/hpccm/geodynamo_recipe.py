@@ -22,6 +22,7 @@ Note:
 from packaging.version import Version
 from hpccm.templates.git import git
 from hpccm.common import container_type
+import hpccm.building_blocks as bb
 import re
 
 
@@ -30,7 +31,8 @@ import re
 ###############################################################################
 
 # Fall3d Optional arguments
-xshells_version = USERARG.get('xshells_version', '9.0.1')
+xshells_branch = USERARG.get('xshells_branch', 'devel')
+xshells_commit = USERARG.get('xshells_commit', '1ba7e6aa2ab7ddeae8a9f431acb3c9a1da0bbc11')
 # Required arguments
 cluster_name = USERARG.get('cluster', None)
 if cluster_name is None:
@@ -58,7 +60,7 @@ cluster_configs = {
         # --------------------
         # Use a (unique) content-based identifier for images
         # --------------------
-        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04
+        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04 # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
         'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda11.8-ubuntu22.04
 
         # --------------------
@@ -114,9 +116,6 @@ Stage0 += comment(__doc__, reformat=False)
 ###############################################################################
 # Devel stage Base Image
 ###############################################################################
-# see # NVIDIA HPC SDK (NGC) https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
-# It seems Singularity does not allow specifying both a tag and a digest in the same reference
-# alternative: image=f'nvcr.io/nvidia/nvhpc:{params["nvhpc_version"]}-devel-cuda_multi-{params["base_os"]}'
 Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_devel"]}',
                 _distro=f'{params["base_os"]}',
                 _arch=f'{params["arch"]}',
@@ -125,16 +124,15 @@ Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_devel"]}',
 ###############################################################################
 # Install Base Dependencies
 ###############################################################################
-os_common_packages = ['autoconf',
-                    'ca-certificates',
-                    'pkg-config',
-                    'python3',
-                    'environment-modules',
-                    'bzip2',
-                    'file',
-                    'zlib1g-dev',
-                    'zip',
-                ]
+os_common_packages = [
+    'environment-modules',
+    'zip',
+    'libz-dev'
+]
+
+# Install Python
+python = bb.python(python2=False)
+Stage0 += python
 
 cuda_major = params["cuda_version"].split('.')[0]  
 
@@ -152,57 +150,29 @@ else:
 # XSHELLS
 #############################           
 
-## HPCCM Building Block: https://github.com/NVIDIA/hpc-container-maker/blob/master/docs/building_blocks.md#generic_cmake
-Stage0 += generic_cmake(cmake_opts=['-D CMAKE_BUILD_TYPE=Release',
-                                    '-D DETAIL_BIN=NO', # name of the binary will be Fall3d.x
-                                    '-D WITH-MPI=YES',
-                                    '-D WITH-ACC=YES',
-                                    '-D CMAKE_Fortran_COMPILER=nvfortran',
-                                    f'-D CUSTOM_COMPILER_FLAGS="-fast -tp={params["march"]}"',
-                                    f'-D WITH-R4={fall3d_single_precision}'
-                        ],
-                        prefix='/opt/fall3d', 
-                        install=False,
-                        preconfigure=[
-                            'mkdir -p /opt/fall3d/bin'
-                        ],
-                        postinstall=[
-                                    # e.g., If 'Fall3d.x' ended up somewhere else, copy it manually
-                                    ## Unfortunately the upstream CMakeLists.txt has no install(TARGETS) logic
-                                    ## and can’t rely on -D CMAKE_RUNTIME_OUTPUT_DIRECTORY=... because the upstream CMakeLists.txt unconditionally overrides it
-                                    'cp /var/tmp/fall3d-9.0.1/build/bin/Fall3d.x /opt/fall3d/bin/'
-                                  ],
-                        # Dictionary of environment variables and values, e.g., LD_LIBRARY_PATH and PATH, to set in the runtime stage. 
-                        runtime_environment = {
-                                    "PATH" : "/opt/fall3d/bin"
-                        },
-                        url=f'https://gitlab.com/fall3d-suite/fall3d/-/archive/{fall3d_version}/fall3d-{fall3d_version}.tar.gz')
-
-
 Stage0 += shell(commands=[
     git().clone_step(
-        repository='https://gitlab.com/mir1995/specfem3d.git',
-        commit = "ea3d9648b4989454eeb1b2a3f370e009f5d4c81a",
-        branch='devel-fix-explicit-types', 
+        repository='https://bitbucket.org/nschaeff/xshells.git',
+        commit = xshells_commit,
+        branch=xshells_branch, 
         path='/opt',
-        directory='specfem3d',
+        directory='xshells',
         recursive=True)
     ])
 
-# Need to copy the XSHELLS parameter file, as it is needed at compilation time
-Stage0 += copy(src='/opt/specfem3d', dest='/opt/specfem3d', _from='devel') # copy xshells.par from host
+# Need to copy the XSHELLS header configuration file xshells.hpp, as it is needed at compilation time
+Stage0 += copy(src='../turbulent-geodynamo/xshells.hpp', dest='/opt/xshells/xshells.hpp') 
 
 Stage0 += shell(commands=[
-    'cd /opt/specfem3d',
-    './configure CC="gcc" CXX="g++" FC="gfortran" CFLAGS="-O3" FCFLAGS="-O3" MPIFC=mpif90 '
-    f'--with-mpi --with-cuda={arch_specfem3d_map[params["cuda_arch"]]} USE_BUNDLED_SCOTCH=1',
-    'make -j$(nproc)'
+    'cd /opt/xshells',
+    './configure MPICXX=mpicxx --enable-cuda=ampere',
+    'make xsgpu_mpi'
 ])
 
 
 Stage0 += environment(
     variables={
-        'PATH': '/opt/specfem3d/bin:$PATH'
+        'PATH': '/opt/xshells:$PATH'
     },
     _export=True
 )
@@ -220,9 +190,7 @@ Stage1 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_runtime"]}',
 
 Stage1 += packages(
     apt=[
-        'gcc',
-        'g++',
-        'gfortran',
+        'zip',
         'libz-dev',
         'libnuma-dev'
     ], 
@@ -231,11 +199,11 @@ Stage1 += packages(
 
 Stage1 += Stage0.runtime(_from='devel') 
 
-Stage1 += copy(src='/opt/specfem3d', dest='/opt/specfem3d', _from='devel')
+Stage1 += copy(src='/opt/xshells', dest='/opt/xshells', _from='devel')
 
 Stage1 += environment(
     variables={
-        'PATH': '/opt/specfem3d/bin:$PATH'
+        'PATH': '/opt/xshells:$PATH'
     },
     _export=True
 )
