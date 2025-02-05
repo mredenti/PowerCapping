@@ -43,7 +43,8 @@ class build_xshells(rfm.CompileOnlyRegressionTest):
 
     build_system = "Autotools"
 
-    xshells_source = fixture(fetch_xshells, scope="test")
+    xshells_source = fixture(fetch_xshells, scope="session")
+    sourcesdir ="turbulent-geodynamo"
     
     valid_systems = ["leonardo:booster", "thea:gh"]
     valid_prog_environs = ["+mpi"]
@@ -55,9 +56,8 @@ class build_xshells(rfm.CompileOnlyRegressionTest):
     @run_after("setup")
     def get_parameter_file(self):
         # get the number of processors, ignoring comments in the Par_file
-        result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.sourcesdir)}/DATA/Par_file") # TO BE CHANGED
-        # Remove any whitespace and convert the output to an integer.
-        self.num_gpus = int(result.stdout.strip())
+        #result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.test)}/DATA/Par_file") # TO BE CHANGED
+        return 0
     
     @run_before("compile")
     def prepare_build(self):        
@@ -91,8 +91,7 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
     image = variable(str) 
     
     exclusive_access = True
-    num_gpus = None
-
+    
     xshells_binaries = None
     
     @run_after('init')
