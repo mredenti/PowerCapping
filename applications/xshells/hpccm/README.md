@@ -6,7 +6,7 @@
 hpccm \
     --format singularity \
     --singularity-version=3.2 \
-    --recipe recipe.py \
+    --recipe geodynamo_recipe.py \
     --userarg cluster=leonardo > singularity_leonardo.def
 ```
 
@@ -15,7 +15,7 @@ hpccm \
 ```shell
 hpccm \
     --format docker \
-    --recipe recipe.py \
+    --recipe geodynamo_recipe.py \
     --userarg cluster=leonardo > Dockerfile
 ```
 
@@ -27,7 +27,7 @@ hpccm \
 hpccm \
     --format singularity \
     --singularity-version=3.2 \
-    --recipe recipe.py \
+    --recipe geodynamo_recipe.py \
     --userarg cluster=thea > singularity_thea.def
 ```
 
@@ -36,6 +36,6 @@ hpccm \
 ```shell
 hpccm \
     --format docker \
-    --recipe recipe.py \
+    --recipe geodynamo_recipe.py \
     --userarg cluster=thea > Dockerfile
 ```
