@@ -177,7 +177,7 @@ reframe \
     -p openmpi-gcc \
     -n specfem3d_medium \
     -S specfem3d_medium.execution_mode=container \
-    -S specfem3d_small.image=$SCRATCH_FAST/SIF_IMAGES/specfem3d_cartesian.sif \
+    -S specfem3d_medium.image=$SCRATCH_FAST/SIF_IMAGES/specfem3d_cartesian.sif \
     -lC
 ```
 
