@@ -24,6 +24,7 @@ reframe \
     -J qos=normal \
     -J account=cin_staff \
     -p openmpi-gcc \
+    -M fftw:fftw/3.3.10--openmpi--4.1.6--gcc--12.2.0 \
     -n xshells_turbulent_geodynamo \
     -S xshells_turbulent_geodynamo.execution_mode=baremetal \
     -lC

@@ -29,6 +29,15 @@ class fetch_xshells(rfm.RunOnlyRegressionTest):
     postrun_cmds = [f'cd xshells && git checkout {commit}']
     
     local = True
+    
+    src = variable(str, value="turbulent-geodynamo")
+
+    @run_after("setup")
+    def get_parameter_file(self):
+        # get the number of processors, ignoring comments in the Par_file
+        src = os.path.join(os.path.dirname(__file__), self.src, "xshells.hpp")
+        dest = os.path.join(self.stagedir, "xshells/xshells.hpp")
+        self.postrun_cmds += [f"cp {src} {dest}"]
         
     @sanity_function
     def validate_download(self):
@@ -44,20 +53,16 @@ class build_xshells(rfm.CompileOnlyRegressionTest):
     build_system = "Autotools"
 
     xshells_source = fixture(fetch_xshells, scope="session")
-    sourcesdir ="turbulent-geodynamo"
     
     valid_systems = ["leonardo:booster", "thea:gh"]
     valid_prog_environs = ["+mpi"]
-    modules = ['cuda']
+    modules = ['cuda', 'fftw']
+    env_vars = {
+        "CUDA_PATH": "$CUDA_HOME", # "LIBRARY_PATH": "$CUDA_HOME/lib64/:$LIBRARY_PATH",
+    }
     
     build_locally = True
     build_time_limit='600'
-    
-    @run_after("setup")
-    def get_parameter_file(self):
-        # get the number of processors, ignoring comments in the Par_file
-        #result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.test)}/DATA/Par_file") # TO BE CHANGED
-        return 0
     
     @run_before("compile")
     def prepare_build(self):        
@@ -66,7 +71,7 @@ class build_xshells(rfm.CompileOnlyRegressionTest):
         self.prebuild_cmds = [
             f'cd {self.build_system.sourcesdir}'
         ]
-        self.build_system.flags_from_environ= True
+        self.build_system.flags_from_environ= False
         #self.build_system.cflags = ['-O3']
         #self.build_system.fflags = ['-O3']
         
@@ -135,10 +140,11 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
         
         if self.execution_mode == 'baremetal':
             # Set the executable path using the stagedir and build prefix
-            self.executable = os.path.join(
-                self.xshells_binaries.build_system.sourcesdir,
-                self.executable
-            )
+            self.executable = "bash -c 'export CUDA_VISIBLE_DEVICES=$((OMPI_COMM_WORLD_LOCAL_RANK % 4)); exec " + \
+                os.path.join(
+                    self.xshells_binaries.build_system.sourcesdir,
+                    self.executable
+                )
 
         elif self.execution_mode == 'container':
             
@@ -162,16 +168,13 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class xshells_turbulent_geodynamo(xshells_base_benchmark):
     descr = "xshells_turbulent_geodynamo"
-    num_gpus = parameter([1])
-    executable = "xsgpu_mpi"
-    #executable_opts = ["xshells.par"]  # perhaps we can move this to the build stage
-    time_limit = "1800"
-    sourcesdir = 'turbulent-geodynamo' # perhaps we can move this to the build stage as a parameter?
+    sourcesdir = "turbulent-geodynamo" 
     readonly_files = [
-        'xshells.hpp', # needed at compilation time
-        'xshells.par'
+        "xshells.hpp", 
+        "xshells.par"
     ]
-    #keep_files = [
-    #   'OUTPUT_FILES'
-    #]
     launcher = variable(str, value="mpirun-mapby")
+    num_gpus = parameter([8])
+    executable = "xsgpu_mpi"
+    executable_opts = ["-iter_max=100'"] 
+    time_limit = "1800"
