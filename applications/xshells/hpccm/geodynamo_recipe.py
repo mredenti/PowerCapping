@@ -6,12 +6,12 @@ The generation is parameterized solely using the provided user arguments, which 
 
 For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
 
-    $ hpccm --recipe recipe.py --userarg cluster="leonardo" \
+    $ hpccm --recipe geodynamo_recipe.py --userarg cluster="leonardo" \
             --format singularity --singularity-version=3.2
 
 Similarly, for the 'thea' cluster:
 
-    $ hpccm --recipe recipe.py --userarg cluster="thea" \
+    $ hpccm --recipe geodynamo_recipe.py --userarg cluster="thea" \
             --format singularity --singularity-version=3.2
 
 Note:
@@ -78,7 +78,7 @@ cluster_configs = {
         # --------------------
         # NVHPC, CUDA setup for GH200
         # --------------------
-        'nvhpc_version': '24.11',
+        'nvhpc_version': '25.1',
         'cuda_version': '12.6',
         'cuda_arch': '90',
         

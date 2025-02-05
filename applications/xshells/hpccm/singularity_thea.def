@@ -1,0 +1,95 @@
+# 
+# This recipe builds a container definition for XSHELLS.
+# The generation is parameterized solely using the provided user arguments, which include:
+# 
+# - `cluster`: Specifies the target cluster ('leonardo' or 'thea').
+# 
+# For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
+# 
+#     $ hpccm --recipe geodynamo_recipe.py --userarg cluster="leonardo"             --format singularity --singularity-version=3.2
+# 
+# Similarly, for the 'thea' cluster:
+# 
+#     $ hpccm --recipe geodynamo_recipe.py --userarg cluster="thea"             --format singularity --singularity-version=3.2
+# 
+# Note:
+#     - This recipe uses SHA-256 content digests as unique identifiers for both the devel and 
+#       runtime base images. These digests ensure safety and reproducibility.
+# 
+
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:4ac58ba75151c2c6dc4ea3410612a897353dbd520ec67572d923ea9e749bb865
+Stage: devel
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+# Python
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3
+    rm -rf /var/lib/apt/lists/*
+
+%post
+    cd /
+    . /usr/share/modules/init/sh
+    module use /opt/nvidia/hpc_sdk/modulefiles
+    module load nvhpc-hpcx-cuda12
+
+%post
+    cd /
+    mkdir -p /opt && cd /opt && git clone --recursive https://bitbucket.org/nschaeff/xshells.git xshells && cd - && cd /opt/xshells && git checkout 1ba7e6aa2ab7ddeae8a9f431acb3c9a1da0bbc11 && cd -
+
+%files
+    ../turbulent-geodynamo/xshells.hpp /opt/xshells/xshells.hpp
+
+%post
+    cd /
+    cd /opt/xshells
+    ./configure MPICXX=mpicxx --enable-cuda=ampere
+    make xsgpu_mpi
+
+%environment
+    export PATH=/opt/xshells:$PATH
+%post
+    export PATH=/opt/xshells:$PATH
+
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:8b07932ed5c3c45afa2a4d527ffcf67117b9caa294417bd8c7727726c0d61d14
+Stage: runtime
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libnuma-dev \
+        libz-dev \
+        zip
+    rm -rf /var/lib/apt/lists/*
+
+# Python
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3
+    rm -rf /var/lib/apt/lists/*
+
+%files from devel
+    /opt/xshells /opt/xshells
+
+%environment
+    export PATH=/opt/xshells:$PATH
+%post
+    export PATH=/opt/xshells:$PATH
+
+# Python
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3
+    rm -rf /var/lib/apt/lists/*
