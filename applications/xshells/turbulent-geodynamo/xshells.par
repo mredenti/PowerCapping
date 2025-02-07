@@ -75,7 +75,7 @@ Mres = 1	# phi-periodicity.
 
 ### OPTIONS ###
 #interp = 1             # 1: allow interpolation of fields in case of grid mismatch. 0: fail if grids mismatch (default).
-restart = 1         # 1: try to restart from a previous run with same name. 0: no auto-restart (default).
+restart = 0         # 1: try to restart from a previous run with same name. 0: no auto-restart (default).
 movie = 0               # 0=field output at the end only (default), 1=output every modulo, 2=also writes time-averaged fields
 #backup_time = 395
 #nbackup = 3

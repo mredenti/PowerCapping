@@ -176,7 +176,7 @@ class xshells_turbulent_geodynamo(xshells_base_benchmark):
         "xshells.par"
     ]
     launcher = variable(str, value="mpirun-mapby")
-    num_gpus = parameter([8])
+    num_gpus = parameter([4])
     executable = "xsgpu_mpi"
     executable_opts = ["-iter_max=100'"] 
     time_limit = "1800"
