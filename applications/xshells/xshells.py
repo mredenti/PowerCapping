@@ -58,7 +58,7 @@ class build_xshells(rfm.CompileOnlyRegressionTest):
     
     valid_systems = ["leonardo:booster", "thea:gh"]
     valid_prog_environs = ["+mpi"]
-    modules = ['cuda', 'fftw']
+    modules = ["cuda", "fftw"]
     env_vars = {
         "CUDA_PATH": "$CUDA_HOME", # "LIBRARY_PATH": "$CUDA_HOME/lib64/:$LIBRARY_PATH",
     }
