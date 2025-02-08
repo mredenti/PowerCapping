@@ -130,6 +130,11 @@ os_common_packages = [
     'libz-dev'
 ]
 
+Stage0 += packages(
+    apt=os_common_packages
+    epel=True
+)
+
 # Install Python
 python = bb.python(python2=False)
 Stage0 += python
