@@ -131,7 +131,7 @@ os_common_packages = [
 ]
 
 Stage0 += packages(
-    apt=os_common_packages
+    apt=os_common_packages,
     epel=True
 )
 
@@ -166,7 +166,7 @@ Stage0 += shell(commands=[
     ])
 
 # Need to copy the XSHELLS header configuration file xshells.hpp, as it is needed at compilation time
-Stage0 += copy(src='../turbulent-geodynamo/xshells.hpp', dest='/opt/xshells/xshells.hpp') 
+Stage0 += copy(src='./xshells.hpp', dest='/opt/xshells/xshells.hpp') 
 
 Stage0 += shell(commands=[
     'cd /opt/xshells',
