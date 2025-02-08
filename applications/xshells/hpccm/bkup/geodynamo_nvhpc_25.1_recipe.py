@@ -78,15 +78,15 @@ cluster_configs = {
         # --------------------
         # NVHPC, CUDA setup for GH200
         # --------------------
-        'nvhpc_version': '24.11',
+        'nvhpc_version': '25.1',
         'cuda_version': '12.6',
         'cuda_arch': '90',
         
         # --------------------
         # Use a (unique) content-based identifier for images 
         # --------------------
-        'digest_devel': 'sha256:da058394e75309cf6c9002a0d47332b0e730f107f029464819a4a9ba2a6e0454', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda12.6-ubuntu22.04
-        'digest_runtime': 'sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
+        'digest_devel': 'sha256:4ac58ba75151c2c6dc4ea3410612a897353dbd520ec67572d923ea9e749bb865', # nvcr.io/nvidia/nvhpc:25.1-devel-cuda12.6-ubuntu22.04
+        'digest_runtime': 'sha256:8b07932ed5c3c45afa2a4d527ffcf67117b9caa294417bd8c7727726c0d61d14', # nvcr.io/nvidia/nvhpc:25.1-runtime-cuda12.6-ubuntu22.04
         
         # --------------------
         # Cluster arch and micro arch 
