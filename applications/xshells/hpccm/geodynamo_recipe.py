@@ -127,7 +127,11 @@ Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_devel"]}',
 os_common_packages = [
     'environment-modules',
     'zip',
-    'libz-dev'
+    'libz-dev',
+    'autoconf',
+    'automake',
+    'ca-certificates',
+    'pkg-config'
 ]
 
 Stage0 += packages(
@@ -150,10 +154,46 @@ else:
     Stage0 += shell(commands=['. /usr/share/modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load nvhpc-hpcx-cuda{cuda_major}'])
+    
+    
+#############################
+# FFTW
+############################# 
+
+Stage0 += fftw(
+    configure_opts=[
+        '--enable-openmp'
+    ],
+    mpi=True,
+    prefix='/opt/fftw',
+    version='3.3.10'
+)
+
+Stage0 += environment(
+    variables={
+        'FFTW_HOME' : '/opt/fftw',
+        'FFTW_LIB' : '/opt/fftw/lib',
+        'LIBRARY_PATH' : '/opt/fftw/lib:$LIBRARY_PATH',
+        'FFTW_INC' : '/opt/fftw/include',
+        'FFTW_INCLUDE' : '/opt/fftw/include',
+        'C_INCLUDE_PATH' : '/opt/fftw/include:$C_INCLUDE_PATH',
+        'CPLUS_INCLUDE_PATH' : '/opt/fftw/include:$CPLUS_INCLUDE_PATH',
+        'CPATH' : '/opt/fftw/include:$CPATH',
+    },
+    _export=True
+)
+     
 
 #############################
 # XSHELLS
-#############################           
+############################# 
+Stage0 += environment(
+    variables={
+        'CUDA_PATH' : f'/opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}',
+    },
+    _export=True
+)
+          
 
 Stage0 += shell(commands=[
     git().clone_step(
@@ -166,9 +206,10 @@ Stage0 += shell(commands=[
     ])
 
 # Need to copy the XSHELLS header configuration file xshells.hpp, as it is needed at compilation time
-Stage0 += copy(src='./xshells.hpp', dest='/opt/xshells/xshells.hpp') 
+Stage0 += copy(src='./xshells.hpp', dest='/opt/xshells.hpp') 
 
 Stage0 += shell(commands=[
+    'mv /opt/xshells.hpp /opt/xshells',
     'cd /opt/xshells',
     './configure MPICXX=mpicxx --enable-cuda=ampere',
     'make xsgpu_mpi'
