@@ -176,9 +176,12 @@ Stage: devel
         make \
         wget
     rm -rf /var/lib/apt/lists/*
+
+%files 
+    ./fftw-3.3.10.tar.gz /var/tmp
+
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp ftp://ftp.fftw.org/pub/fftw/fftw-3.3.10.tar.gz
     mkdir -p /var/tmp && tar -x -f /var/tmp/fftw-3.3.10.tar.gz -C /var/tmp -z
     cd /var/tmp/fftw-3.3.10 &&   ./configure --prefix=/usr/local/fftw --enable-mpi --enable-openmp
     make -j$(nproc)
