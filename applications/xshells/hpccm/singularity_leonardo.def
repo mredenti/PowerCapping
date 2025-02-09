@@ -2,8 +2,8 @@
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: localimage
-From: cuda@sha256_12cf7fda869f87f821113f010ee64b3a230a3fed2a56fb6d3c93fb8a82472816.sif
+BootStrap: docker
+From: docker.io/nvidia/cuda@sha256:1608a19a5d6f013d36abfb9ad50a42b4c0ef86f4ab48e351c6899f0280b946c1
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -24,7 +24,7 @@ Stage: devel
         python3
     rm -rf /var/lib/apt/lists/*
 
-# Mellanox OFED version 24.04-0.7.0.0
+# Mellanox OFED version 5.8-2.0.3.0
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -34,7 +34,7 @@ Stage: devel
     rm -rf /var/lib/apt/lists/*
 %post
     wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | apt-key add -
-    mkdir -p /etc/apt/sources.list.d && wget -q -nc --no-check-certificate -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/24.04-0.7.0.0/ubuntu22.04/mellanox_mlnx_ofed.list
+    mkdir -p /etc/apt/sources.list.d && wget -q -nc --no-check-certificate -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/5.8-2.0.3.0/ubuntu22.04/mellanox_mlnx_ofed.list
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ibverbs-providers \
@@ -99,7 +99,7 @@ Stage: devel
     export LD_LIBRARY_PATH=/usr/local/xpmem/lib:$LD_LIBRARY_PATH
     export LIBRARY_PATH=/usr/local/xpmem/lib:$LIBRARY_PATH
 
-# UCX https://github.com/openucx/ucx.git v1.18.0
+# UCX https://github.com/openucx/ucx.git v1.13.1
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -116,7 +116,7 @@ Stage: devel
     rm -rf /var/lib/apt/lists/*
 %post
     cd /
-    mkdir -p /var/tmp && cd /var/tmp && git clone --depth=1 --branch v1.18.0 https://github.com/openucx/ucx.git ucx && cd -
+    mkdir -p /var/tmp && cd /var/tmp && git clone --depth=1 --branch v1.13.1 https://github.com/openucx/ucx.git ucx && cd -
     cd /var/tmp/ucx
     ./autogen.sh
     cd /var/tmp/ucx &&   ./configure --prefix=/usr/local/ucx --disable-assertions --disable-debug --disable-doxygen-doc --disable-logging --disable-params-check --enable-optimizations --with-cuda=/usr/local/cuda --with-knem=/usr/local/knem --with-rdmacm --with-verbs --with-xpmem=/usr/local/xpmem
@@ -134,7 +134,35 @@ Stage: devel
     export LIBRARY_PATH=/usr/local/ucx/lib:$LIBRARY_PATH
     export PATH=/usr/local/ucx/bin:$PATH
 
-# OpenMPI version 5.0.3
+# PMIX version 3.1.5
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        file \
+        hwloc \
+        libevent-dev \
+        make \
+        tar \
+        wget
+    rm -rf /var/lib/apt/lists/*
+%post
+    cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://github.com/openpmix/openpmix/releases/download/v3.1.5/pmix-3.1.5.tar.gz
+    mkdir -p /var/tmp && tar -x -f /var/tmp/pmix-3.1.5.tar.gz -C /var/tmp -z
+    cd /var/tmp/pmix-3.1.5 &&   ./configure --prefix=/usr/local/pmix
+    make -j$(nproc)
+    make -j$(nproc) install
+    rm -rf /var/tmp/pmix-3.1.5 /var/tmp/pmix-3.1.5.tar.gz
+%environment
+    export CPATH=/usr/local/pmix/include:$CPATH
+    export LD_LIBRARY_PATH=/usr/local/pmix/lib:$LD_LIBRARY_PATH
+    export PATH=/usr/local/pmix/bin:$PATH
+%post
+    export CPATH=/usr/local/pmix/include:$CPATH
+    export LD_LIBRARY_PATH=/usr/local/pmix/lib:$LD_LIBRARY_PATH
+    export PATH=/usr/local/pmix/bin:$PATH
+
+# OpenMPI version 4.1.6
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -150,12 +178,12 @@ Stage: devel
     rm -rf /var/lib/apt/lists/*
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://www.open-mpi.org/software/ompi/v5.0/downloads/openmpi-5.0.3.tar.bz2
-    mkdir -p /var/tmp && tar -x -f /var/tmp/openmpi-5.0.3.tar.bz2 -C /var/tmp -j
-    cd /var/tmp/openmpi-5.0.3 &&   ./configure --prefix=/usr/local/openmpi --disable-getpwuid --enable-mpi-fortran=yes --enable-orterun-prefix-by-default --with-cuda --with-pmix=internal --with-ucx=/usr/local/ucx --with-verbs
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://www.open-mpi.org/software/ompi/v4.1/downloads/openmpi-4.1.6.tar.bz2
+    mkdir -p /var/tmp && tar -x -f /var/tmp/openmpi-4.1.6.tar.bz2 -C /var/tmp -j
+    cd /var/tmp/openmpi-4.1.6 &&   ./configure --prefix=/usr/local/openmpi --disable-getpwuid --enable-mpi-fortran=yes --enable-orterun-prefix-by-default --with-cuda --with-pmix=/usr/local/pmix --with-ucx=/usr/local/ucx --with-verbs
     make -j$(nproc)
     make -j$(nproc) install
-    rm -rf /var/tmp/openmpi-5.0.3 /var/tmp/openmpi-5.0.3.tar.bz2
+    rm -rf /var/tmp/openmpi-4.1.6 /var/tmp/openmpi-4.1.6.tar.bz2
 %environment
     export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
     export PATH=/usr/local/openmpi/bin:$PATH
@@ -226,8 +254,8 @@ Stage: devel
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: localimage
-From: cuda@sha256_77e5fa9d1849bdba5a340be90d8ca30fb13d8f62fb433b1fa9d2903bb7a68498.sif
+BootStrap: docker
+From: docker.io/nvidia/cuda@sha256:4cf7f8137bdeeb099b1f2de126e505aa1f01b6e4471d13faf93727a9bf83d539
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -250,7 +278,7 @@ Stage: runtime
         python3
     rm -rf /var/lib/apt/lists/*
 
-# Mellanox OFED version 24.04-0.7.0.0
+# Mellanox OFED version 5.8-2.0.3.0
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -260,7 +288,7 @@ Stage: runtime
     rm -rf /var/lib/apt/lists/*
 %post
     wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | apt-key add -
-    mkdir -p /etc/apt/sources.list.d && wget -q -nc --no-check-certificate -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/24.04-0.7.0.0/ubuntu22.04/mellanox_mlnx_ofed.list
+    mkdir -p /etc/apt/sources.list.d && wget -q -nc --no-check-certificate -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/5.8-2.0.3.0/ubuntu22.04/mellanox_mlnx_ofed.list
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ibverbs-providers \
@@ -313,6 +341,24 @@ Stage: runtime
     export LD_LIBRARY_PATH=/usr/local/ucx/lib:$LD_LIBRARY_PATH
     export LIBRARY_PATH=/usr/local/ucx/lib:$LIBRARY_PATH
     export PATH=/usr/local/ucx/bin:$PATH
+
+# PMIX
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        libevent-2.* \
+        libevent-pthreads-2.*
+    rm -rf /var/lib/apt/lists/*
+%files from devel
+    /usr/local/pmix /usr/local/pmix
+%environment
+    export CPATH=/usr/local/pmix/include:$CPATH
+    export LD_LIBRARY_PATH=/usr/local/pmix/lib:$LD_LIBRARY_PATH
+    export PATH=/usr/local/pmix/bin:$PATH
+%post
+    export CPATH=/usr/local/pmix/include:$CPATH
+    export LD_LIBRARY_PATH=/usr/local/pmix/lib:$LD_LIBRARY_PATH
+    export PATH=/usr/local/pmix/bin:$PATH
 
 # OpenMPI
 %post
