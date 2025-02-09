@@ -167,7 +167,14 @@ Stage: runtime
     export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
 
 %files from devel
+    /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64/libnvrtc.so /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64/libnvrtc.so.12.6.77
     /opt/xshells /opt/xshells
+
+%post
+    cd /
+    cd /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64
+    ln -s libnvrtc.so.12.6.77 libnvrtc.so.12
+    ln -s libnvrtc.so.12.6.77 libnvrtc.so
 
 %environment
     export PATH=/opt/xshells:$PATH

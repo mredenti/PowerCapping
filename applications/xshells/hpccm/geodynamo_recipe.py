@@ -265,7 +265,21 @@ Stage1 += packages(
 
 Stage1 += Stage0.runtime(_from='devel') 
 
-Stage1 += copy(src='/opt/xshells', dest='/opt/xshells', _from='devel')
+Stage1 += copy(
+    files = {
+        '/opt/xshells'          : '/opt/xshells',
+        f'/opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}/lib64/libnvrtc.so'   : f'/opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}/lib64/libnvrtc.so.12.6.77',
+
+    }, 
+    _from='devel'
+)
+
+Stage1 += shell(commands = [
+    f'cd /opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}/lib64',
+    'ln -s libnvrtc.so.12.6.77 libnvrtc.so.12',
+    'ln -s libnvrtc.so.12.6.77 libnvrtc.so'
+])
+
 
 Stage1 += environment(
     variables={
