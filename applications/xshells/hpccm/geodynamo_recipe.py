@@ -54,14 +54,14 @@ cluster_configs = {
         # NVHPC, CUDA setup for A100
         # --------------------
         'nvhpc_version': '24.11',
-        'cuda_version': '11.8',
+        'cuda_version': '12.6',
         'cuda_arch': '80',
 
         # --------------------
         # Use a (unique) content-based identifier for images
         # --------------------
-        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04 # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
-        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda11.8-ubuntu22.04
+        'digest_devel': 'sha256:ac4a478728822dbc02d6b081cd9935f103f224990c9fe5fde17951f0ba83953a', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda12.6-ubuntu22.04 # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
+        'digest_runtime': 'sha256:0d4d48e7208887ae032c9372298840133553dcb0572dabc35922fc2273243602', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
 
         # --------------------
         # Cluster arch and micro arch
@@ -131,7 +131,10 @@ os_common_packages = [
     'autoconf',
     'automake',
     'ca-certificates',
-    'pkg-config'
+    'pkg-config',
+    'gcc',
+    'g++',
+    'gfortran'
 ]
 
 Stage0 += packages(
@@ -154,7 +157,21 @@ else:
     Stage0 += shell(commands=['. /usr/share/modules/init/sh',
                             'module use /opt/nvidia/hpc_sdk/modulefiles',
                             f'module load nvhpc-hpcx-cuda{cuda_major}'])
-    
+
+#############################
+# Set GNU compiler
+############################# 
+Stage0 += environment(
+    variables={
+        'CC' : 'gcc',
+        'CXX' : 'g++',
+        'FC' : 'gfortran',
+        'OMPI_CC' : 'gcc',
+        'OMPI_CXX' : 'g++',
+        'OMPI_FC' : 'gfortran',
+    },
+    _export=True
+)
     
 #############################
 # FFTW
@@ -211,7 +228,7 @@ Stage0 += copy(src='./xshells.hpp', dest='/opt/xshells.hpp')
 Stage0 += shell(commands=[
     'mv /opt/xshells.hpp /opt/xshells',
     'cd /opt/xshells',
-    './configure MPICXX=mpicxx --enable-cuda=ampere',
+    './configure MPICXX=mpicxx --enable-cuda=ampere --disable-simd',
     'make xsgpu_mpi'
 ])
 
@@ -238,7 +255,10 @@ Stage1 += packages(
     apt=[
         'zip',
         'libz-dev',
-        'libnuma-dev'
+        'libnuma-dev',
+        'gcc',
+        'g++',
+        'gfortran',
     ], 
     epel=True
 )
@@ -257,5 +277,4 @@ Stage1 += environment(
 if hpccm.config.g_ctype == container_type.DOCKER:
   # Docker automatically passes through command line arguments
   Stage1+= runscript(commands = ['/bin/sh', '--rcfile', '/etc/profile', '-l'], _args=True, _exec=True)
-Stage1 += Stage0.runtime(_from='devel') 
   
