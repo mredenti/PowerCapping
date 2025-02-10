@@ -257,7 +257,7 @@ Stage0 += copy(src='./xshells.hpp', dest='/opt/xshells.hpp')
 Stage0 += shell(commands=[
     'mv /opt/xshells.hpp /opt/xshells',
     'cd /opt/xshells',
-    './configure MPICXX=mpicxx --enable-cuda=ampere',
+    './configure MPICXX=mpicxx --enable-cuda=ampere --disable-simd',
     'make xsgpu_mpi'
 ])
 
