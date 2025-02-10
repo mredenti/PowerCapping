@@ -1,4 +1,21 @@
-# Container recipe
+# 
+# This recipe builds a container definition for XSHELLS.
+# The generation is parameterized solely using the provided user arguments, which include:
+# 
+# - `cluster`: Specifies the target cluster ('leonardo' or 'thea').
+# 
+# For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
+# 
+#     $ hpccm --recipe geodynamo_recipe.py --userarg cluster="leonardo"             --format singularity --singularity-version=3.2
+# 
+# Similarly, for the 'thea' cluster:
+# 
+#     $ hpccm --recipe geodynamo_recipe.py --userarg cluster="thea"             --format singularity --singularity-version=3.2
+# 
+# Note:
+#     - This recipe uses SHA-256 content digests as unique identifiers for both the devel and 
+#       runtime base images. These digests ensure safety and reproducibility.
+# 
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
@@ -11,10 +28,16 @@ Stage: devel
 %post
     apt-get update -y
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        autoconf \
+        automake \
+        ca-certificates \
+        environment-modules \
         g++ \
         gcc \
         gfortran \
-        libz-dev
+        libz-dev \
+        pkg-config \
+        zip
     rm -rf /var/lib/apt/lists/*
 
 # Python
@@ -24,149 +47,26 @@ Stage: devel
         python3
     rm -rf /var/lib/apt/lists/*
 
-# Mellanox OFED version 24.04-0.7.0.0
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates \
-        gnupg \
-        wget
-    rm -rf /var/lib/apt/lists/*
-%post
-    wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | apt-key add -
-    mkdir -p /etc/apt/sources.list.d && wget -q -nc --no-check-certificate -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/24.04-0.7.0.0/ubuntu22.04/mellanox_mlnx_ofed.list
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ibverbs-providers \
-        ibverbs-utils \
-        libibmad-dev \
-        libibmad5 \
-        libibumad-dev \
-        libibumad3 \
-        libibverbs-dev \
-        libibverbs1 \
-        librdmacm-dev \
-        librdmacm1
-    rm -rf /var/lib/apt/lists/*
-
-# KNEM version 1.1.4
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates \
-        git
-    rm -rf /var/lib/apt/lists/*
 %post
     cd /
-    mkdir -p /var/tmp && cd /var/tmp && git clone --depth=1 --branch knem-1.1.4 https://gitlab.inria.fr/knem/knem.git knem && cd -
-    mkdir -p /usr/local/knem
-    cd /var/tmp/knem
-    mkdir -p /usr/local/knem/include
-    cp common/*.h /usr/local/knem/include
-    rm -rf /var/tmp/knem
-%environment
-    export CPATH=/usr/local/knem/include:$CPATH
-%post
-    export CPATH=/usr/local/knem/include:$CPATH
-
-# XPMEM branch master
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        autoconf \
-        automake \
-        ca-certificates \
-        file \
-        git \
-        libtool \
-        make
-    rm -rf /var/lib/apt/lists/*
-%post
-    cd /
-    mkdir -p /var/tmp && cd /var/tmp && git clone --depth=1 --branch master https://github.com/hjelmn/xpmem.git xpmem && cd -
-    cd /var/tmp/xpmem
-    autoreconf --install
-    cd /var/tmp/xpmem &&   ./configure --prefix=/usr/local/xpmem --disable-kernel-module
-    make -j$(nproc)
-    make -j$(nproc) install
-    rm -rf /var/tmp/xpmem
-%environment
-    export CPATH=/usr/local/xpmem/include:$CPATH
-    export LD_LIBRARY_PATH=/usr/local/xpmem/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/usr/local/xpmem/lib:$LIBRARY_PATH
-%post
-    export CPATH=/usr/local/xpmem/include:$CPATH
-    export LD_LIBRARY_PATH=/usr/local/xpmem/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/usr/local/xpmem/lib:$LIBRARY_PATH
-
-# UCX https://github.com/openucx/ucx.git v1.18.0
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        autoconf \
-        automake \
-        binutils-dev \
-        ca-certificates \
-        file \
-        git \
-        libnuma-dev \
-        libtool \
-        make \
-        wget
-    rm -rf /var/lib/apt/lists/*
-%post
-    cd /
-    mkdir -p /var/tmp && cd /var/tmp && git clone --depth=1 --branch v1.18.0 https://github.com/openucx/ucx.git ucx && cd -
-    cd /var/tmp/ucx
-    ./autogen.sh
-    cd /var/tmp/ucx &&   ./configure --prefix=/usr/local/ucx --disable-assertions --disable-debug --disable-doxygen-doc --disable-logging --disable-params-check --enable-optimizations --with-cuda=/usr/local/cuda --with-knem=/usr/local/knem --with-rdmacm --with-verbs --with-xpmem=/usr/local/xpmem
-    make -j$(nproc)
-    make -j$(nproc) install
-    rm -rf /var/tmp/ucx
-%environment
-    export CPATH=/usr/local/ucx/include:$CPATH
-    export LD_LIBRARY_PATH=/usr/local/ucx/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/usr/local/ucx/lib:$LIBRARY_PATH
-    export PATH=/usr/local/ucx/bin:$PATH
-%post
-    export CPATH=/usr/local/ucx/include:$CPATH
-    export LD_LIBRARY_PATH=/usr/local/ucx/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/usr/local/ucx/lib:$LIBRARY_PATH
-    export PATH=/usr/local/ucx/bin:$PATH
-
-# OpenMPI version 5.0.3
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        bzip2 \
-        file \
-        hwloc \
-        libnuma-dev \
-        make \
-        openssh-client \
-        perl \
-        tar \
-        wget
-    rm -rf /var/lib/apt/lists/*
-%post
-    cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp https://www.open-mpi.org/software/ompi/v5.0/downloads/openmpi-5.0.3.tar.bz2
-    mkdir -p /var/tmp && tar -x -f /var/tmp/openmpi-5.0.3.tar.bz2 -C /var/tmp -j
-    cd /var/tmp/openmpi-5.0.3 &&   ./configure --prefix=/usr/local/openmpi --disable-getpwuid --enable-mpi-fortran=yes --enable-orterun-prefix-by-default --with-cuda --with-pmix=internal --with-ucx=/usr/local/ucx --with-verbs
-    make -j$(nproc)
-    make -j$(nproc) install
-    rm -rf /var/tmp/openmpi-5.0.3 /var/tmp/openmpi-5.0.3.tar.bz2
-%environment
-    export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
-    export PATH=/usr/local/openmpi/bin:$PATH
-%post
-    export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
-    export PATH=/usr/local/openmpi/bin:$PATH
+    . /usr/share/modules/init/sh
+    module use /opt/nvidia/hpc_sdk/modulefiles
+    module load nvhpc-hpcx-cuda12
 
 %environment
-    export MPI_INC=/usr/local/openmpi/include
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+    export OMPI_CC=gcc
+    export OMPI_CXX=g++
+    export OMPI_FC=gfortran
 %post
-    export MPI_INC=/usr/local/openmpi/include
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+    export OMPI_CC=gcc
+    export OMPI_CXX=g++
+    export OMPI_FC=gfortran
 
 # FFTW version 3.3.10
 %post
@@ -176,37 +76,42 @@ Stage: devel
         make \
         wget
     rm -rf /var/lib/apt/lists/*
-
-%files 
-    ./fftw-3.3.10.tar.gz /var/tmp
-
 %post
     cd /
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp ftp://ftp.fftw.org/pub/fftw/fftw-3.3.10.tar.gz
     mkdir -p /var/tmp && tar -x -f /var/tmp/fftw-3.3.10.tar.gz -C /var/tmp -z
-    cd /var/tmp/fftw-3.3.10 &&   ./configure --prefix=/usr/local/fftw --enable-mpi --enable-openmp
+    cd /var/tmp/fftw-3.3.10 &&   ./configure --prefix=/opt/fftw --enable-mpi --enable-openmp
     make -j$(nproc)
     make -j$(nproc) install
     rm -rf /var/tmp/fftw-3.3.10 /var/tmp/fftw-3.3.10.tar.gz
 %environment
-    export LD_LIBRARY_PATH=/usr/local/fftw/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
 %post
-    export LD_LIBRARY_PATH=/usr/local/fftw/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
 
 %environment
-    export CPATH=/usr/local/fftw/include:$CPATH
-    export CPLUS_INCLUDE_PATH=/usr/local/fftw/include:$CPLUS_INCLUDE_PATH
-    export C_INCLUDE_PATH=/usr/local/fftw/include:$C_INCLUDE_PATH
-    export LIBRARY_PATH=/usr/local/fftw/lib:$LIBRARY_PATH
+    export CPATH=/opt/fftw/include:$CPATH
+    export CPLUS_INCLUDE_PATH=/opt/fftw/include:$CPLUS_INCLUDE_PATH
+    export C_INCLUDE_PATH=/opt/fftw/include:$C_INCLUDE_PATH
+    export FFTW_HOME=/opt/fftw
+    export FFTW_INC=/opt/fftw/include
+    export FFTW_INCLUDE=/opt/fftw/include
+    export FFTW_LIB=/opt/fftw/lib
+    export LIBRARY_PATH=/opt/fftw/lib:$LIBRARY_PATH
 %post
-    export CPATH=/usr/local/fftw/include:$CPATH
-    export CPLUS_INCLUDE_PATH=/usr/local/fftw/include:$CPLUS_INCLUDE_PATH
-    export C_INCLUDE_PATH=/usr/local/fftw/include:$C_INCLUDE_PATH
-    export LIBRARY_PATH=/usr/local/fftw/lib:$LIBRARY_PATH
+    export CPATH=/opt/fftw/include:$CPATH
+    export CPLUS_INCLUDE_PATH=/opt/fftw/include:$CPLUS_INCLUDE_PATH
+    export C_INCLUDE_PATH=/opt/fftw/include:$C_INCLUDE_PATH
+    export FFTW_HOME=/opt/fftw
+    export FFTW_INC=/opt/fftw/include
+    export FFTW_INCLUDE=/opt/fftw/include
+    export FFTW_LIB=/opt/fftw/lib
+    export LIBRARY_PATH=/opt/fftw/lib:$LIBRARY_PATH
 
 %environment
-    export CUDA_PATH=/usr/local/cuda-12.6
+    export CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6
 %post
-    export CUDA_PATH=/usr/local/cuda-12.6
+    export CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6
 
 %post
     cd /
@@ -219,7 +124,7 @@ Stage: devel
     cd /
     mv /opt/xshells.hpp /opt/xshells
     cd /opt/xshells
-    ./configure MPICXX=mpicxx --enable-cuda=ampere
+    ./configure MPICXX=mpicxx --enable-cuda=ampere --disable-simd
     make xsgpu_mpi
 
 %environment
@@ -230,7 +135,7 @@ Stage: devel
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: localimage
-From: cuda@sha256_77e5fa9d1849bdba5a340be90d8ca30fb13d8f62fb433b1fa9d2903bb7a68498.sif
+From: nvhpc@sha256_fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914.sif
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -253,96 +158,23 @@ Stage: runtime
         python3
     rm -rf /var/lib/apt/lists/*
 
-# Mellanox OFED version 24.04-0.7.0.0
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates \
-        gnupg \
-        wget
-    rm -rf /var/lib/apt/lists/*
-%post
-    wget -qO - https://www.mellanox.com/downloads/ofed/RPM-GPG-KEY-Mellanox | apt-key add -
-    mkdir -p /etc/apt/sources.list.d && wget -q -nc --no-check-certificate -P /etc/apt/sources.list.d https://linux.mellanox.com/public/repo/mlnx_ofed/24.04-0.7.0.0/ubuntu22.04/mellanox_mlnx_ofed.list
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ibverbs-providers \
-        ibverbs-utils \
-        libibmad-dev \
-        libibmad5 \
-        libibumad-dev \
-        libibumad3 \
-        libibverbs-dev \
-        libibverbs1 \
-        librdmacm-dev \
-        librdmacm1
-    rm -rf /var/lib/apt/lists/*
-
-# KNEM
-%files from devel
-    /usr/local/knem /usr/local/knem
-%environment
-    export CPATH=/usr/local/knem/include:$CPATH
-%post
-    export CPATH=/usr/local/knem/include:$CPATH
-
-# XPMEM
-%files from devel
-    /usr/local/xpmem /usr/local/xpmem
-%environment
-    export CPATH=/usr/local/xpmem/include:$CPATH
-    export LD_LIBRARY_PATH=/usr/local/xpmem/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/usr/local/xpmem/lib:$LIBRARY_PATH
-%post
-    export CPATH=/usr/local/xpmem/include:$CPATH
-    export LD_LIBRARY_PATH=/usr/local/xpmem/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/usr/local/xpmem/lib:$LIBRARY_PATH
-
-# UCX
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        libbinutils
-    rm -rf /var/lib/apt/lists/*
-%files from devel
-    /usr/local/ucx /usr/local/ucx
-%environment
-    export CPATH=/usr/local/ucx/include:$CPATH
-    export LD_LIBRARY_PATH=/usr/local/ucx/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/usr/local/ucx/lib:$LIBRARY_PATH
-    export PATH=/usr/local/ucx/bin:$PATH
-%post
-    export CPATH=/usr/local/ucx/include:$CPATH
-    export LD_LIBRARY_PATH=/usr/local/ucx/lib:$LD_LIBRARY_PATH
-    export LIBRARY_PATH=/usr/local/ucx/lib:$LIBRARY_PATH
-    export PATH=/usr/local/ucx/bin:$PATH
-
-# OpenMPI
-%post
-    apt-get update -y
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        hwloc \
-        openssh-client
-    rm -rf /var/lib/apt/lists/*
-%files from devel
-    /usr/local/openmpi /usr/local/openmpi
-%environment
-    export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
-    export PATH=/usr/local/openmpi/bin:$PATH
-%post
-    export LD_LIBRARY_PATH=/usr/local/openmpi/lib:$LD_LIBRARY_PATH
-    export PATH=/usr/local/openmpi/bin:$PATH
-
 # FFTW
 %files from devel
-    /usr/local/fftw /usr/local/fftw
+    /opt/fftw /opt/fftw
 %environment
-    export LD_LIBRARY_PATH=/usr/local/fftw/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
 %post
-    export LD_LIBRARY_PATH=/usr/local/fftw/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
 
 %files from devel
+    /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64/libnvrtc.so /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64/libnvrtc.so.12.6.77
     /opt/xshells /opt/xshells
+
+%post
+    cd /
+    cd /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64
+    ln -s libnvrtc.so.12.6.77 libnvrtc.so.12
+    ln -s libnvrtc.so.12.6.77 libnvrtc.so
 
 %environment
     export PATH=/opt/xshells:$PATH
