@@ -58,7 +58,7 @@ The following codes are to be considered if any of the main targeted codes does 
 | Code                                                                    | leonardo-baremetal                                                         | leonardo-container | thea-baremetal | thea-container | Validation Test | Test Case Identified |
 |-------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------|----------------|----------------|-----------------|----------------------|
 | [SPECFEM3D_GLOBE](https://github.com/SPECFEM/specfem3d_globe)            | :heavy_check_mark:                                                                         | Not started        | Not started    | Not started    |        Not started          | :heavy_check_mark:, Waiting Data From Developers                   |
-| [TANDEM](https://tandem.readthedocs.io/en/latest/)                      | Ok                                                                          | Not started        | Ok             | Not started    |         Not started        | Backup if no response from XSHELLS                   |
+| [TANDEM](https://tandem.readthedocs.io/en/latest/)                      | Ok                                                                          | Not started        | Ok             | Not started    |         Not started        |                   |
 
 
 
