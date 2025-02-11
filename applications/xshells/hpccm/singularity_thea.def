@@ -1,12 +1,72 @@
-# Container recipe
+# 
+# This recipe builds a container definition for XSHELLS.
+# The generation is parameterized solely using the provided user arguments, which include:
+# 
+# - `cluster`: Specifies the target cluster ('leonardo' or 'thea').
+# 
+# For example, to generate a Singularity definition file for the 'leonardo' cluster, you can run:
+# 
+#     $ hpccm --recipe geodynamo_recipe.py --userarg cluster="leonardo"             --format singularity --singularity-version=3.2
+# 
+# Similarly, for the 'thea' cluster:
+# 
+#     $ hpccm --recipe geodynamo_recipe.py --userarg cluster="thea"             --format singularity --singularity-version=3.2
+# 
+# Note:
+#     - This recipe uses SHA-256 content digests as unique identifiers for both the devel and 
+#       runtime base images. These digests ensure safety and reproducibility.
+# 
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
 BootStrap: localimage
-From: mpi.sif
+From: nvhpc@sha256_da058394e75309cf6c9002a0d47332b0e730f107f029464819a4a9ba2a6e0454.sif
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        autoconf \
+        automake \
+        ca-certificates \
+        environment-modules \
+        g++ \
+        gcc \
+        gfortran \
+        libz-dev \
+        pkg-config \
+        zip
+    rm -rf /var/lib/apt/lists/*
+
+# Python
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3
+    rm -rf /var/lib/apt/lists/*
+
+%post
+    cd /
+    . /usr/share/modules/init/sh
+    module use /opt/nvidia/hpc_sdk/modulefiles
+    module load nvhpc-hpcx-cuda12
+
+%environment
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+    export OMPI_CC=gcc
+    export OMPI_CXX=g++
+    export OMPI_FC=gfortran
+%post
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+    export OMPI_CC=gcc
+    export OMPI_CXX=g++
+    export OMPI_FC=gfortran
 
 # FFTW version 3.3.10
 %post
@@ -16,34 +76,47 @@ Stage: devel
         make \
         wget
     rm -rf /var/lib/apt/lists/*
+
+%files 
+    fftw-3.3.10.tar.gz /opt/
+
 %post
     cd /
-    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp ftp://ftp.fftw.org/pub/fftw/fftw-3.3.10.tar.gz
+    mkdir -p /var/tmp 
+    mv /opt/fftw-3.3.10.tar.gz /var/tmp
     mkdir -p /var/tmp && tar -x -f /var/tmp/fftw-3.3.10.tar.gz -C /var/tmp -z
-    cd /var/tmp/fftw-3.3.10 &&   ./configure --prefix=/usr/local/fftw --enable-mpi --enable-openmp
+    cd /var/tmp/fftw-3.3.10 &&   ./configure --prefix=/opt/fftw --enable-mpi --enable-openmp
     make -j$(nproc)
     make -j$(nproc) install
     rm -rf /var/tmp/fftw-3.3.10 /var/tmp/fftw-3.3.10.tar.gz
 %environment
-    export LD_LIBRARY_PATH=/usr/local/fftw/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
 %post
-    export LD_LIBRARY_PATH=/usr/local/fftw/lib:$LD_LIBRARY_PATH
+    export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
 
 %environment
-    export CPATH=/usr/local/fftw/include:$CPATH
-    export CPLUS_INCLUDE_PATH=/usr/local/fftw/include:$CPLUS_INCLUDE_PATH
-    export C_INCLUDE_PATH=/usr/local/fftw/include:$C_INCLUDE_PATH
-    export LIBRARY_PATH=/usr/local/fftw/lib:$LIBRARY_PATH
+    export CPATH=/opt/fftw/include:$CPATH
+    export CPLUS_INCLUDE_PATH=/opt/fftw/include:$CPLUS_INCLUDE_PATH
+    export C_INCLUDE_PATH=/opt/fftw/include:$C_INCLUDE_PATH
+    export FFTW_HOME=/opt/fftw
+    export FFTW_INC=/opt/fftw/include
+    export FFTW_INCLUDE=/opt/fftw/include
+    export FFTW_LIB=/opt/fftw/lib
+    export LIBRARY_PATH=/opt/fftw/lib:$LIBRARY_PATH
 %post
-    export CPATH=/usr/local/fftw/include:$CPATH
-    export CPLUS_INCLUDE_PATH=/usr/local/fftw/include:$CPLUS_INCLUDE_PATH
-    export C_INCLUDE_PATH=/usr/local/fftw/include:$C_INCLUDE_PATH
-    export LIBRARY_PATH=/usr/local/fftw/lib:$LIBRARY_PATH
+    export CPATH=/opt/fftw/include:$CPATH
+    export CPLUS_INCLUDE_PATH=/opt/fftw/include:$CPLUS_INCLUDE_PATH
+    export C_INCLUDE_PATH=/opt/fftw/include:$C_INCLUDE_PATH
+    export FFTW_HOME=/opt/fftw
+    export FFTW_INC=/opt/fftw/include
+    export FFTW_INCLUDE=/opt/fftw/include
+    export FFTW_LIB=/opt/fftw/lib
+    export LIBRARY_PATH=/opt/fftw/lib:$LIBRARY_PATH
 
 %environment
-    export CUDA_PATH=/usr/local/cuda-12.6
+    export CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6
 %post
-    export CUDA_PATH=/usr/local/cuda-12.6
+    export CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6
 
 %post
     cd /
@@ -56,7 +129,7 @@ Stage: devel
     cd /
     mv /opt/xshells.hpp /opt/xshells
     cd /opt/xshells
-    ./configure MPICXX=mpicxx --enable-cuda=ampere
+    ./configure MPICXX=mpicxx --enable-cuda=ampere --disable-simd
     make xsgpu_mpi
 
 %environment
@@ -64,3 +137,45 @@ Stage: devel
 %post
     export PATH=/opt/xshells:$PATH
 
+# NOTE: this definition file depends on features only available in
+# Singularity 3.2 and later.
+BootStrap: localimage
+From: nvhpc@sha256_fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914.sif
+Stage: runtime
+%post
+    . /.singularity.d/env/10-docker*.sh
+
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        g++ \
+        gcc \
+        gfortran \
+        libnuma-dev \
+        libz-dev \
+        zip
+    rm -rf /var/lib/apt/lists/*
+
+# Python
+%post
+    apt-get update -y
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        python3
+    rm -rf /var/lib/apt/lists/*
+
+# FFTW
+%files from devel
+    /opt/fftw /opt/fftw
+%environment
+    export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
+%post
+    export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
+
+%files from devel
+    /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64/ /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64/
+    /opt/xshells /opt/xshells
+
+%environment
+    export PATH=/opt/xshells:$PATH
+%post
+    export PATH=/opt/xshells:$PATH
