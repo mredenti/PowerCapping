@@ -132,6 +132,7 @@ os_common_packages = [
     'automake',
     'ca-certificates',
     'pkg-config',
+    'bsdmainutils', # hexdump
     'gcc',
     'g++',
     'gfortran'
