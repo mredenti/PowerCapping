@@ -160,7 +160,7 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
                 (input_dir, input_dir) 
             ]
             
-            self.container_platform.command =  "bash -c 'export CUDA_VISIBLE_DEVICES=$((OMPI_COMM_WORLD_LOCAL_RANK % 4)); exec xsgpu_mpi -iter_max=100'" 
+            self.container_platform.command = self.executable + " -iter_max=100"
             
         
     @sanity_function
