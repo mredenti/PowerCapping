@@ -51,7 +51,7 @@ The following codes are to be considered if any of the main targeted codes does 
 | [XSHELLS](applications/xshells/README.md)                              | :heavy_check_mark:                                                                             | :heavy_check_mark:           |:heavy_check_mark:    | :heavy_check_mark:       |      :heavy_check_mark:             | :heavy_check_mark:, checking for numerical instability                  |
 | [Seissol](applications/seissol/local_docker_build_singularity_image.md)                                 | :heavy_check_mark:                                                                          | Not Started                 | Not Started            | Ongoing             |      Ongoing          | :heavy_check_mark:                   |
 | [ExaHype](https://gitlab.lrz.de/exahype/ExaHyPE-Engine)                                 | Not Started                                                                          | Not Started                 | Not Started            | Ongoing             |      Ongoing          | Meeting scheduled to discuss                   |
-| [ELMER_ICE](https://elmerice.elmerfem.org/)            | Not Started                                                                          | Not started        | Not started    | Not started    |        Not started          | :heavy_check_mark:, Waiting Data From Developers                   |
+| [ELMER_ICE](https://elmerice.elmerfem.org/)            | Not Started                                                                          | Not started        | Ongoing    | Ongoing    |        Ongoing          | :heavy_check_mark:                  |
 
 **Backup**
 
