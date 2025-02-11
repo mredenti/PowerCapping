@@ -92,7 +92,7 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
     """Base class of xshells mini-aps runtime tests"""
 
     valid_systems = ["leonardo:booster", "thea:gh"]
-    valid_prog_environs = ["+mpi"]
+    valid_prog_environs = ["+mpi", "default"]
     
     execution_mode = variable(typ.Str[r'baremetal|container'])
     image = variable(str) 
@@ -160,7 +160,7 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
                 (input_dir, input_dir) 
             ]
             
-            self.container_platform.command = self.executable 
+            self.container_platform.command =  "bash -c 'export CUDA_VISIBLE_DEVICES=$((OMPI_COMM_WORLD_LOCAL_RANK % 4)); exec xsgpu_mpi -iter_max=100'" 
             
         
     @sanity_function
@@ -175,7 +175,7 @@ class xshells_turbulent_geodynamo(xshells_base_benchmark):
         "xshells.hpp", 
         "xshells.par"
     ]
-    launcher = variable(str, value="mpirun-mapby")
+    launcher = variable(str, value="srun-pmix")
     num_gpus = parameter([4])
     executable = "xsgpu_mpi"
     executable_opts = ["-iter_max=100'"] 

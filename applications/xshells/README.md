@@ -41,12 +41,13 @@ reframe \
     --dont-restage \
     --performance-report \
     -p openmpi-gcc \
-    -J qos=normal \
+    -J qos=boost_qos_dbg \
     -J account=cin_staff \
-    -n xshells_small \
-    -S xshells_small.execution_mode=container \
-    -S xshells_small.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/xshells.sif \
-    --dry-run
+    -n xshells_turbulent_geodynamo \
+    -S xshells_turbulent_geodynamo.execution_mode=container \
+    -S xshells_turbulent_geodynamo.launcher=mpirun-mapby \
+    -S xshells_turbulent_geodynamo.image=$SCRATCH/POWER_CAPPING/SIF_IMAGES/xshells_custom_mpi.sif \
+    -lC
 ```
 
 </details>
@@ -67,8 +68,9 @@ reframe \
     --dont-restage \
     --performance-report \
     -p openmpi-gcc \
-    -n xshells_small \
-    -S xshells_small.execution_mode=baremetal \
+    -M fftw:fftw \
+    -n xshells_turbulent_geodynamo \
+    -S xshells_turbulent_geodynamo.execution_mode=baremetal \
     -lC
 ```
 
@@ -82,10 +84,10 @@ reframe \
     --keep-stage-files \
     --dont-restage \
     --performance-report \
-    -p openmpi-gcc \
-    -n xshells_small \
-    -S xshells_small.execution_mode=container \
-    -S xshells_small.image=$SCRATCH_FAST/SIF_IMAGES/xshells.sif \
+    -p default \
+    -n xshells_turbulent_geodynamo \
+    -S xshells_turbulent_geodynamo.execution_mode=container \
+    -S xshells_turbulent_geodynamo.image=$SCRATCH_FAST/SIF_IMAGES/xshells.sif \
     -lC
 ```
 
