@@ -43,7 +43,7 @@ class build_specfem3d_cartesian(rfm.CompileOnlyRegressionTest):
 
     build_system = "Autotools"
 
-    specfem3d_cartesian_source = fixture(fetch_specfemd3d_cartesian, scope="test")
+    specfem3d_cartesian_source = fixture(fetch_specfemd3d_cartesian, scope="session")
     
     valid_systems = ["leonardo:booster", "thea:gh"]
     valid_prog_environs = ["+mpi"]

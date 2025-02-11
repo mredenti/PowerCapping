@@ -19,8 +19,8 @@
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: localimage
-From: nvhpc@sha256_da058394e75309cf6c9002a0d47332b0e730f107f029464819a4a9ba2a6e0454.sif
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:ac4a478728822dbc02d6b081cd9935f103f224990c9fe5fde17951f0ba83953a
 Stage: devel
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -76,14 +76,9 @@ Stage: devel
         make \
         wget
     rm -rf /var/lib/apt/lists/*
-
-%files 
-    fftw-3.3.10.tar.gz /opt/
-
 %post
     cd /
-    mkdir -p /var/tmp 
-    mv /opt/fftw-3.3.10.tar.gz /var/tmp
+    mkdir -p /var/tmp && wget -q -nc --no-check-certificate -P /var/tmp ftp://ftp.fftw.org/pub/fftw/fftw-3.3.10.tar.gz
     mkdir -p /var/tmp && tar -x -f /var/tmp/fftw-3.3.10.tar.gz -C /var/tmp -z
     cd /var/tmp/fftw-3.3.10 &&   ./configure --prefix=/opt/fftw --enable-mpi --enable-openmp
     make -j$(nproc)
@@ -114,9 +109,9 @@ Stage: devel
     export LIBRARY_PATH=/opt/fftw/lib:$LIBRARY_PATH
 
 %environment
-    export CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6
+    export CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/cuda/12.6
 %post
-    export CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6
+    export CUDA_PATH=/opt/nvidia/hpc_sdk/Linux_x86_64/24.11/cuda/12.6
 
 %post
     cd /
@@ -139,8 +134,8 @@ Stage: devel
 
 # NOTE: this definition file depends on features only available in
 # Singularity 3.2 and later.
-BootStrap: localimage
-From: nvhpc@sha256_fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914.sif
+BootStrap: docker
+From: nvcr.io/nvidia/nvhpc@sha256:0d4d48e7208887ae032c9372298840133553dcb0572dabc35922fc2273243602
 Stage: runtime
 %post
     . /.singularity.d/env/10-docker*.sh
@@ -172,8 +167,14 @@ Stage: runtime
     export LD_LIBRARY_PATH=/opt/fftw/lib:$LD_LIBRARY_PATH
 
 %files from devel
-    /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64/ /opt/nvidia/hpc_sdk/Linux_aarch64/24.11/cuda/12.6/lib64/
+    /opt/nvidia/hpc_sdk/Linux_x86_64/24.11/cuda/12.6/lib64/libnvrtc.so /opt/nvidia/hpc_sdk/Linux_x86_64/24.11/cuda/12.6/lib64/libnvrtc.so.12.6.77
     /opt/xshells /opt/xshells
+
+%post
+    cd /
+    cd /opt/nvidia/hpc_sdk/Linux_x86_64/24.11/cuda/12.6/lib64
+    ln -s libnvrtc.so.12.6.77 libnvrtc.so.12
+    ln -s libnvrtc.so.12.6.77 libnvrtc.so
 
 %environment
     export PATH=/opt/xshells:$PATH

@@ -36,7 +36,12 @@ site_configuration = {
                     "modules": [],
                     "access": [],
                     "max_jobs": 1,
-                    "environs": ["default", "gcc", "openmpi-gcc", "openmpi-nvhpc"],
+                    "environs": [
+                        "default", 
+                        "gcc", 
+                        "openmpi-gcc", 
+                        "openmpi-nvhpc"
+                    ],
                     "processor": {
                         "arch": "icelake",
                         "platform": "x86_64",

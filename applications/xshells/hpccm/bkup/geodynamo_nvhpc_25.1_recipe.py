@@ -54,14 +54,14 @@ cluster_configs = {
         # NVHPC, CUDA setup for A100
         # --------------------
         'nvhpc_version': '24.11',
-        'cuda_version': '12.6',
+        'cuda_version': '11.8',
         'cuda_arch': '80',
 
         # --------------------
         # Use a (unique) content-based identifier for images
         # --------------------
-        'digest_devel': 'sha256:ac4a478728822dbc02d6b081cd9935f103f224990c9fe5fde17951f0ba83953a', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda12.6-ubuntu22.04 # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
-        'digest_runtime': 'sha256:0d4d48e7208887ae032c9372298840133553dcb0572dabc35922fc2273243602', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
+        'digest_devel': 'sha256:f50d2e293b79d43684a36c781ceb34a663db54249364530bf6da72bdf2feab30', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda_multi-ubuntu22.04 # https://catalog.ngc.nvidia.com/orgs/nvidia/containers/nvhpc/tags
+        'digest_runtime': 'sha256:70d561f38e07c013ace2e5e8b30cdd3dadd81c2e132e07147ebcbda71f5a602a', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda11.8-ubuntu22.04
 
         # --------------------
         # Cluster arch and micro arch
@@ -78,15 +78,15 @@ cluster_configs = {
         # --------------------
         # NVHPC, CUDA setup for GH200
         # --------------------
-        'nvhpc_version': '24.11',
+        'nvhpc_version': '25.1',
         'cuda_version': '12.6',
         'cuda_arch': '90',
         
         # --------------------
         # Use a (unique) content-based identifier for images 
         # --------------------
-        'digest_devel': 'sha256:da058394e75309cf6c9002a0d47332b0e730f107f029464819a4a9ba2a6e0454', # nvcr.io/nvidia/nvhpc:24.11-devel-cuda12.6-ubuntu22.04
-        'digest_runtime': 'sha256:fb36c0c055458603df27c31dbdf6ab02fc483f76f4272e7db99546ffe710d914', # nvcr.io/nvidia/nvhpc:24.11-runtime-cuda12.6-ubuntu22.04
+        'digest_devel': 'sha256:4ac58ba75151c2c6dc4ea3410612a897353dbd520ec67572d923ea9e749bb865', # nvcr.io/nvidia/nvhpc:25.1-devel-cuda12.6-ubuntu22.04
+        'digest_runtime': 'sha256:8b07932ed5c3c45afa2a4d527ffcf67117b9caa294417bd8c7727726c0d61d14', # nvcr.io/nvidia/nvhpc:25.1-runtime-cuda12.6-ubuntu22.04
         
         # --------------------
         # Cluster arch and micro arch 
@@ -127,21 +127,8 @@ Stage0 += baseimage(image=f'nvcr.io/nvidia/nvhpc@{params["digest_devel"]}',
 os_common_packages = [
     'environment-modules',
     'zip',
-    'libz-dev',
-    'autoconf',
-    'automake',
-    'ca-certificates',
-    'pkg-config',
-    'bsdmainutils', # hexdump
-    'gcc',
-    'g++',
-    'gfortran'
+    'libz-dev'
 ]
-
-Stage0 += packages(
-    apt=os_common_packages,
-    epel=True
-)
 
 # Install Python
 python = bb.python(python2=False)
@@ -160,58 +147,8 @@ else:
                             f'module load nvhpc-hpcx-cuda{cuda_major}'])
 
 #############################
-# Set GNU compiler
-############################# 
-Stage0 += environment(
-    variables={
-        'CC' : 'gcc',
-        'CXX' : 'g++',
-        'FC' : 'gfortran',
-        'OMPI_CC' : 'gcc',
-        'OMPI_CXX' : 'g++',
-        'OMPI_FC' : 'gfortran',
-    },
-    _export=True
-)
-    
-#############################
-# FFTW
-############################# 
-
-Stage0 += fftw(
-    configure_opts=[
-        '--enable-openmp'
-    ],
-    mpi=True,
-    prefix='/opt/fftw',
-    version='3.3.10'
-)
-
-Stage0 += environment(
-    variables={
-        'FFTW_HOME' : '/opt/fftw',
-        'FFTW_LIB' : '/opt/fftw/lib',
-        'LIBRARY_PATH' : '/opt/fftw/lib:$LIBRARY_PATH',
-        'FFTW_INC' : '/opt/fftw/include',
-        'FFTW_INCLUDE' : '/opt/fftw/include',
-        'C_INCLUDE_PATH' : '/opt/fftw/include:$C_INCLUDE_PATH',
-        'CPLUS_INCLUDE_PATH' : '/opt/fftw/include:$CPLUS_INCLUDE_PATH',
-        'CPATH' : '/opt/fftw/include:$CPATH',
-    },
-    _export=True
-)
-     
-
-#############################
 # XSHELLS
-############################# 
-Stage0 += environment(
-    variables={
-        'CUDA_PATH' : f'/opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}',
-    },
-    _export=True
-)
-          
+#############################           
 
 Stage0 += shell(commands=[
     git().clone_step(
@@ -224,12 +161,11 @@ Stage0 += shell(commands=[
     ])
 
 # Need to copy the XSHELLS header configuration file xshells.hpp, as it is needed at compilation time
-Stage0 += copy(src='./xshells.hpp', dest='/opt/xshells.hpp') 
+Stage0 += copy(src='../turbulent-geodynamo/xshells.hpp', dest='/opt/xshells/xshells.hpp') 
 
 Stage0 += shell(commands=[
-    'mv /opt/xshells.hpp /opt/xshells',
     'cd /opt/xshells',
-    './configure MPICXX=mpicxx --enable-cuda=ampere --disable-simd',
+    './configure MPICXX=mpicxx --enable-cuda=ampere',
     'make xsgpu_mpi'
 ])
 
@@ -256,31 +192,14 @@ Stage1 += packages(
     apt=[
         'zip',
         'libz-dev',
-        'libnuma-dev',
-        'gcc',
-        'g++',
-        'gfortran',
+        'libnuma-dev'
     ], 
     epel=True
 )
 
 Stage1 += Stage0.runtime(_from='devel') 
 
-Stage1 += copy(
-    files = {
-        '/opt/xshells'          : '/opt/xshells',
-        f'/opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}/lib64/'   : f'/opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}/lib64/',
-
-    }, 
-    _from='devel'
-)
-
-#Stage1 += shell(commands = [
-#    f'cd /opt/nvidia/hpc_sdk/Linux_{params["arch"]}/{params["nvhpc_version"]}/cuda/{params["cuda_version"]}/lib64',
-#    'ln -s libnvrtc.so.12.6.77 libnvrtc.so.12',
-#    'ln -s libnvrtc.so.12.6.77 libnvrtc.so'
-#])
-
+Stage1 += copy(src='/opt/xshells', dest='/opt/xshells', _from='devel')
 
 Stage1 += environment(
     variables={
@@ -292,4 +211,5 @@ Stage1 += environment(
 if hpccm.config.g_ctype == container_type.DOCKER:
   # Docker automatically passes through command line arguments
   Stage1+= runscript(commands = ['/bin/sh', '--rcfile', '/etc/profile', '-l'], _args=True, _exec=True)
+Stage1 += Stage0.runtime(_from='devel') 
   

@@ -29,6 +29,17 @@ class fetch_xshells(rfm.RunOnlyRegressionTest):
     postrun_cmds = [f'cd xshells && git checkout {commit}']
     
     local = True
+    
+    src = variable(str, value="turbulent-geodynamo")
+
+    @run_after("setup")
+    def get_parameter_file(self):
+        # get the number of processors, ignoring comments in the Par_file
+        src = os.path.join(os.path.dirname(__file__), self.src, "xshells.hpp")
+        dest = os.path.join(self.stagedir, "xshells/xshells.hpp")
+        self.postrun_cmds += [
+            f"cp {src} {dest}"    
+        ]
         
     @sanity_function
     def validate_download(self):
@@ -43,21 +54,17 @@ class build_xshells(rfm.CompileOnlyRegressionTest):
 
     build_system = "Autotools"
 
-    xshells_source = fixture(fetch_xshells, scope="test")
+    xshells_source = fixture(fetch_xshells, scope="session")
     
     valid_systems = ["leonardo:booster", "thea:gh"]
     valid_prog_environs = ["+mpi"]
-    modules = ['cuda']
+    modules = ["cuda", "fftw"]
+    env_vars = {
+        "CUDA_PATH": "$CUDA_HOME", # "LIBRARY_PATH": "$CUDA_HOME/lib64/:$LIBRARY_PATH",
+    }
     
     build_locally = True
     build_time_limit='600'
-    
-    @run_after("setup")
-    def get_parameter_file(self):
-        # get the number of processors, ignoring comments in the Par_file
-        result = osext.run_command(f"grep -Po '^NPROC\\s*=\\s*\\K\\d+' {os.path.join(os.path.dirname(__file__), self.sourcesdir)}/DATA/Par_file") # TO BE CHANGED
-        # Remove any whitespace and convert the output to an integer.
-        self.num_gpus = int(result.stdout.strip())
     
     @run_before("compile")
     def prepare_build(self):        
@@ -66,7 +73,7 @@ class build_xshells(rfm.CompileOnlyRegressionTest):
         self.prebuild_cmds = [
             f'cd {self.build_system.sourcesdir}'
         ]
-        self.build_system.flags_from_environ= True
+        self.build_system.flags_from_environ= False
         #self.build_system.cflags = ['-O3']
         #self.build_system.fflags = ['-O3']
         
@@ -85,14 +92,13 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
     """Base class of xshells mini-aps runtime tests"""
 
     valid_systems = ["leonardo:booster", "thea:gh"]
-    valid_prog_environs = ["+mpi"]
+    valid_prog_environs = ["+mpi", "default"]
     
     execution_mode = variable(typ.Str[r'baremetal|container'])
     image = variable(str) 
     
     exclusive_access = True
-    num_gpus = None
-
+    
     xshells_binaries = None
     
     @run_after('init')
@@ -136,10 +142,11 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
         
         if self.execution_mode == 'baremetal':
             # Set the executable path using the stagedir and build prefix
-            self.executable = os.path.join(
-                self.xshells_binaries.build_system.sourcesdir,
-                self.executable
-            )
+            self.executable = "bash -c 'export CUDA_VISIBLE_DEVICES=$((OMPI_COMM_WORLD_LOCAL_RANK % 4)); exec " + \
+                os.path.join(
+                    self.xshells_binaries.build_system.sourcesdir,
+                    self.executable
+                )
 
         elif self.execution_mode == 'container':
             
@@ -153,7 +160,7 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
                 (input_dir, input_dir) 
             ]
             
-            self.container_platform.command = self.executable 
+            self.container_platform.command = self.executable + " -iter_max=100"
             
         
     @sanity_function
@@ -163,16 +170,13 @@ class xshells_base_benchmark(rfm.RunOnlyRegressionTest):
 @rfm.simple_test
 class xshells_turbulent_geodynamo(xshells_base_benchmark):
     descr = "xshells_turbulent_geodynamo"
-    num_gpus = parameter([1])
-    executable = "xsgpu_mpi"
-    #executable_opts = ["xshells.par"]  # perhaps we can move this to the build stage
-    time_limit = "1800"
-    sourcesdir = 'turbulent-geodynamo' # perhaps we can move this to the build stage as a parameter?
+    sourcesdir = "turbulent-geodynamo" 
     readonly_files = [
-        'xshells.hpp', # needed at compilation time
-        'xshells.par'
+        "xshells.hpp", 
+        "xshells.par"
     ]
-    #keep_files = [
-    #   'OUTPUT_FILES'
-    #]
-    launcher = variable(str, value="mpirun-mapby")
+    launcher = variable(str, value="srun-pmix")
+    num_gpus = parameter([4])
+    executable = "xsgpu_mpi"
+    executable_opts = ["-iter_max=100'"] 
+    time_limit = "1800"
