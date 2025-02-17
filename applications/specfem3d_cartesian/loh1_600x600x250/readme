@@ -1,0 +1,13 @@
+Simple example inspired from LOH1 spice benchmark (http://www.sismowine.org/model/WP2_LOH1.pdf)
+
+Configuration for 4 GPUs
+
+edit (set path to specfem directory) and run
+
+run_preproc.sh (on CPU) : for mesh and input file creation
+run_specfem.sh (on GPU): simulation 
+
+
+
+ 
+
