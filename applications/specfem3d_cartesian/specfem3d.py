@@ -245,3 +245,19 @@ class specfem3d_medium(specfemd3d_base_benchmark):
        'OUTPUT_FILES'
     ]
     launcher = variable(str, value="mpirun-mapby")
+    
+@rfm.simple_test
+class specfem3d_large(specfemd3d_base_benchmark):
+    descr = "specfem3d_large"
+    time_limit = "3600"
+    sourcesdir = 'loh1_600x600x250'
+    readonly_files = [
+        'DATA',
+        'readme',
+        'run_preproc.sh',  
+        'run_specfem.sh'
+    ]
+    keep_files = [
+       'OUTPUT_FILES'
+    ]
+    launcher = variable(str, value="mpirun-mapby")
