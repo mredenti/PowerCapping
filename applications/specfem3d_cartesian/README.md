@@ -166,6 +166,8 @@ reframe \
 
 **Container**
 
+- 8 GPUs
+
 ```shell
 reframe \
     -C power-capping/configuration/thea.py \
@@ -178,6 +180,23 @@ reframe \
     -n specfem3d_medium \
     -S specfem3d_medium.execution_mode=container \
     -S specfem3d_medium.image=$SCRATCH_FAST/SIF_IMAGES/specfem3d_cartesian.sif \
+    -lC
+```
+
+- 16 GPUs
+
+```shell
+reframe \
+    -C power-capping/configuration/thea.py \
+    -c power-capping/applications/specfem3d_cartesian/specfem3d.py \
+    --prefix $SCRATCH_FAST/REFRAME-SPECFEM-LARGE-CONTAINER \
+    --keep-stage-files \
+    --dont-restage \
+    --performance-report \
+    -p openmpi-gcc \
+    -n specfem3d_large \
+    -S specfem3d_large.execution_mode=container \
+    -S specfem3d_large.image=$SCRATCH_FAST/SIF_IMAGES/specfem3d_cartesian.sif \
     -lC
 ```
 
